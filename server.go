@@ -1,7 +1,7 @@
 package main
 
 import (
-	"light-house/graph"
+	"github.com/light-speak/lighthouse/graph"
 	"log"
 	"net/http"
 	"os"
