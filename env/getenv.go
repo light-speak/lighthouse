@@ -1,7 +1,13 @@
 package env
 
-import "os"
-import "github.com/joho/godotenv"
+import (
+	"github.com/joho/godotenv"
+	"os"
+)
+
+var (
+	loadedEnv = false
+)
 
 func GetEnvString(key string, defaultValue string) string {
 	value := os.Getenv(key)
@@ -12,11 +18,15 @@ func GetEnvString(key string, defaultValue string) string {
 }
 
 func Init(path *string) (err error) {
+	if loadedEnv {
+		return nil
+	}
 	p := ""
 	if path == nil {
 		p = "../.env"
 	} else {
 		p = *path
 	}
+	loadedEnv = true
 	return godotenv.Load(p)
 }
