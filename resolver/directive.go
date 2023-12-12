@@ -19,7 +19,15 @@ func getFieldKeyValue(ctx context.Context, obj interface{}) (string, interface{}
 	return "", nil, errors.New("parse key value error")
 }
 
-var DoNothing = func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+var First = func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+	return next(ctx)
+}
+
+var All = func(ctx context.Context, obj interface{}, next graphql.Resolver, scopes []*string) (res interface{}, err error) {
+	return next(ctx)
+}
+
+var Scope = func(ctx context.Context, obj interface{}, next graphql.Resolver, scope string) (res interface{}, err error) {
 	return next(ctx)
 }
 

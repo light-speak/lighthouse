@@ -84,14 +84,15 @@ func resolveList(lCtx *lighthouse.Context, tx *gorm.DB, data interface{}) error 
 	if lCtx.Paginate != nil {
 		tx = tx.Limit(lCtx.Paginate.Size).Offset((lCtx.Paginate.Page - 1) * lCtx.Paginate.Size)
 	}
-	if err := tx.Find(&data).Error; err != nil {
+
+	if err := tx.Find(data).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func resolveOne(lCtx *lighthouse.Context, tx *gorm.DB, data interface{}) error {
-	if err := tx.First(&data).Error; err != nil {
+	if err := tx.First(data).Error; err != nil {
 		return err
 	}
 	return nil
