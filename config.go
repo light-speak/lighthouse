@@ -9,6 +9,7 @@ var (
 
 type Context struct {
 	Wheres   []*Where
+	Data     *map[string]interface{}
 	Paginate *Paginate
 }
 
