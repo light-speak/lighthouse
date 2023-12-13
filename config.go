@@ -19,6 +19,6 @@ type Where struct {
 }
 
 type Paginate struct {
-	Page int
-	Size int
+	Page int64
+	Size int64
 }

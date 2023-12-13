@@ -57,3 +57,29 @@ var CreateOrUpdate = func(ctx context.Context, obj interface{}, next graphql.Res
 
 	return next(ctx)
 }
+
+var Page = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
+	lctx := middleware.GetContext(ctx)
+	if _, page, err := getFieldKeyValue(ctx, obj); err != nil {
+		return nil, err
+	} else {
+		if lctx.Paginate == nil {
+			lctx.Paginate = &lighthouse.Paginate{Page: 0, Size: 0}
+		}
+		lctx.Paginate.Page = page.(int64)
+	}
+	return next(ctx)
+}
+
+var Size = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
+	lctx := middleware.GetContext(ctx)
+	if _, size, err := getFieldKeyValue(ctx, obj); err != nil {
+		return nil, err
+	} else {
+		if lctx.Paginate == nil {
+			lctx.Paginate = &lighthouse.Paginate{Page: 0, Size: 0}
+		}
+		lctx.Paginate.Size = size.(int64)
+	}
+	return next(ctx)
+}

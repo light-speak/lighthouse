@@ -82,7 +82,7 @@ func ResolveData(ctx context.Context, db *gorm.DB, data interface{}, option Opti
 
 func resolveList(lCtx *lighthouse.Context, tx *gorm.DB, data interface{}) error {
 	if lCtx.Paginate != nil {
-		tx = tx.Limit(lCtx.Paginate.Size).Offset((lCtx.Paginate.Page - 1) * lCtx.Paginate.Size)
+		tx = tx.Limit(int(lCtx.Paginate.Size)).Offset((int(lCtx.Paginate.Page - 1)) * int(lCtx.Paginate.Size))
 	}
 
 	if err := tx.Find(data).Error; err != nil {
