@@ -3,31 +3,28 @@ package dataloader
 import (
 	_ "embed"
 	"fmt"
+	"path/filepath"
+	"text/template"
+
 	"github.com/99designs/gqlgen/plugin/modelgen"
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
-	"os"
-	"path/filepath"
-	"text/template"
 )
 
 //go:embed modelloader.gotpl
 var modelloaderTamplate string
 
 func GenModelLoader(models []*modelgen.Object) error {
-	var file *os.File
-	var err error
-
-	fileName := filepath.Join("graph", fmt.Sprintf("loaders.go"))
-	file, err = utils.CreateOrTruncateFile(fileName)
+	fileName := filepath.Join("graph", "loaders.go")
+	file, err := utils.CreateOrTruncateFile(fileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("创建或截断文件失败: %v", err)
 	}
+	defer file.Close()
 
-	names := make([]string, 0)
-
-	for _, model := range models {
-		names = append(names, model.Name)
+	names := make([]string, len(models))
+	for i, model := range models {
+		names[i] = model.Name
 	}
 
 	data := struct {
@@ -40,12 +37,12 @@ func GenModelLoader(models []*modelgen.Object) error {
 		"lcFirst": utils.LcFirst,
 		"ucFirst": utils.UcFirst,
 	}).Parse(modelloaderTamplate))
-	err = tmpl.Execute(file, data)
-	if err != nil {
-		return fmt.Errorf("error executing template: %v", err)
+
+	if err := tmpl.Execute(file, data); err != nil {
+		return fmt.Errorf("执行模板失败: %v", err)
 	}
 
-	log.Info("Appended loaders to file: %s\n", fileName)
+	log.Info("已将加载器追加到文件: %s", fileName)
 
 	return nil
 }

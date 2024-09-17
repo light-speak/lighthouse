@@ -10,32 +10,27 @@ import (
 )
 
 func main() {
-
 	if len(os.Args) < 2 {
-		log.Error("请输入一个命令， 如： init 或 gql:init")
+		log.Error("请输入一个命令，如：init、gql:init 或 gql:generate")
 		return
 	}
 
 	command := os.Args[1]
+	var err error
+
 	switch command {
 	case "init":
-		if err := initialize.Run(); err != nil {
-			log.Error("\nfailed to run initialize command: %v ", err)
-		}
-		break
-
+		err = initialize.Run()
 	case "gql:init":
-		if err := gqlInitialize.Run(); err != nil {
-			log.Error("\nfailed to run gql:init command: %v ", err)
-		}
-		break
-
+		err = gqlInitialize.Run()
 	case "gql:generate":
-		if err := gqlGenerate.Run(); err != nil {
-			log.Error("\nfailed to run gql:generate command: %v ", err)
-		}
-		break
+		err = gqlGenerate.Run()
 	default:
-		log.Error("命令 %s 不正确，请输入一个命令， 如： init 或 gql:init", command)
+		log.Error("命令 %s 不正确，请输入一个有效命令：init、gql:init 或 gql:generate", command)
+		return
+	}
+
+	if err != nil {
+		log.Error("执行命令 %s 失败: %v", command, err)
 	}
 }

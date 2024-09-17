@@ -12,7 +12,11 @@ import (
 	"unicode/utf8"
 )
 
-const minWidth = 20 // 设置默认最小宽度
+const (
+	minWidth        = 20
+	maxLogRetention = 15
+	logFilePattern  = "log-*.log"
+)
 
 // 定义日志级别常量
 const (
@@ -43,16 +47,13 @@ type LoggerConfig struct {
 
 // NewLogger 创建一个新的 Logger 实例，并初始化日志文件和目录
 func NewLogger(config LoggerConfig) (*Logger, error) {
-	var file *os.File
-	var err error
-
-	// 确定日志文件夹路径并创建
 	logDir := filepath.Join(config.LogDir, "logs")
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("无法创建日志目录: %v", err)
 	}
 
-	// 如果不是 ConsoleOnly 模式，初始化日志文件
+	var file *os.File
+	var err error
 	if !config.ConsoleOnly {
 		file, err = openDailyFile(logDir)
 		if err != nil {
@@ -60,7 +61,6 @@ func NewLogger(config LoggerConfig) (*Logger, error) {
 		}
 	}
 
-	// 返回初始化的 Logger 实例
 	return &Logger{
 		LogFile:     file,
 		ConsoleOnly: config.ConsoleOnly,
@@ -75,15 +75,12 @@ func openDailyFile(logDir string) (*os.File, error) {
 	today := time.Now().Format("2006-01-02")
 	dailyLogFilePath := filepath.Join(logDir, fmt.Sprintf("log-%s.log", today))
 
-	// 打开或创建今天的日志文件
 	file, err := os.OpenFile(dailyLogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
 
-	// 清理超过15天的旧日志文件
-	err = cleanupOldLogs(logDir, 15)
-	if err != nil {
+	if err := cleanupOldLogs(logDir, maxLogRetention); err != nil {
 		fmt.Fprintf(os.Stderr, "清理旧日志文件时出错: %v\n", err)
 	}
 
@@ -92,20 +89,17 @@ func openDailyFile(logDir string) (*os.File, error) {
 
 // cleanupOldLogs 清理超过指定数量的旧日志文件
 func cleanupOldLogs(logDir string, maxDays int) error {
-	files, err := filepath.Glob(filepath.Join(logDir, "log-*.log"))
+	files, err := filepath.Glob(filepath.Join(logDir, logFilePattern))
 	if err != nil {
 		return fmt.Errorf("无法列出日志文件: %v", err)
 	}
 
-	// 如果文件数量少于或等于 maxDays，则无需删除任何文件
 	if len(files) <= maxDays {
 		return nil
 	}
 
-	// 按文件名（日期）排序
 	sort.Strings(files)
 
-	// 删除最早的文件，保留最近的 maxDays 个文件
 	for _, file := range files[:len(files)-maxDays] {
 		if err := os.Remove(file); err != nil {
 			fmt.Fprintf(os.Stderr, "无法删除旧日志文件: %v\n", err)
@@ -155,11 +149,10 @@ func getCallerInfo() string {
 }
 
 // formatLogMessage 格式化日志信息，并处理多行显示
-func formatLogMessage(level string, message string, callerInfo string) (string, string, string) {
+func formatLogMessage(level, message, callerInfo string) (string, string, string) {
 	lines := strings.Split(message, "\n")
 	maxWidth := minWidth
 
-	// 计算最大行宽
 	for _, line := range lines {
 		lineWidth := calcDisplayWidth(line)
 		if lineWidth > maxWidth {
@@ -167,36 +160,18 @@ func formatLogMessage(level string, message string, callerInfo string) (string, 
 		}
 	}
 
-	// 确保maxWidth不小于调用信息的宽度
 	callerInfoWidth := calcDisplayWidth(callerInfo) + 12
 	if callerInfoWidth > maxWidth {
 		maxWidth = callerInfoWidth
 	}
 
-	// 设置颜色
-	var color string
-	switch level {
-	case "DEBUG ":
-		color = "\033[36m" // 青色
-	case " INFO ":
-		color = "\033[32m" // 绿色
-	case " WARN ":
-		color = "\033[33m" // 黄色
-	case "ERROR ":
-		color = "\033[31m" // 红色
-	default:
-		color = "\033[0m" // 默认颜色
-	}
+	color := getColorForLevel(level)
 	resetColor := "\033[0m"
 
-	// 设置标题宽度为最长行的宽度
 	levelLine := fmt.Sprintf("%s╓%s%s", color, centerText(fmt.Sprintf(" %s ", level), maxWidth+2), resetColor)
 	footerLine := fmt.Sprintf("%s╙%s%s", color, centerText("LIGHTHOUSE", maxWidth+2), resetColor)
-
-	// 添加调用信息行
 	callerLine := fmt.Sprintf("%s║ Called from %s%s %s", color, callerInfo, strings.Repeat(" ", maxWidth-calcDisplayWidth(callerInfo)-12), resetColor)
 
-	// 格式化每一行
 	var formattedLines []string
 	for _, line := range lines {
 		padding := maxWidth - calcDisplayWidth(line)
@@ -204,6 +179,21 @@ func formatLogMessage(level string, message string, callerInfo string) (string, 
 	}
 
 	return levelLine, fmt.Sprintf("%s\n%s", callerLine, strings.Join(formattedLines, "\n")), footerLine
+}
+
+func getColorForLevel(level string) string {
+	switch level {
+	case "DEBUG ":
+		return "\033[36m"
+	case " INFO ":
+		return "\033[32m"
+	case " WARN ":
+		return "\033[33m"
+	case "ERROR ":
+		return "\033[31m"
+	default:
+		return "\033[0m"
+	}
 }
 
 // Log 记录日志信息，带有日志级别限制功能，并支持格式化字符串

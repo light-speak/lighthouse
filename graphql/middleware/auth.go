@@ -4,24 +4,24 @@ import (
 	"context"
 )
 
-type contextKey struct {
-	name string
-}
+type contextKey string
 
-var userIdContextKey = &contextKey{
-	name: "USER",
-}
+const userIDContextKey contextKey = "USER"
 
-func UserId(ctx context.Context) (int64, error) {
-	userId, ok := ctx.Value(userIdContextKey).(int64)
+func UserID(ctx context.Context) (int64, error) {
+	userID, ok := ctx.Value(userIDContextKey).(int64)
 	if !ok {
-		return 0, &AuthError{Message: "请登录后重试"}
+		return 0, NewAuthError("请登录后重试")
 	}
-	return userId, nil
+	return userID, nil
 }
 
 type AuthError struct {
 	Message string
+}
+
+func NewAuthError(message string) *AuthError {
+	return &AuthError{Message: message}
 }
 
 func (e *AuthError) Error() string {

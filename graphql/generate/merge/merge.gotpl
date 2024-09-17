@@ -20,14 +20,14 @@ func (r *Resolver) merge{{ ucFirst $mergeType.Model }}(ctx context.Context, {{ l
     {{- range $mergeField := $mergeType.MergeField -}}
         {{- if eq $mergeField.Local "True" }}
             {{- lcFirst $mergeType.Model }}.{{ ucFirst $mergeField.Target }} = &{{ ucFirst $mergeField.Target }}{ID: {{ lcFirst $mergeType.Model }}.{{ ucFirstWithID $mergeField.Source }},}
-        {{ else }}
+        {{- else -}}
             if {{ lcFirst $mergeField.Target }}, err := r.Entity().Find{{ ucFirst $mergeField.Target }}ByID(ctx, {{ lcFirst $mergeType.Model }}.{{ ucFirstWithID $mergeField.Source }}); err != nil {
                 return {{ lcFirst $mergeType.Model }}, nil
             } else {
                 {{ lcFirst $mergeType.Model }}.{{ ucFirst $mergeField.Target }} = {{ lcFirst $mergeField.Target }}
             }
         {{ end -}}
-	{{- end -}}
+	{{- end }}
 	return {{ lcFirst $mergeType.Model }}, nil
 }
 {{ end }}

@@ -2,34 +2,33 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"github.com/light-speak/lighthouse/graphql"
+	"github.com/light-speak/lighthouse/log"
 	"net/http"
 	"strconv"
 )
 
-func ContextMiddleware() func(handler http.Handler) http.Handler {
+func ContextMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			ctx := context.WithValue(request.Context(), graphql.ContextKey, &graphql.Context{})
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), graphql.ContextKey, &graphql.Context{})
 
-			userIdList := request.Header.Values("X-User-Id")
-			if len(userIdList) > 0 {
-				userId := userIdList[0]
-				userIdInt64, err := strconv.ParseInt(userId, 10, 64)
-				if err == nil {
-					ctx = context.WithValue(ctx, userIdContextKey, userIdInt64)
+			if userID := r.Header.Get("X-User-Id"); userID != "" {
+				if userIDInt64, err := strconv.ParseInt(userID, 10, 64); err == nil {
+					ctx = context.WithValue(ctx, userIDContextKey, userIDInt64)
 				} else {
-					fmt.Println(err)
+					log.Error("解析用户ID失败: %v", err)
 				}
 			}
 
-			request = request.WithContext(ctx)
-			next.ServeHTTP(writer, request)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func GetContext(ctx context.Context) *graphql.Context {
-	return ctx.Value(graphql.ContextKey).(*graphql.Context)
+	if gqlCtx, ok := ctx.Value(graphql.ContextKey).(*graphql.Context); ok {
+		return gqlCtx
+	}
+	return &graphql.Context{}
 }

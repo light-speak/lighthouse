@@ -7,46 +7,52 @@ import (
 	"sync"
 )
 
-var logger *Logger
-var once sync.Once
+var (
+	logger *Logger
+	once   sync.Once
+)
+
+const (
+	defaultLogLevel = "DEBUG"
+	defaultLogPath  = "storage"
+)
 
 func initLogger() {
 	once.Do(func() {
-		// 从环境变量获取日志级别和路径
-		logLevelStr := env.Getenv("LOG_LEVEL", "DEBUG")
-		logDir := env.Getenv("LOG_PATH", "storage")
+		logLevelStr := env.Getenv("LOG_LEVEL", defaultLogLevel)
+		logDir := env.Getenv("LOG_PATH", defaultLogPath)
 
-		logLevel := LevelDebug
-		switch logLevelStr {
-		case "DEBUG":
-			logLevel = LevelDebug
-			break
-		case "INFO":
-			logLevel = LevelInfo
-			break
-		case "WARN":
-			logLevel = LevelWarn
-			break
-		case "ERROR":
-			logLevel = LevelError
-			break
-		}
+		logLevel := parseLogLevel(logLevelStr)
 
-		// 初始化 Logger 实例
 		config := LoggerConfig{
-			LogDir:      logDir,   // 日志目录
-			ConsoleOnly: false,    // 是否只输出到控制台
-			FileOnly:    false,    // 是否只输出到文件
-			Level:       logLevel, // 日志级别
+			LogDir:      logDir,
+			ConsoleOnly: false,
+			FileOnly:    false,
+			Level:       logLevel,
 		}
 
 		var err error
 		logger, err = NewLogger(config)
 		if err != nil {
-			fmt.Printf("Failed to initialize logger: %v\n", err)
+			fmt.Printf("初始化日志器失败: %v\n", err)
 			os.Exit(1)
 		}
 	})
+}
+
+func parseLogLevel(levelStr string) int {
+	switch levelStr {
+	case "DEBUG":
+		return LevelDebug
+	case "INFO":
+		return LevelInfo
+	case "WARN":
+		return LevelWarn
+	case "ERROR":
+		return LevelError
+	default:
+		return LevelDebug
+	}
 }
 
 func Debug(format string, args ...interface{}) {

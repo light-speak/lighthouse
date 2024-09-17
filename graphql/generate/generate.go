@@ -22,70 +22,61 @@ import (
 var customModelName map[string]int
 
 func mutateHook(b *modelgen.ModelBuild) *modelgen.ModelBuild {
-	var filteredModels []*modelgen.Object   // 用于存储过滤后的模型
-	var dataloaderModels []*modelgen.Object // 用于存储过滤后的模型
+	filteredModels := make([]*modelgen.Object, 0, len(b.Models))
+	dataloaderModels := make([]*modelgen.Object, 0)
 
 	for _, model := range b.Models {
-		// 检查并过滤掉不需要附加 GORM Model 的类型
 		if shouldExcludeModel(model.Name) {
-			// 从 b.Models 中移除该类型，不添加到 filteredModels
 			continue
 		}
-		var ftype types.Type = nil
+
+		var ftype types.Type
 		if len(model.Implements) > 0 {
 			switch model.Implements[0] {
 			case "BaseModel":
-				ftype = buildNamedType("gitlab.staticoft.com/lighthouse/db.Model")
-				break
+				ftype = buildNamedType("github.com/light-speak/lighthouse/db.Model")
 			case "BaseModelSoftDelete":
-				ftype = buildNamedType("gitlab.staticoft.com/lighthouse/db.ModelSoftDelete")
-				break
+				ftype = buildNamedType("github.com/light-speak/lighthouse/db.ModelSoftDelete")
 			}
 		}
 
 		if ftype != nil {
 			model.Fields = append(model.Fields, &modelgen.Field{
 				Description: "Custom GORM Model",
-				Name:        "",
-				GoName:      "",
 				Type:        ftype,
-				Tag:         `gorm:"embedded"`, // GORM 中常用的嵌入式模型
-				Omittable:   false,
+				Tag:         `gorm:"embedded"`,
 			})
 
-			// 移除字段名为 "id" 的字段
-			for index, field := range model.Fields {
+			// 移除 "id" 字段
+			for i, field := range model.Fields {
 				if field.Name == "id" {
-					model.Fields = append(model.Fields[:index], model.Fields[index+1:]...)
+					model.Fields = append(model.Fields[:i], model.Fields[i+1:]...)
+					break
 				}
 			}
-			// 将处理后的模型添加到 filteredModels 列表中
+
 			dataloaderModels = append(dataloaderModels, model)
 			customModelName[model.Name] = 1
 		}
 		filteredModels = append(filteredModels, model)
 	}
 
-	// 更新 b.Models 列表为过滤后的模型列表
 	b.Models = filteredModels
 
-	err := dataloader.GenModelLoader(dataloaderModels)
-	if err != nil {
-		log.Error("%s", err)
+	if err := dataloader.GenAllDataloader(dataloaderModels); err != nil {
+		log.Error("生成 dataloader 时出错: %v", err)
 	}
 
 	return b
 }
-
 func constraintFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelgen.Field) (*modelgen.Field, error) {
-	if f, err := modelgen.DefaultFieldMutateHook(td, fd, f); err != nil {
-		return f, err
+	f, err := modelgen.DefaultFieldMutateHook(td, fd, f)
+	if err != nil {
+		return nil, err
 	}
 
-	c := fd.Directives.ForName("constraint")
-	if c != nil {
-		formatConstraint := c.Arguments.ForName("format")
-		if formatConstraint != nil {
+	if c := fd.Directives.ForName("constraint"); c != nil {
+		if formatConstraint := c.Arguments.ForName("format"); formatConstraint != nil {
 			f.Tag += " validate:" + formatConstraint.Value.String()
 		}
 	}
@@ -93,32 +84,22 @@ func constraintFieldHook(td *ast.Definition, fd *ast.FieldDefinition, f *modelge
 	return f, nil
 }
 
-// shouldExcludeModel 确定是否排除模型
+// shouldExcludeModel 判断是否应该排除某个模型
 func shouldExcludeModel(name string) bool {
-	// 根据名称排除特定类型
 	excludedTypes := map[string]bool{
 		"Query":        true,
 		"Mutation":     true,
 		"Subscription": true,
 	}
 
-	// 例如，这里可以扩展更多排除规则
-	if _, exists := excludedTypes[name]; exists {
-		return true
-	}
-
-	return false
+	return excludedTypes[name]
 }
-
 func buildNamedType(fullName string) types.Type {
 	dotIndex := strings.LastIndex(fullName, ".")
-	// type is pkg.Name
-	pkgPath := fullName[:dotIndex]
-	typeName := fullName[dotIndex+1:]
+	pkgPath, typeName := fullName[:dotIndex], fullName[dotIndex+1:]
 
 	pkgName := pkgPath
-	slashIndex := strings.LastIndex(pkgPath, "/")
-	if slashIndex != -1 {
+	if slashIndex := strings.LastIndex(pkgPath, "/"); slashIndex != -1 {
 		pkgName = pkgPath[slashIndex+1:]
 	}
 
@@ -128,83 +109,68 @@ func buildNamedType(fullName string) types.Type {
 
 // 从字段返回类型中提取模型名称
 func getModelNameFromField(field *ast.FieldDefinition) string {
-	// 获取字段返回类型的名称
 	typeName := field.Type.Name()
 
-	// 如果类型是非空或列表类型，继续获取基础类型名称
 	for field.Type.Elem != nil {
-		typeName = field.Type.Elem.Name()
 		field.Type = field.Type.Elem
+		typeName = field.Type.Name()
 	}
 
 	return typeName
 }
-
 func generateDirectives(cfg *config.Config) {
 	for _, d := range cfg.Schema.Query.Fields {
 		modelName := getModelNameFromField(d)
-		// 遍历每个字段上的所有 Directives
 		for _, directive := range d.Directives {
-			// 解析 directive 的 Arguments
 			for _, arg := range directive.Arguments {
-				// 如果参数有Model，就用这个当ModelName
 				if arg.Name == "model" {
 					modelName = arg.Value.Raw
-					err := scope.ModelScope(modelName)
-					if err != nil {
+					if err := scope.ModelScope(modelName); err != nil {
 						log.Error("%+v", err)
 					}
 				}
 				if arg.Name == "scopes" && arg.Value.Kind == ast.ListValue {
-					// 如果是 scopes 参数，并且是一个列表
 					for _, scopeValue := range arg.Value.Children {
-						s := scopeValue.Value // 提取每个 scope 的值
-						//fmt.Printf("Found scope: %s for field: %s\n", s, d.Name)
-						err := scope.Generate(strings.ToLower(modelName), s.Raw)
-						if err != nil {
+						if err := scope.Generate(strings.ToLower(modelName), scopeValue.Value.Raw); err != nil {
 							log.Error("%+v", err)
 						}
 					}
 				}
 			}
-
 		}
 	}
 
 	var mergeTypes []*merge.MergeType
 
 	for _, t := range cfg.Schema.Types {
-		var mergeFields []*merge.MergeField
+		if t.Kind != ast.Object || strings.HasPrefix(t.Name, "_") || t.Name == "Entity" || t.Name == "Query" || t.Name == "Mutation" || t.Name == "Subscription" {
+			continue
+		}
 
+		var mergeFields []*merge.MergeField
 		for _, f := range t.Fields {
-			requires := f.Directives.ForName("requires")
-			if requires != nil {
-				field := requires.Arguments.ForName("fields")
-				target := f.Name
-				source := field.Value.Raw
-				local := "True"
-				if v, ok := customModelName[utils.UcFirst(target)]; ok && v > 0 {
-					local = "False"
+			if requires := f.Directives.ForName("requires"); requires != nil {
+				if field := requires.Arguments.ForName("fields"); field != nil {
+					local := "True"
+					if v, ok := customModelName[utils.UcFirst(f.Name)]; ok && v > 0 {
+						local = "False"
+					}
+					mergeFields = append(mergeFields, &merge.MergeField{
+						Target: f.Name,
+						Source: field.Value.Raw,
+						Local:  local,
+					})
 				}
-				mergeFields = append(mergeFields, &merge.MergeField{
-					Target: target,
-					Source: source,
-					Local:  local,
-				})
 			}
 		}
 
-		if t.Kind == ast.Object && !strings.HasPrefix(t.Name, "_") && t.Name != "Entity" && t.Name != "Query" && t.Name != "Mutation" && t.Name != "Subscription" {
-			// 判断是否是本地模型
-			mergeTypes = append(mergeTypes, &merge.MergeType{
-				Model:      t.Name,
-				MergeField: mergeFields,
-			})
-		}
+		mergeTypes = append(mergeTypes, &merge.MergeType{
+			Model:      t.Name,
+			MergeField: mergeFields,
+		})
 	}
 
-	err := merge.GenMergeModels(mergeTypes)
-	if err != nil {
+	if err := merge.GenMergeModels(mergeTypes); err != nil {
 		log.Error("%+v", err)
 	}
 }
@@ -213,31 +179,29 @@ func generateDirectives(cfg *config.Config) {
 func getLibraryPath() (string, error) {
 	_, currentFilePath, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", fmt.Errorf("failed to get current file path")
+		return "", fmt.Errorf("获取当前文件路径失败")
 	}
 
-	// b 是当前文件的路径, 返回 lighthouse 目录
+	// 返回 lighthouse 目录
 	return filepath.Dir(filepath.Dir(currentFilePath)), nil
 }
-
 func Run() error {
 	customModelName = make(map[string]int)
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
-		return err
+		return fmt.Errorf("加载配置失败: %w", err)
 	}
 
 	currentDir, err := getLibraryPath()
 	if err != nil {
-		return fmt.Errorf("failed to get current directory: %w", err)
+		return fmt.Errorf("获取当前目录失败: %w", err)
 	}
 
 	cfg.Model.ModelTemplate = filepath.Join(currentDir, "generate", "tpl", "models.gotpl")
 	cfg.Resolver.ResolverTemplate = filepath.Join(currentDir, "generate", "tpl", "resolver.gotpl")
 
-	err = db.Init()
-	if err != nil {
-		return err
+	if err := db.Init(); err != nil {
+		return fmt.Errorf("初始化数据库失败: %w", err)
 	}
 
 	p := modelgen.Plugin{
@@ -245,12 +209,8 @@ func Run() error {
 		MutateHook: mutateHook,
 	}
 
-	err = api.Generate(cfg, api.ReplacePlugin(&p))
+	api.Generate(cfg, api.ReplacePlugin(&p))
 	generateDirectives(cfg)
 
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
 	return nil
 }

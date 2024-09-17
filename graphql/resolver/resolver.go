@@ -37,7 +37,6 @@ type Option struct {
 	*QueryType
 	*MutationType
 }
-
 func ResolveData(ctx context.Context, db *gorm.DB, path string, data interface{}, option Option) error {
 	lCtx := middleware.GetContext(ctx)
 
@@ -51,7 +50,9 @@ func ResolveData(ctx context.Context, db *gorm.DB, path string, data interface{}
 	if option.MutationType == nil {
 		option.MutationType = &CreateMutation
 	}
-	if *option.Type == Query {
+
+	switch *option.Type {
+	case Query:
 		for _, where := range lCtx.Wheres {
 			if path == where.Path {
 				tx = tx.Where(where.Query, where.Value)
@@ -60,29 +61,51 @@ func ResolveData(ctx context.Context, db *gorm.DB, path string, data interface{}
 				}
 			}
 		}
-		switch option.QueryType {
-		case &ListQuery:
-			return resolveList(lCtx, tx, data)
-		case &OneQuery:
-			return resolveOne(lCtx, tx, data)
-		case &CountQuery:
-			return resolveCount(lCtx, tx, data)
-		case &SumQuery:
-			return resolveSum(lCtx, tx, data)
+
+		switch *option.QueryType {
+		case ListQuery:
+			if lCtx.Paginate != nil {
+				tx = tx.Limit(int(lCtx.Paginate.Size)).Offset((int(lCtx.Paginate.Page - 1)) * int(lCtx.Paginate.Size))
+			}
+			return tx.Find(data).Error
+		case OneQuery:
+			return tx.First(data).Error
+		case CountQuery:
+			if intPtr, ok := data.(*int); ok {
+				var count int64
+				if err := tx.Count(&count).Error; err != nil {
+					return err
+				}
+				*intPtr = int(count)
+				return nil
+			}
+			return fmt.Errorf("无效的数据类型用于计数查询")
+		case SumQuery:
+			if intPtr, ok := data.(*int); ok {
+				var sum int64
+				if err := tx.Select("SUM(amount)").Row().Scan(&sum); err != nil {
+					return err
+				}
+				*intPtr = int(sum)
+				return nil
+			}
+			return fmt.Errorf("无效的数据类型用于求和查询")
 		default:
-			return errors.New("error Query Type")
+			return errors.New("错误的查询类型")
 		}
-	} else if *option.Type == Mutation {
-		switch option.MutationType {
-		case &CreateMutation:
-			return resolveCreate(lCtx, tx, data)
-		case &UpdateMutation:
-			return resolveUpdate(lCtx, tx, data)
+
+	case Mutation:
+		switch *option.MutationType {
+		case CreateMutation:
+			return tx.Create(data).Error
+		case UpdateMutation:
+			return tx.Model(data).Updates(data).Error
 		default:
-			return errors.New("error Mutation Type")
+			return errors.New("错误的修改类型")
 		}
-	} else {
-		return errors.New("error Type")
+
+	default:
+		return errors.New("错误的操作类型")
 	}
 }
 

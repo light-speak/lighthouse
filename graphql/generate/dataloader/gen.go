@@ -6,7 +6,6 @@ import (
 	"github.com/99designs/gqlgen/plugin/modelgen"
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
-	"os"
 	"path/filepath"
 	"text/template"
 )
@@ -15,15 +14,17 @@ import (
 var genTemplate string
 
 func genDataloaderGen(models []*modelgen.Object) error {
-	var file *os.File
-	var err error
-
-	fileName := filepath.Join("graph", fmt.Sprintf("gen.go"))
-	file, err = utils.CreateOrTruncateFile(fileName)
+	fileName := filepath.Join("graph", "gen.go")
+	file, err := utils.CreateOrTruncateFile(fileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("创建或截断文件失败: %v", err)
 	}
 	defer file.Close()
+
+	tmpl, err := template.New("graph").Parse(genTemplate)
+	if err != nil {
+		return fmt.Errorf("解析模板失败: %v", err)
+	}
 
 	data := struct {
 		Models []*modelgen.Object
@@ -31,12 +32,10 @@ func genDataloaderGen(models []*modelgen.Object) error {
 		Models: models,
 	}
 
-	tmpl := template.Must(template.New("graph").Parse(genTemplate))
-	err = tmpl.Execute(file, data)
-	if err != nil {
-		return fmt.Errorf("error executing template: %v", err)
+	if err := tmpl.Execute(file, data); err != nil {
+		return fmt.Errorf("执行模板失败: %v", err)
 	}
 
-	log.Info("Appended middleware to file: %s\n", fileName)
+	log.Info("已将中间件追加到文件: %s", fileName)
 	return nil
 }

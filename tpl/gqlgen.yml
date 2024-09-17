@@ -1,5 +1,6 @@
 schema:
   - graph/*.graphqls
+  - graph/*.graphql
 
 exec:
   filename: graph/generated.go
