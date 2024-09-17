@@ -1,0 +1,18 @@
+type User implements BaseModelSoftDelete @key(fields: "id") {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  deletedAt: Time
+
+  name: String!
+  email: String!
+}
+
+extend type Query {
+  user(id: ID! @eq): User @first
+}
+
+# extend type Mutation {
+#   createUser(name: String!, email: String!): User @create
+#   updateUser(id: ID!, name: String!, email: String!): User @update
+# }
