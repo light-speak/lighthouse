@@ -1,0 +1,168 @@
+{{ reserveImport "context"  }}
+{{ reserveImport "fmt"  }}
+{{ reserveImport "io"  }}
+{{ reserveImport "strconv"  }}
+{{ reserveImport "time"  }}
+{{ reserveImport "sync"  }}
+{{ reserveImport "errors"  }}
+{{ reserveImport "bytes"  }}
+
+{{ reserveImport "github.com/vektah/gqlparser/v2" }}
+{{ reserveImport "github.com/vektah/gqlparser/v2/ast" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql/introspection" }}
+{{ reserveImport "github.com/light-speak/lighthouse/graphql/resolver" }}
+{{ reserveImport "github.com/light-speak/lighthouse/db" }}
+
+{{ .Imports }}
+
+{{ if .HasRoot }}
+	type {{.ResolverType}} struct {}
+{{ end }}
+
+
+{{ range $resolver := .Resolvers -}}
+	{{ if $resolver.Comment -}}
+		// {{ $resolver.Comment }}
+	{{- else if not $.OmitTemplateComment -}}
+		// {{ $resolver.Field.GoFieldName }} is the resolver for the {{ $resolver.Field.Name }} field.
+	{{- end }}
+	func (r *{{lcFirst $resolver.Object.Name}}{{ucFirst $.ResolverType}}) {{$resolver.Field.GoFieldName}}{{ with $resolver.PrevDecl }}{{ $resolver.Field.ShortResolverSignature .Type }}{{ else }}{{ $resolver.Field.ShortResolverDeclaration }}{{ end }}{
+		{{ range $directive := $resolver.Field.Directives -}}
+		    {{- if eq $directive.Name "first" -}}
+		        var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
+		        tx := r.Db
+	            if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.OneQuery}); err != nil {
+	                return nil, err
+	            }
+		        return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+		    {{- else if eq $directive.Name "all" -}}
+                var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
+                tx := r.Db
+                {{- range $arg := $directive.Args -}}
+                    {{- range $scope := $arg.Value -}}
+                        tx = tx.Scopes({{ ref $resolver.Field.TypeReference.Target }}Scope{{ ucFirst $scope }}(ctx))
+                    {{ end }}
+                {{- end -}}
+                {{- range $arg := $resolver.Field.Args -}}
+                    {{- range $directive := $arg.Directives -}}
+                        {{ if eq $directive.Name "scope" }}
+                            {{ range $dArgs := $directive.Args }}
+                                tx = tx.Scopes({{ ref $resolver.Field.TypeReference.Target }}Scope{{ ucFirst $dArgs.Value }}(ctx, {{ if $arg.ArgumentDefinition.Type.NonNull }} &{{ $arg.VarName }} {{ else }} {{ $arg.VarName }} {{ end }}))
+                            {{ end }}
+                        {{ end }}
+                    {{ end }}
+                {{- end }}
+                if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.ListQuery}); err != nil {
+                    return nil, err
+                }
+                return r.merge{{ ref $resolver.Field.TypeReference.Target }}s(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+            {{- else if eq $directive.Name "count" -}}
+                var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
+                tx := r.Db
+                {{- $modelName := "" -}}
+                {{- range $arg := $directive.Args -}}
+                    {{- if eq $arg.Name "model" -}}
+                        {{ $modelName = $arg.Value }}
+                        tx = tx.Scopes({{- $modelName -}}ScopeModel(ctx))
+                    {{- end -}}
+                {{- end -}}
+                {{- range $arg := $directive.Args -}}
+                    {{- if eq $arg.Name "scopes" -}}
+                        {{ range $scope := $arg.Value }}
+                            tx = tx.Scopes({{ if $modelName }} {{- $modelName -}} {{ else }} {{ ref $resolver.Field.TypeReference.Target }} {{ end }}Scope{{ ucFirst $scope }}(ctx))
+                        {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+                {{ range $arg := $resolver.Field.Args }}
+                    {{ range $directive := $arg.Directives }}
+                        {{ if eq $directive.Name "scope" }}
+                            {{ range $dArgs := $directive.Args }}
+                                tx = tx.Scopes({{ if $modelName }} {{ $modelName }} {{ else }} {{ ref $resolver.Field.TypeReference.Target }} {{ end }}Scope{{ ucFirst $dArgs.Value }}(ctx, {{ if $arg.ArgumentDefinition.Type.NonNull }} &{{ $arg.VarName }} {{ else }} {{ $arg.VarName }} {{ end }}))
+                            {{ end }}
+                        {{ end }}
+                    {{ end }}
+                {{ end }}
+                if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.CountQuery}); err != nil {
+                    return 0, err
+                }
+                return {{ lcFirst $resolver.Field.GoFieldName }}, nil
+            {{- else if eq $directive.Name "sum" -}}
+                var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
+                tx := r.Db
+                {{- $modelName := "" -}}
+                {{- range $arg := $directive.Args -}}
+                    {{- if eq $arg.Name "model" -}}
+                        {{ $modelName = $arg.Value }}
+                        tx = tx.Scopes({{- $modelName -}}ScopeModel(ctx))
+                    {{- end -}}
+                {{- end -}}
+                {{- range $arg := $directive.Args -}}
+                    {{- if eq $arg.Name "scopes" -}}
+                        {{ range $scope := $arg.Value }}
+                            tx = tx.Scopes({{ if $modelName }} {{- $modelName -}} {{ else }} {{ ref $resolver.Field.TypeReference.Target }} {{ end }}Scope{{ ucFirst $scope }}(ctx))
+                        {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+                {{ range $arg := $resolver.Field.Args }}
+                    {{ range $directive := $arg.Directives }}
+                        {{ if eq $directive.Name "scope" }}
+                            {{ range $dArgs := $directive.Args }}
+                                tx = tx.Scopes({{ if $modelName }} {{ $modelName }} {{ else }} {{ ref $resolver.Field.TypeReference.Target }} {{ end }}Scope{{ ucFirst $dArgs.Value }}(ctx, {{ if $arg.ArgumentDefinition.Type.NonNull }} &{{ $arg.VarName }} {{ else }} {{ $arg.VarName }} {{ end }}))
+                            {{ end }}
+                        {{ end }}
+                    {{ end }}
+                {{ end }}
+                if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.SumQuery}); err != nil {
+                    return 0, err
+                }
+                return {{ lcFirst $resolver.Field.GoFieldName }}, nil
+            {{- else if eq $directive.Name "create" -}}
+                {{ lcFirst $resolver.Field.GoFieldName }} := &{{ ref $resolver.Field.TypeReference.Target }}{
+                    {{ range $arg := $resolver.Field.Args }}{{ if ne $arg.VarName "id" }}{{ ucFirst $arg.VarName }}: {{ if $arg.ArgumentDefinition.Type.NonNull }} {{ $arg.VarName }} {{ else }} *{{ $arg.VarName }} {{ end }},{{ else }}Model: db.Model{ID: id},{{ end }}{{ end }}
+                }
+                tx := r.Db
+                if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", {{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Mutation, MutationType: &resolver.CreateMutation}); err != nil {
+                    return nil, err
+                }
+                return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+            {{- else if eq $directive.Name "update" -}}
+               {{ lcFirst $resolver.Field.GoFieldName }} := &{{ ref $resolver.Field.TypeReference.Target }}{
+                   {{ range $arg := $resolver.Field.Args }}{{ if ne $arg.VarName "id" }}{{ ucFirst $arg.VarName }}: {{ if $arg.ArgumentDefinition.Type.NonNull }} {{ $arg.VarName }} {{ else }} *{{ $arg.VarName }} {{ end }},{{ else }}Model: db.Model{ID: id},{{ end }}{{ end }}
+               }
+               tx := r.Db
+               if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", {{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Mutation, MutationType: &resolver.UpdateMutation}); err != nil {
+                   return nil, err
+               }
+               return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+		    {{ else if eq $directive.Name "resolve" }}
+		    	{{- $resolver.Implementation -}}
+		    {{- end -}}
+		{{ end }}
+        {{- if eq $resolver.Object.Name "Entity" -}}
+            {{- $resolver.Implementation -}}
+        {{- end -}}
+    }
+{{ end }}
+
+{{ range $object := .Objects -}}
+	{{ if not $.OmitTemplateComment -}}
+		// {{ucFirst $object.Name}} returns {{ $object.ResolverInterface | ref }} implementation.
+	{{- end }}
+	func (r *{{$.ResolverType}}) {{ucFirst $object.Name}}() {{ $object.ResolverInterface | ref }} { return &{{lcFirst $object.Name}}{{ucFirst $.ResolverType}}{r} }
+{{ end }}
+
+{{ range $object := .Objects -}}
+	type {{lcFirst $object.Name}}{{ucFirst $.ResolverType}} struct { *{{$.ResolverType}} }
+{{ end }}
+
+{{ if (ne .RemainingSource "") }}
+    // !!! WARNING !!!
+    // The code below was going to be deleted when updating resolvers. It has been copied here so you have
+    // one last chance to move it out of harms way if you want. There are two reasons this happens:
+	//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+	//    it when you're done.
+	//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+	{{ .RemainingSource }}
+{{ end }}
+
