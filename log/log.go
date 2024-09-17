@@ -140,9 +140,16 @@ func centerText(text string, width int) string {
 
 // getCallerInfo 获取调用者的信息，包含文件名和行号
 func getCallerInfo() string {
-	_, file, line, ok := runtime.Caller(3)
-	if ok {
-		return fmt.Sprintf("%s:%d", file, line)
+	for i := 1; i < 10; i++ {
+		_, file, line, ok := runtime.Caller(i)
+		if ok {
+			// 检查是否不在当前包内
+			if !strings.Contains(file, "lighthouse/log") {
+				return fmt.Sprintf("%s:%d", file, line)
+			}
+		} else {
+			break
+		}
 	}
 	return "unknown"
 }
@@ -166,18 +173,34 @@ func formatLogMessage(level string, message string, callerInfo string) (string, 
 		maxWidth = callerInfoWidth
 	}
 
+	// 设置颜色
+	var color string
+	switch level {
+	case "DEBUG ":
+		color = "\033[36m" // 青色
+	case " INFO ":
+		color = "\033[32m" // 绿色
+	case " WARN ":
+		color = "\033[33m" // 黄色
+	case "ERROR ":
+		color = "\033[31m" // 红色
+	default:
+		color = "\033[0m" // 默认颜色
+	}
+	resetColor := "\033[0m"
+
 	// 设置标题宽度为最长行的宽度
-	levelLine := fmt.Sprintf("╓%s", centerText(fmt.Sprintf(" %s ", level), maxWidth+2))
-	footerLine := fmt.Sprintf("╙%s", centerText("LIGHTHOUSE", maxWidth+2))
+	levelLine := fmt.Sprintf("%s╓%s%s", color, centerText(fmt.Sprintf(" %s ", level), maxWidth+2), resetColor)
+	footerLine := fmt.Sprintf("%s╙%s%s", color, centerText("LIGHTHOUSE", maxWidth+2), resetColor)
 
 	// 添加调用信息行
-	callerLine := fmt.Sprintf("║ Called from %s%s ", callerInfo, strings.Repeat(" ", maxWidth-calcDisplayWidth(callerInfo)-12))
+	callerLine := fmt.Sprintf("%s║ Called from %s%s %s", color, callerInfo, strings.Repeat(" ", maxWidth-calcDisplayWidth(callerInfo)-12), resetColor)
 
 	// 格式化每一行
 	var formattedLines []string
 	for _, line := range lines {
 		padding := maxWidth - calcDisplayWidth(line)
-		formattedLines = append(formattedLines, fmt.Sprintf("║ %s%s ", line, strings.Repeat(" ", padding)))
+		formattedLines = append(formattedLines, fmt.Sprintf("%s║ %s%s %s", color, line, strings.Repeat(" ", padding), resetColor))
 	}
 
 	return levelLine, fmt.Sprintf("%s\n%s", callerLine, strings.Join(formattedLines, "\n")), footerLine
