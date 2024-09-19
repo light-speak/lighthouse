@@ -47,13 +47,19 @@ type LoggerConfig struct {
 
 // NewLogger 创建一个新的 Logger 实例，并初始化日志文件和目录
 func NewLogger(config LoggerConfig) (*Logger, error) {
-	logDir := filepath.Join(config.LogDir, "logs")
+	// 获取项目根目录
+	projectRoot, err := findProjectRoot()
+	if err != nil {
+		return nil, fmt.Errorf("无法找到项目根目录: %v", err)
+	}
+
+	// 在项目根目录下创建日志目录
+	logDir := filepath.Join(projectRoot, config.LogDir, "logs")
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("无法创建日志目录: %v", err)
 	}
 
 	var file *os.File
-	var err error
 	if !config.ConsoleOnly {
 		file, err = openDailyFile(logDir)
 		if err != nil {
@@ -68,6 +74,26 @@ func NewLogger(config LoggerConfig) (*Logger, error) {
 		logDir:      logDir,
 		Level:       config.Level,
 	}, nil
+}
+
+// findProjectRoot 查找项目根目录
+func findProjectRoot() (string, error) {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
+			return currentDir, nil
+		}
+
+		parentDir := filepath.Dir(currentDir)
+		if parentDir == currentDir {
+			return "", fmt.Errorf("无法找到包含 go.mod 的项目根目录")
+		}
+		currentDir = parentDir
+	}
 }
 
 // openDailyFile 打开或创建今天的日志文件，并清理超过15天的旧日志文件
