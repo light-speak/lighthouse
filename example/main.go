@@ -1,9 +1,12 @@
 package main
 
 import (
+	"example/graph"
+
 	"github.com/light-speak/lighthouse/log"
 )
 
 func main() {
-	log.Info("hello world")
+	log.Info("应用启动！")
+	graph.StartServer()
 }

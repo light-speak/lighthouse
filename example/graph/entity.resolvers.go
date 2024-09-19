@@ -6,12 +6,15 @@ package graph
 
 import (
 	"context"
-	"fmt"
 )
 
 // FindUserByID is the resolver for the findUserByID field.
 func (r *entityResolver) FindUserByID(ctx context.Context, id int64) (*User, error) {
-	panic(fmt.Errorf("not implemented: FindUserByID - findUserByID"))
+	user, err := For(ctx).FindUserById.Load(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // Entity returns EntityResolver implementation.
