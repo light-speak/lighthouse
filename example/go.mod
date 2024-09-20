@@ -2,11 +2,11 @@ module example
 
 go 1.22.7
 
-replace github.com/light-speak/lighthouse => ../
+// replace github.com/light-speak/lighthouse => ../
 
 require (
 	github.com/99designs/gqlgen v0.17.53
-	github.com/light-speak/lighthouse v0.0.0-00010101000000-000000000000
+	github.com/light-speak/lighthouse v0.0.0-20240919134615-948d5ad1579d
 	github.com/vektah/gqlparser/v2 v2.5.16
 	gorm.io/gorm v1.25.12
 )

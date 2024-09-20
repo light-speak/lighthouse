@@ -47,7 +47,7 @@ func GenAllDataloader(models []*modelgen.Object) error {
 		return fmt.Errorf("获取当前工作目录失败: %w", err)
 	}
 
-	mod, err := utils.GetModulePathFromGoMod()
+	mod, err := utils.GetModulePath()
 	if err != nil {
 		return fmt.Errorf("获取模块路径失败: %w", err)
 	}

@@ -1,13 +1,14 @@
 package graph
 
 import (
+	"net/http"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/light-speak/lighthouse/db"
 	"github.com/light-speak/lighthouse/env"
 	"github.com/light-speak/lighthouse/graphql/middleware"
 	"github.com/light-speak/lighthouse/log"
-	"net/http"
 )
 
 func StartServer() error {
@@ -26,5 +27,5 @@ func StartServer() error {
 	router.Handle("/query", srv)
 
 	log.Info("成功运行， 点击进入 GraphQL playground ： http://localhost:%s/ ", port)
-	return http.ListenAndServe(":"+port, Middleware(db.GetDb(), router))
+	return http.ListenAndServe("0.0.0.0:"+port, Middleware(db.GetDb(), router))
 }

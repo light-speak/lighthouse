@@ -83,17 +83,27 @@ func findProjectRoot() (string, error) {
 		return "", err
 	}
 
-	for {
-		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
-			return currentDir, nil
-		}
-
-		parentDir := filepath.Dir(currentDir)
-		if parentDir == currentDir {
-			return "", fmt.Errorf("无法找到包含 go.mod 的项目根目录")
-		}
-		currentDir = parentDir
+	// 首先检查当前目录是否存在 go.mod 文件
+	if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
+		return currentDir, nil
 	}
+
+	// 如果没有 go.mod 文件，尝试获取可执行文件的路径
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("无法获取可执行文件路径: %v", err)
+	}
+
+	// 获取可执行文件所在的目录
+	execDir := filepath.Dir(execPath)
+
+	// 如果可执行文件目录存在 go.mod，则返回该目录
+	if _, err := os.Stat(filepath.Join(execDir, "go.mod")); err == nil {
+		return execDir, nil
+	}
+
+	// 如果都没有找到 go.mod，则返回可执行文件所在的目录作为项目根目录
+	return execDir, nil
 }
 
 // openDailyFile 打开或创建今天的日志文件，并清理超过15天的旧日志文件
