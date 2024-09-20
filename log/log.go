@@ -172,6 +172,7 @@ func centerText(text string, width int) string {
 func getCallerInfo() string {
 	for i := 1; i < 10; i++ {
 		_, file, line, ok := runtime.Caller(i)
+		fmt.Println(file)
 		if ok {
 			// 检查是否不在当前包内
 			if !strings.Contains(file, "lighthouse/log") && !strings.Contains(file, "lighthouse@") {
