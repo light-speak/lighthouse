@@ -22,6 +22,7 @@ WORKDIR /root/
 
 # 从构建环境复制可执行文件到运行环境
 COPY --from=builder /example .
+COPY --from=builder /app/go.mod .
 COPY --from=builder /app/.env .
 # 暴露服务端口（根据你的应用需要调整）
 EXPOSE 4001

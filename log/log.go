@@ -174,7 +174,7 @@ func getCallerInfo() string {
 		_, file, line, ok := runtime.Caller(i)
 		if ok {
 			// 检查是否不在当前包内
-			if !strings.Contains(file, "lighthouse/log") {
+			if !strings.Contains(file, "lighthouse/log") && !strings.Contains(file, "lighthouse@") {
 				return fmt.Sprintf("%s:%d", file, line)
 			}
 		} else {
