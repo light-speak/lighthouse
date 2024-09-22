@@ -2,7 +2,7 @@ module example
 
 go 1.22.7
 
-// replace github.com/light-speak/lighthouse => ../
+replace github.com/light-speak/lighthouse => ../
 
 require (
 	github.com/99designs/gqlgen v0.17.54
