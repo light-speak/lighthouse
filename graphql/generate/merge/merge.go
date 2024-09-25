@@ -25,20 +25,27 @@ type MergeField struct {
 }
 
 func GenMergeModels(mergeTypes []*MergeType) error {
-	fileName := filepath.Join("graph", "merge.go")
+	fileName := filepath.Join("graph", "generate", "merge.go")
 	file, err := utils.CreateOrTruncateFile(fileName)
 	if err != nil {
 		return fmt.Errorf("创建或截断文件失败: %v", err)
 	}
 	defer file.Close()
 
-	data := struct {
-		MergeTypes []*MergeType
-	}{
-		MergeTypes: mergeTypes,
+	packageName, err := utils.GetModulePath()
+	if err != nil {
+		return fmt.Errorf("获取模块路径失败: %v", err)
 	}
 
-	tmpl := template.Must(template.New("graph").Funcs(template.FuncMap{
+	data := struct {
+		MergeTypes []*MergeType
+		Package string
+	}{
+		MergeTypes: mergeTypes,
+		Package: packageName,
+	}
+
+	tmpl := template.Must(template.New("generate").Funcs(template.FuncMap{
 		"lcFirst":       utils.LcFirst,
 		"ucFirst":       utils.UcFirst,
 		"ucFirstWithID": utils.UcFirstWithID,

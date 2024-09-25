@@ -1,0 +1,26 @@
+type Post implements BaseModelSoftDelete @key(fields: "id") {
+  id: ID!
+  title: String!
+  content: String!
+  createdAt: Time!
+  updatedAt: Time!
+  deletedAt: Time
+
+  userId: ID!
+  user: User @requires(fields: "userId")
+}
+
+type User @key(fields: "id") @extends {
+    id: ID! @external
+    posts: [Post!]! @provides(fields: "id")
+}
+
+extend type Query {
+  posts: [Post!]! @all
+  # post(id: ID! @eq): Post @first
+}
+
+# extend type Mutation {
+#   createPost(title: String!, content: String!, userId: ID!): Post @create
+#   publishPost(id: ID!): Post @resolve
+# }

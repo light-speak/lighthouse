@@ -2,9 +2,10 @@ package env
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 	"path/filepath"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -22,7 +23,8 @@ func init() {
 	// 构造.env文件的路径
 	envFilePath := filepath.Join(currentDir, ".env")
 	if err := initEnv(&envFilePath); err != nil {
-		fmt.Printf("Failed to initialize environment: %v\n", err)
+		// fmt.Printf("Failed to initialize environment: %v\n", err)
+		// 错误不做处理
 	}
 }
 

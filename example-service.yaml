@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-service
+  labels:
+    k8s-app: example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: example
+  template:
+    metadata:
+      labels:
+        k8s-app: example
+    spec:
+      containers:
+      - name: example-service
+        image: ccr.ccs.tencentyun.com/test-lighthouse/example:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 4001
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: PATH
+          value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        - name: APP_ENV
+          value: production
+        - name: SHOW_CALLER
+          value: "false"
+        - name: DB_HOST
+          value: 10.0.0.58
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USER
+          value: root
+        - name: DB_PASSWORD
+          value: LTYlty0123
+        - name: DB_DATABASE
+          value: example
+        securityContext:
+          privileged: false
+      imagePullSecrets:
+      - name: qcloudregistrykey
+      tolerations:
+      - key: "eks.tke.cloud.tencent.com/eklet"
+        operator: "Exists"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-service
+spec:
+  selector:
+    k8s-app: example
+  ports:
+  - protocol: TCP
+    port: 4001
+    targetPort: 4001
+  type: ClusterIP

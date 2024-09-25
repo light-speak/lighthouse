@@ -21,6 +21,7 @@ func initLogger() {
 	once.Do(func() {
 		logLevelStr := env.Getenv("LOG_LEVEL", defaultLogLevel)
 		logDir := env.Getenv("LOG_PATH", defaultLogPath)
+		showCaller := env.Getenv("SHOW_CALLER", "true")
 
 		logLevel := parseLogLevel(logLevelStr)
 
@@ -29,6 +30,7 @@ func initLogger() {
 			ConsoleOnly: false,
 			FileOnly:    false,
 			Level:       logLevel,
+			ShowCaller:  showCaller == "true",
 		}
 
 		var err error

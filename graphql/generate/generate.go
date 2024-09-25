@@ -13,6 +13,7 @@ import (
 	"github.com/light-speak/lighthouse/db"
 	"github.com/light-speak/lighthouse/graphql/generate/dataloader"
 	"github.com/light-speak/lighthouse/graphql/generate/merge"
+	"github.com/light-speak/lighthouse/graphql/generate/resolver"
 	"github.com/light-speak/lighthouse/graphql/generate/scope"
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
@@ -185,6 +186,7 @@ func getLibraryPath() (string, error) {
 	// 返回 lighthouse 目录
 	return filepath.Dir(filepath.Dir(currentFilePath)), nil
 }
+
 func Run() error {
 	customModelName = make(map[string]int)
 	cfg, err := config.LoadConfigFromDefaultLocations()
@@ -209,8 +211,12 @@ func Run() error {
 		MutateHook: mutateHook,
 	}
 
-	api.Generate(cfg, api.ReplacePlugin(&p))
+	err = api.Generate(cfg, api.ReplacePlugin(&p))
+	if err != nil {
+		log.Error("生成环节出现错误，已自动忽略，文件为准: %v", err)
+	}
 	generateDirectives(cfg)
+	resolver.GenerateResolver()
 
 	return nil
 }

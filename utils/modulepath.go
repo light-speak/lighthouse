@@ -8,26 +8,33 @@ import (
 	"strings"
 )
 
+// GetModulePath 获取模块路径
 func GetModulePath() (string, error) {
-	// 获取当前执行文件的路径
-	execPath, err := os.Executable()
+	// 获取当前工作目录
+	currentDir, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("获取执行文件路径失败: %v", err)
+		return "", fmt.Errorf("获取当前工作目录失败: %v", err)
 	}
 
-	// 获取执行文件所在目录
-	execDir := filepath.Dir(execPath)
-
-	// 尝试从go.mod文件获取模块路径
-	modulePath, err := getModulePathFromGoMod(execDir)
+	// 尝试从当前目录的go.mod文件获取模块路径
+	modulePath, err := getModulePathFromGoMod(currentDir)
 	if err == nil {
 		return modulePath, nil
 	}
 
-	// 如果无法从go.mod获取，尝试从可执行文件名推断
-	return inferModulePathFromExecutable(execPath), nil
+	// 如果在当前目录找不到go.mod，尝试向上查找父目录
+	for dir := currentDir; dir != "/"; dir = filepath.Dir(dir) {
+		modulePath, err := getModulePathFromGoMod(dir)
+		if err == nil {
+			return modulePath, nil
+		}
+	}
+
+	// 如果无法找到go.mod，返回错误
+	return "", fmt.Errorf("无法找到项目的go.mod文件")
 }
 
+// getModulePathFromGoMod 从go.mod文件中获取模块路径
 func getModulePathFromGoMod(dir string) (string, error) {
 	goModPath := filepath.Join(dir, "go.mod")
 	content, err := os.ReadFile(goModPath)
@@ -45,13 +52,11 @@ func getModulePathFromGoMod(dir string) (string, error) {
 	return "", fmt.Errorf("在go.mod文件中未找到模块路径")
 }
 
-func inferModulePathFromExecutable(execPath string) string {
-	// 获取可执行文件名（不包含扩展名）
-	baseName := filepath.Base(execPath)
-	if runtime.GOOS == "windows" {
-		baseName = strings.TrimSuffix(baseName, ".exe")
-	}
 
-	// 假设模块路径与可执行文件名相同
-	return baseName
+func GetLibraryPath() (string, error) {
+	_, currentFilePath, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("获取当前文件路径失败")
+	}
+	return filepath.Dir(filepath.Dir(currentFilePath)), nil
 }

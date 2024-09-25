@@ -3,14 +3,20 @@ package initialize
 import (
 	"fmt"
 
+	_ "embed"
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
+	"text/template"
+
 	"github.com/light-speak/lighthouse/log"
+	"github.com/light-speak/lighthouse/utils"
 )
+
+//go:embed server.gotpl
+var serverTemplate string
 
 func Run() error {
 	currentDir, err := os.Getwd()
@@ -18,7 +24,7 @@ func Run() error {
 		return fmt.Errorf("获取当前目录失败: %w", err)
 	}
 
-	libDir, err := getLibraryPath()
+	libDir, err := utils.GetLibraryPath()
 	if err != nil {
 		return fmt.Errorf("获取库路径失败: %w", err)
 	}
@@ -27,7 +33,8 @@ func Run() error {
 		src  string
 		dest string
 	}{
-		{filepath.Join(libDir, "../tpl", "graph"), filepath.Join(currentDir, "graph")},
+		{filepath.Join(libDir, "../tpl", "resolver"), filepath.Join(currentDir, "resolver")},
+		{filepath.Join(libDir, "../tpl", "schema"), filepath.Join(currentDir, "schema")},
 		{filepath.Join(libDir, "../tpl", "gqlgen.yml"), filepath.Join(currentDir, "gqlgen.yml")},
 	}
 
@@ -37,15 +44,8 @@ func Run() error {
 		}
 	}
 
+	genServerFile(currentDir)
 	return nil
-}
-
-func getLibraryPath() (string, error) {
-	_, currentFilePath, _, ok := runtime.Caller(0)
-	if !ok {
-		return "", fmt.Errorf("获取当前文件路径失败")
-	}
-	return filepath.Dir(filepath.Dir(currentFilePath)), nil
 }
 
 func copyItem(src, dest string) error {
@@ -120,5 +120,48 @@ func copyDir(src, dest string) error {
 	}
 
 	log.Info("已复制目录: %s -> %s", src, dest)
+	return nil
+}
+
+func genServerFile(currentDir string) error {
+	serverDir := filepath.Join(currentDir, "graph", "server")
+	serverFile := filepath.Join(serverDir, "server.go")
+
+	if _, err := os.Stat(serverFile); err == nil {
+		log.Warn("文件 %s 已存在，跳过创建", serverFile)
+		return nil
+	}
+
+	if _, err := os.Stat(serverDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(serverDir, os.ModePerm); err != nil {
+			return fmt.Errorf("创建目录失败: %w", err)
+		}
+	}
+
+	file, err := os.Create(serverFile)
+	if err != nil {
+		return fmt.Errorf("创建文件失败: %w", err)
+	}
+	defer file.Close()
+
+	packageName, err := utils.GetModulePath()
+	if err != nil {
+		return fmt.Errorf("获取包名失败: %w", err)
+	}
+	log.Info(packageName)
+
+	data := struct {
+		Package string
+	}{
+		Package: packageName,
+	}
+	tmpl := template.Must(template.New("server").Parse(serverTemplate))
+	if err := tmpl.Execute(file, data); err != nil {
+		return fmt.Errorf("执行模板失败: %w", err)
+	}
+
+	log.Info("已创建文件: %s", serverFile)
+
+	generateDirective(currentDir)
 	return nil
 }

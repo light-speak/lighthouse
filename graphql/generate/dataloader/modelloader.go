@@ -15,7 +15,7 @@ import (
 var modelloaderTamplate string
 
 func GenModelLoader(models []*modelgen.Object) error {
-	fileName := filepath.Join("graph", "loaders.go")
+	fileName := filepath.Join("graph", "generate", "loaders.go")
 	file, err := utils.CreateOrTruncateFile(fileName)
 	if err != nil {
 		return fmt.Errorf("创建或截断文件失败: %v", err)
@@ -27,13 +27,20 @@ func GenModelLoader(models []*modelgen.Object) error {
 		names[i] = model.Name
 	}
 
-	data := struct {
-		Names []string
-	}{
-		Names: names,
+	packageName, err := utils.GetModulePath()
+	if err != nil {
+		return fmt.Errorf("获取模块路径失败: %v", err)
 	}
 
-	tmpl := template.Must(template.New("graph").Funcs(template.FuncMap{
+	data := struct {
+		Names   []string
+		Package string
+	}{
+		Names:   names,
+		Package: packageName,
+	}
+
+	tmpl := template.Must(template.New("generate").Funcs(template.FuncMap{
 		"lcFirst": utils.LcFirst,
 		"ucFirst": utils.UcFirst,
 	}).Parse(modelloaderTamplate))

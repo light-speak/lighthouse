@@ -35,6 +35,7 @@ type Logger struct {
 	FileOnly    bool       // 是否只输出到文件
 	logDir      string     // 日志文件存放目录
 	Level       int        // 日志输出的最低级别
+	ShowCaller  bool       // 是否显示调用者信息
 }
 
 // LoggerConfig 是用于初始化 Logger 的配置结构体
@@ -43,6 +44,7 @@ type LoggerConfig struct {
 	ConsoleOnly bool   // 是否只输出到控制台
 	FileOnly    bool   // 是否只输出到文件
 	Level       int    // 日志输出的最低级别
+	ShowCaller  bool   // 是否显示调用者信息
 }
 
 // NewLogger 创建一个新的 Logger 实例，并初始化日志文件和目录
@@ -73,6 +75,7 @@ func NewLogger(config LoggerConfig) (*Logger, error) {
 		FileOnly:    config.FileOnly,
 		logDir:      logDir,
 		Level:       config.Level,
+		ShowCaller:  config.ShowCaller,
 	}, nil
 }
 
@@ -170,19 +173,16 @@ func centerText(text string, width int) string {
 
 // getCallerInfo 获取调用者的信息，包含文件名和行号
 func getCallerInfo() string {
+	if !(*logger).ShowCaller {
+		return ""
+	}
 	for i := 1; i < 10; i++ {
 		_, file, line, ok := runtime.Caller(i)
-		fmt.Println(file)
-		if ok {
-			// 检查是否不在当前包内
-			if !strings.Contains(file, "lighthouse/log") && !strings.Contains(file, "lighthouse@") {
-				return fmt.Sprintf("%s:%d", file, line)
-			}
-		} else {
-			break
+		if ok && !strings.Contains(file, "lighthouse/log") {
+			return fmt.Sprintf("%s:%d", file, line)
 		}
 	}
-	return "unknown"
+	return "未知"
 }
 
 // formatLogMessage 格式化日志信息，并处理多行显示
@@ -197,9 +197,11 @@ func formatLogMessage(level, message, callerInfo string) (string, string, string
 		}
 	}
 
-	callerInfoWidth := calcDisplayWidth(callerInfo) + 12
-	if callerInfoWidth > maxWidth {
-		maxWidth = callerInfoWidth
+	if callerInfo != "" {
+		callerInfoWidth := calcDisplayWidth(callerInfo) + 12
+		if callerInfoWidth > maxWidth {
+			maxWidth = callerInfoWidth
+		}
 	}
 
 	color := getColorForLevel(level)
@@ -207,15 +209,19 @@ func formatLogMessage(level, message, callerInfo string) (string, string, string
 
 	levelLine := fmt.Sprintf("%s╓%s%s", color, centerText(fmt.Sprintf(" %s ", level), maxWidth+2), resetColor)
 	footerLine := fmt.Sprintf("%s╙%s%s", color, centerText("LIGHTHOUSE", maxWidth+2), resetColor)
-	callerLine := fmt.Sprintf("%s║ Called from %s%s %s", color, callerInfo, strings.Repeat(" ", maxWidth-calcDisplayWidth(callerInfo)-12), resetColor)
 
 	var formattedLines []string
+	if callerInfo != "" {
+		callerLine := fmt.Sprintf("%s║ Called from %s%s %s", color, callerInfo, strings.Repeat(" ", maxWidth-calcDisplayWidth(callerInfo)-12), resetColor)
+		formattedLines = append(formattedLines, callerLine)
+	}
+
 	for _, line := range lines {
 		padding := maxWidth - calcDisplayWidth(line)
 		formattedLines = append(formattedLines, fmt.Sprintf("%s║ %s%s %s", color, line, strings.Repeat(" ", padding), resetColor))
 	}
 
-	return levelLine, fmt.Sprintf("%s\n%s", callerLine, strings.Join(formattedLines, "\n")), footerLine
+	return levelLine, strings.Join(formattedLines, "\n"), footerLine
 }
 
 func getColorForLevel(level string) string {
@@ -252,7 +258,12 @@ func (l *Logger) Log(level int, levelName, format string, callerInfo string, arg
 	// 输出到文件
 	if l.LogFile != nil && !l.ConsoleOnly {
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		fileMessage := fmt.Sprintf("[%s] [%s] %s - %s", timestamp, levelName, callerInfo, message)
+		var fileMessage string
+		if callerInfo != "" {
+			fileMessage = fmt.Sprintf("[%s] [%s] %s - %s", timestamp, levelName, callerInfo, message)
+		} else {
+			fileMessage = fmt.Sprintf("[%s] [%s] %s", timestamp, levelName, message)
+		}
 		fmt.Fprintln(l.LogFile, fileMessage)
 	}
 

@@ -35,7 +35,7 @@
 	            if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.OneQuery}); err != nil {
 	                return nil, err
 	            }
-		        return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+                return generate.Merge{{ index (strSplit (ref $resolver.Field.TypeReference.Target) "models.") 1 }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
 		    {{- else if eq $directive.Name "all" -}}
                 var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
                 tx := r.Db
@@ -56,7 +56,7 @@
                 if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", &{{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Query, QueryType: &resolver.ListQuery}); err != nil {
                     return nil, err
                 }
-                return r.merge{{ ref $resolver.Field.TypeReference.Target }}s(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+                return generate.Merge{{ index (strSplit (ref $resolver.Field.TypeReference.Target) "models.") 1 }}s(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
             {{- else if eq $directive.Name "count" -}}
                 var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
                 tx := r.Db
@@ -125,7 +125,7 @@
                 if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", {{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Mutation, MutationType: &resolver.CreateMutation}); err != nil {
                     return nil, err
                 }
-                return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+                return generate.Merge{{ index (strSplit (ref $resolver.Field.TypeReference.Target) "models.") 1 }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
             {{- else if eq $directive.Name "update" -}}
                {{ lcFirst $resolver.Field.GoFieldName }} := &{{ ref $resolver.Field.TypeReference.Target }}{
                    {{ range $arg := $resolver.Field.Args }}{{ if ne $arg.VarName "id" }}{{ ucFirst $arg.VarName }}: {{ if $arg.ArgumentDefinition.Type.NonNull }} {{ $arg.VarName }} {{ else }} *{{ $arg.VarName }} {{ end }},{{ else }}Model: db.Model{ID: id},{{ end }}{{ end }}
@@ -134,7 +134,7 @@
                if err := resolver.ResolveData(ctx, tx, "{{ lcFirst $resolver.Field.GoFieldName }}", {{ lcFirst $resolver.Field.GoFieldName }}, resolver.Option{Type: &resolver.Mutation, MutationType: &resolver.UpdateMutation}); err != nil {
                    return nil, err
                }
-               return r.merge{{ ref $resolver.Field.TypeReference.Target }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
+                return generate.Merge{{ index (strSplit (ref $resolver.Field.TypeReference.Target) "models.") 1 }}(ctx, {{ lcFirst $resolver.Field.GoFieldName }})
 		    {{ else if eq $directive.Name "resolve" }}
 		    	{{- $resolver.Implementation -}}
 		    {{- end -}}

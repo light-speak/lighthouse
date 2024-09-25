@@ -1,0 +1,63 @@
+directive @goModel(
+    model: String
+    models: [String!]
+    forceGenerate: Boolean
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+
+directive @goField(
+    forceResolver: Boolean
+    name: String
+    omittable: Boolean
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @goTag(
+    key: String!
+    value: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @inject(
+    field: String!
+    target: String!
+) on  FIELD_DEFINITION
+
+scalar Time
+
+interface BaseModel {
+    id: ID!
+    createdAt: Time!
+    updatedAt: Time!
+}
+
+interface BaseModelSoftDelete {
+    id: ID!
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time
+}
+
+# 参数Eq
+directive @eq(key: String) on ARGUMENT_DEFINITION
+# 参数Scope
+directive @scope(name: String!) on ARGUMENT_DEFINITION
+# 第几页
+directive @page on ARGUMENT_DEFINITION
+# 每页数量
+directive @size on ARGUMENT_DEFINITION
+
+
+# 创建
+directive @create on FIELD_DEFINITION
+# 更新
+directive @update on FIELD_DEFINITION
+# 自定义Resolve
+directive @resolve on FIELD_DEFINITION
+# 获取第一条
+directive @first on FIELD_DEFINITION
+# 获取列表
+directive @all(scopes: [String]) on FIELD_DEFINITION
+
+# 统计数量
+directive @count(model: String!, scopes: [String]) on FIELD_DEFINITION
+# 求和
+directive @sum(model: String!, column: String!, scopes: [String]) on FIELD_DEFINITION
+
