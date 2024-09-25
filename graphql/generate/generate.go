@@ -213,7 +213,7 @@ func Run() error {
 
 	err = api.Generate(cfg, api.ReplacePlugin(&p))
 	if err != nil {
-		log.Error("生成环节出现错误，已自动忽略，文件为准: %v", err)
+		log.Warn("生成环节出现错误，已自动忽略，部分Func将在后续过程中生成，请检查生成文件: %v", err)
 	}
 	generateDirectives(cfg)
 	resolver.GenerateResolver()

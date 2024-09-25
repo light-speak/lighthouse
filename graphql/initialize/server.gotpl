@@ -9,7 +9,7 @@ import (
 	"github.com/light-speak/lighthouse/log"
 	"net/http"
 	"{{ .Package }}/graph/generate"
-	"{{ .Package }}/graph/resolver"
+	"{{ .Package }}/resolver"
 )
 
 func StartServer() error {

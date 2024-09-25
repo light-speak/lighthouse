@@ -87,7 +87,7 @@
 
 	func (e *{{ goModelName .Name }}) UnmarshalGQL(v interface{}) error {
 		str, ok := v.(string)
-		if !ok {b
+		if !ok {
 			return fmt.Errorf("enums must be strings")
 		}
 

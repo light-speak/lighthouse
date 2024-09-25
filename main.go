@@ -24,6 +24,11 @@ func main() {
 	case "gql:init":
 		err = gqlInitialize.Run()
 	case "gql:generate":
+		err = gqlInitialize.Run()
+		if err != nil {
+			log.Error("执行 gqlInitialize.Run() 失败: %v", err)
+			return
+		}
 		err = gqlGenerate.Run()
 	default:
 		log.Error("命令 %s 不正确，请输入一个有效命令：init、gql:init 或 gql:generate", command)

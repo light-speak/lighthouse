@@ -3,6 +3,9 @@
 package models
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/light-speak/lighthouse/db"
@@ -49,6 +52,151 @@ type User struct {
 }
 
 func (User) IsEntity() {}
+
+type SearchableAnalyzer string
+
+const (
+	SearchableAnalyzerIkMaxWord SearchableAnalyzer = "IK_MAX_WORD"
+	SearchableAnalyzerIkSmart   SearchableAnalyzer = "IK_SMART"
+)
+
+var AllSearchableAnalyzer = []SearchableAnalyzer{
+	SearchableAnalyzerIkMaxWord,
+	SearchableAnalyzerIkSmart,
+}
+
+func (e SearchableAnalyzer) IsValid() bool {
+	switch e {
+	case SearchableAnalyzerIkMaxWord, SearchableAnalyzerIkSmart:
+		return true
+	}
+	return false
+}
+
+func (e SearchableAnalyzer) String() string {
+	return string(e)
+}
+
+func (e *SearchableAnalyzer) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SearchableAnalyzer(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SearchableAnalyzer", str)
+	}
+	return nil
+}
+
+func (e SearchableAnalyzer) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SearchableType string
+
+const (
+	SearchableTypeText        SearchableType = "TEXT"
+	SearchableTypeKeyword     SearchableType = "KEYWORD"
+	SearchableTypeLong        SearchableType = "LONG"
+	SearchableTypeInteger     SearchableType = "INTEGER"
+	SearchableTypeShort       SearchableType = "SHORT"
+	SearchableTypeByte        SearchableType = "BYTE"
+	SearchableTypeDouble      SearchableType = "DOUBLE"
+	SearchableTypeFloat       SearchableType = "FLOAT"
+	SearchableTypeHalfFloat   SearchableType = "HALF_FLOAT"
+	SearchableTypeScaledFloat SearchableType = "SCALED_FLOAT"
+	SearchableTypeDate        SearchableType = "DATE"
+	SearchableTypeBoolean     SearchableType = "BOOLEAN"
+	SearchableTypeIP          SearchableType = "IP"
+)
+
+var AllSearchableType = []SearchableType{
+	SearchableTypeText,
+	SearchableTypeKeyword,
+	SearchableTypeLong,
+	SearchableTypeInteger,
+	SearchableTypeShort,
+	SearchableTypeByte,
+	SearchableTypeDouble,
+	SearchableTypeFloat,
+	SearchableTypeHalfFloat,
+	SearchableTypeScaledFloat,
+	SearchableTypeDate,
+	SearchableTypeBoolean,
+	SearchableTypeIP,
+}
+
+func (e SearchableType) IsValid() bool {
+	switch e {
+	case SearchableTypeText, SearchableTypeKeyword, SearchableTypeLong, SearchableTypeInteger, SearchableTypeShort, SearchableTypeByte, SearchableTypeDouble, SearchableTypeFloat, SearchableTypeHalfFloat, SearchableTypeScaledFloat, SearchableTypeDate, SearchableTypeBoolean, SearchableTypeIP:
+		return true
+	}
+	return false
+}
+
+func (e SearchableType) String() string {
+	return string(e)
+}
+
+func (e *SearchableType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SearchableType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SearchableType", str)
+	}
+	return nil
+}
+
+func (e SearchableType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SortDirection string
+
+const (
+	SortDirectionAsc  SortDirection = "ASC"
+	SortDirectionDesc SortDirection = "DESC"
+)
+
+var AllSortDirection = []SortDirection{
+	SortDirectionAsc,
+	SortDirectionDesc,
+}
+
+func (e SortDirection) IsValid() bool {
+	switch e {
+	case SortDirectionAsc, SortDirectionDesc:
+		return true
+	}
+	return false
+}
+
+func (e SortDirection) String() string {
+	return string(e)
+}
+
+func (e *SortDirection) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SortDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SortDirection", str)
+	}
+	return nil
+}
+
+func (e SortDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
 
 func init() {
 	db.Init()

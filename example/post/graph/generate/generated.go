@@ -46,18 +46,22 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	All     func(ctx context.Context, obj interface{}, next graphql.Resolver, scopes []*string) (res interface{}, err error)
-	Count   func(ctx context.Context, obj interface{}, next graphql.Resolver, model string, scopes []*string) (res interface{}, err error)
-	Create  func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Eq      func(ctx context.Context, obj interface{}, next graphql.Resolver, key *string) (res interface{}, err error)
-	First   func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Inject  func(ctx context.Context, obj interface{}, next graphql.Resolver, field string, target string) (res interface{}, err error)
-	Page    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Resolve func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Scope   func(ctx context.Context, obj interface{}, next graphql.Resolver, name string) (res interface{}, err error)
-	Size    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Sum     func(ctx context.Context, obj interface{}, next graphql.Resolver, model string, column string, scopes []*string) (res interface{}, err error)
-	Update  func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	All        func(ctx context.Context, obj interface{}, next graphql.Resolver, scopes []*string) (res interface{}, err error)
+	Auth       func(ctx context.Context, obj interface{}, next graphql.Resolver, message *string) (res interface{}, err error)
+	Cache      func(ctx context.Context, obj interface{}, next graphql.Resolver, ttl int, key *string) (res interface{}, err error)
+	Count      func(ctx context.Context, obj interface{}, next graphql.Resolver, model string, scopes []*string) (res interface{}, err error)
+	Create     func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Eq         func(ctx context.Context, obj interface{}, next graphql.Resolver, key *string) (res interface{}, err error)
+	First      func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Inject     func(ctx context.Context, obj interface{}, next graphql.Resolver, field string, target string) (res interface{}, err error)
+	OrderBy    func(ctx context.Context, obj interface{}, next graphql.Resolver, column string, direction *models.SortDirection) (res interface{}, err error)
+	Page       func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Resolve    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Scope      func(ctx context.Context, obj interface{}, next graphql.Resolver, name string) (res interface{}, err error)
+	Searchable func(ctx context.Context, obj interface{}, next graphql.Resolver, typeArg *models.SearchableType, indexAnalyzer *models.SearchableAnalyzer, searchAnalyzer *models.SearchableAnalyzer) (res interface{}, err error)
+	Size       func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Sum        func(ctx context.Context, obj interface{}, next graphql.Resolver, model string, column string, scopes []*string) (res interface{}, err error)
+	Update     func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -415,10 +419,7 @@ directive @goTag(
     value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
-directive @inject(
-    field: String!
-    target: String!
-) on  FIELD_DEFINITION
+directive @inject(field: String!, target: String!) on FIELD_DEFINITION
 
 scalar Time
 
@@ -435,21 +436,20 @@ interface BaseModelSoftDelete {
     deletedAt: Time
 }
 
-# 参数Eq
+# 参数Eq，是否相等
 directive @eq(key: String) on ARGUMENT_DEFINITION
-# 参数Scope
+# 参数Scope，会自动生成scope func，需要自己写逻辑
 directive @scope(name: String!) on ARGUMENT_DEFINITION
 # 第几页
 directive @page on ARGUMENT_DEFINITION
 # 每页数量
 directive @size on ARGUMENT_DEFINITION
 
-
 # 创建
 directive @create on FIELD_DEFINITION
-# 更新
+# 更新，要带上ID
 directive @update on FIELD_DEFINITION
-# 自定义Resolve
+# 自定义Resolve，只要是准备自己写逻辑，都要附加这个注解
 directive @resolve on FIELD_DEFINITION
 # 获取第一条
 directive @first on FIELD_DEFINITION
@@ -459,11 +459,79 @@ directive @all(scopes: [String]) on FIELD_DEFINITION
 # 统计数量
 directive @count(model: String!, scopes: [String]) on FIELD_DEFINITION
 # 求和
-directive @sum(model: String!, column: String!, scopes: [String]) on FIELD_DEFINITION
+directive @sum(
+    model: String!
+    column: String!
+    scopes: [String]
+) on FIELD_DEFINITION
+
+# 登录验证, 直接判断是否登录
+# message: 自定义未登录提示信息
+directive @auth(message: String) on FIELD_DEFINITION
+
+# 排序
+directive @orderBy(
+    column: String!
+    direction: SortDirection = ASC
+) on FIELD_DEFINITION
+
+# 缓存结果
+directive @cache(ttl: Int!, key: String) on FIELD_DEFINITION
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+enum SearchableType {
+    # 用于全文搜索，适合文章内容、描述等
+    TEXT
+    # 用于精确匹配，适合用户ID、状态等
+    KEYWORD
+    # 用于长整型数值，如时间戳
+    LONG
+    # 用于整型数值，如年龄、数量
+    INTEGER
+    # 用于短整型数值，如小范围的枚举值
+    SHORT
+    # 用于字节型数值，如标志位
+    BYTE
+    # 用于双精度浮点数，如精确的金融计算
+    DOUBLE
+    # 用于单精度浮点数，如一般的科学计算
+    FLOAT
+    # 用于半精度浮点数，如简单的图形处理
+    HALF_FLOAT
+    # 用于可缩放的浮点数，如需要精确控制小数位的金额
+    SCALED_FLOAT
+    # 用于日期时间，支持多种日期格式，默认是 ISO 8601 格式
+    DATE
+    # 用于布尔值，表示 true 或 false
+    BOOLEAN
+    # 用于存储 IPv4 或 IPv6 地址
+    IP
+}
+
+enum SearchableAnalyzer {
+    # 最大化分词，尽可能多地分出所有可能的词汇
+    IK_MAX_WORD
+    # 智能分词，分出比较常用的词汇
+    IK_SMART
+}
+# 可搜索指令
+# 用于标记字段为可搜索，并指定搜索相关的参数
+directive @searchable(
+    # 搜索类型，指定字段的数据类型
+    type: SearchableType
+    # 索引分析器，用于创建索引时的分词
+    indexAnalyzer: SearchableAnalyzer = IK_MAX_WORD
+    # 搜索分析器，用于搜索时的分词
+    searchAnalyzer: SearchableAnalyzer = IK_SMART
+) on FIELD_DEFINITION
 
 
 `, BuiltIn: false},
-	{Name: "../../schema/post.graphql", Input: `type Post implements BaseModelSoftDelete @key(fields: "id") {
+	{Name: "../../schema/post.graphqls", Input: `type Post implements BaseModelSoftDelete @key(fields: "id") {
   id: ID!
   title: String!
   content: String!
@@ -553,6 +621,97 @@ func (ec *executionContext) dir_all_argsScopes(
 	}
 
 	var zeroVal []*string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_auth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.dir_auth_argsMessage(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["message"] = arg0
+	return args, nil
+}
+func (ec *executionContext) dir_auth_argsMessage(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["message"]
+	if !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+	if tmp, ok := rawArgs["message"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_cache_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.dir_cache_argsTTL(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ttl"] = arg0
+	arg1, err := ec.dir_cache_argsKey(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["key"] = arg1
+	return args, nil
+}
+func (ec *executionContext) dir_cache_argsTTL(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (int, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["ttl"]
+	if !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ttl"))
+	if tmp, ok := rawArgs["ttl"]; ok {
+		return ec.unmarshalNInt2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_cache_argsKey(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["key"]
+	if !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+	if tmp, ok := rawArgs["key"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -706,6 +865,65 @@ func (ec *executionContext) dir_inject_argsTarget(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) dir_orderBy_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.dir_orderBy_argsColumn(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["column"] = arg0
+	arg1, err := ec.dir_orderBy_argsDirection(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["direction"] = arg1
+	return args, nil
+}
+func (ec *executionContext) dir_orderBy_argsColumn(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["column"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("column"))
+	if tmp, ok := rawArgs["column"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_orderBy_argsDirection(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*models.SortDirection, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["direction"]
+	if !ok {
+		var zeroVal *models.SortDirection
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+	if tmp, ok := rawArgs["direction"]; ok {
+		return ec.unmarshalOSortDirection2ᚖpostᚋgraphᚋmodelsᚐSortDirection(ctx, tmp)
+	}
+
+	var zeroVal *models.SortDirection
+	return zeroVal, nil
+}
+
 func (ec *executionContext) dir_scope_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -735,6 +953,92 @@ func (ec *executionContext) dir_scope_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_searchable_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.dir_searchable_argsType(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["type"] = arg0
+	arg1, err := ec.dir_searchable_argsIndexAnalyzer(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["indexAnalyzer"] = arg1
+	arg2, err := ec.dir_searchable_argsSearchAnalyzer(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["searchAnalyzer"] = arg2
+	return args, nil
+}
+func (ec *executionContext) dir_searchable_argsType(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*models.SearchableType, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["type"]
+	if !ok {
+		var zeroVal *models.SearchableType
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+	if tmp, ok := rawArgs["type"]; ok {
+		return ec.unmarshalOSearchableType2ᚖpostᚋgraphᚋmodelsᚐSearchableType(ctx, tmp)
+	}
+
+	var zeroVal *models.SearchableType
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_searchable_argsIndexAnalyzer(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*models.SearchableAnalyzer, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["indexAnalyzer"]
+	if !ok {
+		var zeroVal *models.SearchableAnalyzer
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("indexAnalyzer"))
+	if tmp, ok := rawArgs["indexAnalyzer"]; ok {
+		return ec.unmarshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx, tmp)
+	}
+
+	var zeroVal *models.SearchableAnalyzer
+	return zeroVal, nil
+}
+
+func (ec *executionContext) dir_searchable_argsSearchAnalyzer(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*models.SearchableAnalyzer, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["searchAnalyzer"]
+	if !ok {
+		var zeroVal *models.SearchableAnalyzer
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("searchAnalyzer"))
+	if tmp, ok := rawArgs["searchAnalyzer"]; ok {
+		return ec.unmarshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx, tmp)
+	}
+
+	var zeroVal *models.SearchableAnalyzer
 	return zeroVal, nil
 }
 
@@ -5025,6 +5329,21 @@ func (ec *executionContext) marshalNID2int64(ctx context.Context, sel ast.Select
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNPost2postᚋgraphᚋmodelsᚐPost(ctx context.Context, sel ast.SelectionSet, v models.Post) graphql.Marshaler {
 	return ec._Post(ctx, sel, &v)
 }
@@ -5521,6 +5840,54 @@ func (ec *executionContext) marshalOPost2ᚖpostᚋgraphᚋmodelsᚐPost(ctx con
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx context.Context, v interface{}) (*models.SearchableAnalyzer, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(models.SearchableAnalyzer)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx context.Context, sel ast.SelectionSet, v *models.SearchableAnalyzer) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOSearchableType2ᚖpostᚋgraphᚋmodelsᚐSearchableType(ctx context.Context, v interface{}) (*models.SearchableType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(models.SearchableType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSearchableType2ᚖpostᚋgraphᚋmodelsᚐSearchableType(ctx context.Context, sel ast.SelectionSet, v *models.SearchableType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOSortDirection2ᚖpostᚋgraphᚋmodelsᚐSortDirection(ctx context.Context, v interface{}) (*models.SortDirection, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(models.SortDirection)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSortDirection2ᚖpostᚋgraphᚋmodelsᚐSortDirection(ctx context.Context, sel ast.SelectionSet, v *models.SortDirection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

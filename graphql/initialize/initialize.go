@@ -28,14 +28,15 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("获取库路径失败: %w", err)
 	}
+	log.Warn(libDir)
 
 	itemsToCopy := []struct {
 		src  string
 		dest string
 	}{
-		{filepath.Join(libDir, "../tpl", "resolver"), filepath.Join(currentDir, "resolver")},
-		{filepath.Join(libDir, "../tpl", "schema"), filepath.Join(currentDir, "schema")},
-		{filepath.Join(libDir, "../tpl", "gqlgen.yml"), filepath.Join(currentDir, "gqlgen.yml")},
+		{filepath.Join(libDir, "tpl", "resolver"), filepath.Join(currentDir, "resolver")},
+		{filepath.Join(libDir, "tpl", "schema", "lighthouse.graphqls"), filepath.Join(currentDir, "schema", "lighthouse.graphqls")},
+		{filepath.Join(libDir, "tpl", "gqlgen.yml"), filepath.Join(currentDir, "gqlgen.yml")},
 	}
 
 	for _, item := range itemsToCopy {

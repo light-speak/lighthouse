@@ -15,7 +15,7 @@ federation:
 model:
   filename: graph/models/models_gen.go
   package: models
-  
+
 
 resolver:
   layout: follow-schema
