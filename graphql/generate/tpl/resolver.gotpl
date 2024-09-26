@@ -39,11 +39,11 @@
 		    {{- else if eq $directive.Name "all" -}}
                 var {{ lcFirst $resolver.Field.GoFieldName }} {{ ref $resolver.Field.TypeReference.GO }}
                 tx := r.Db
-                {{- range $arg := $directive.Args -}}
+                {{ range $arg := $directive.Args -}}
                     {{- range $scope := $arg.Value -}}
                         tx = tx.Scopes({{ ref $resolver.Field.TypeReference.Target }}Scope{{ ucFirst $scope }}(ctx))
                     {{ end }}
-                {{- end -}}
+                {{- end }}
                 {{- range $arg := $resolver.Field.Args -}}
                     {{- range $directive := $arg.Directives -}}
                         {{ if eq $directive.Name "scope" }}

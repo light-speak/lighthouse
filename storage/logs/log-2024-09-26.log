@@ -1,1 +1,0 @@
-[2024-09-26 03:02:54] [ERROR ] /Users/lintianyao/data/source/golang/lighthouse/main.go:34 - 执行命令 gql:generate 失败: 加载配置失败: file does not exist

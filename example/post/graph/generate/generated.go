@@ -549,7 +549,7 @@ type User @key(fields: "id") @extends {
 }
 
 extend type Query {
-  posts: [Post!]! @all
+  posts: [Post!]! @all(scopes: ["published"])
   post(id: ID! @eq): Post @first
 }
 
@@ -2189,11 +2189,16 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		}
 
 		directive1 := func(ctx context.Context) (interface{}, error) {
+			scopes, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"published"})
+			if err != nil {
+				var zeroVal []*models.Post
+				return zeroVal, err
+			}
 			if ec.directives.All == nil {
 				var zeroVal []*models.Post
 				return zeroVal, errors.New("directive all is not implemented")
 			}
-			return ec.directives.All(ctx, nil, directive0, nil)
+			return ec.directives.All(ctx, nil, directive0, scopes)
 		}
 
 		tmp, err := directive1(rctx)

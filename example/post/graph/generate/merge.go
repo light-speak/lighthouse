@@ -8,6 +8,21 @@ import (
 )
 
 
+func MergeUsers(ctx context.Context, users []*models.User) ([]*models.User, error) {
+	var err error
+	for _, user := range users {
+		user, err = MergeUser(ctx, user)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return users, nil
+}
+
+func MergeUser(ctx context.Context, user *models.User) (*models.User, error) {
+	return user, nil
+}
+
 func MergePosts(ctx context.Context, posts []*models.Post) ([]*models.Post, error) {
 	var err error
 	for _, post := range posts {
@@ -23,21 +38,6 @@ func MergePost(ctx context.Context, post *models.Post) (*models.Post, error) {
             post.User = &models.User{ID: post.UserID,}
         
 	return post, nil
-}
-
-func MergeUsers(ctx context.Context, users []*models.User) ([]*models.User, error) {
-	var err error
-	for _, user := range users {
-		user, err = MergeUser(ctx, user)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return users, nil
-}
-
-func MergeUser(ctx context.Context, user *models.User) (*models.User, error) {
-	return user, nil
 }
 
 

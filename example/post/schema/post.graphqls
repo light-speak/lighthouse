@@ -16,7 +16,7 @@ type User @key(fields: "id") @extends {
 }
 
 extend type Query {
-  posts: [Post!]! @all
+  posts: [Post!]! @all(scopes: ["published"])
   post(id: ID! @eq): Post @first
 }
 
