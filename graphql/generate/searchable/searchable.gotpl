@@ -1,0 +1,24 @@
+package models
+
+{{ range $model := .SearchableModels }}
+func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) Mapping() map[string]interface{} {
+	return map[string]interface{}{
+		"properties": map[string]interface{}{
+			{{- range $index, $field := $model.Fields }}
+			"{{ $field.FieldName }}": map[string]interface{}{
+				"type": "{{ $field.SearchableType }}",
+				{{- if eq $field.SearchableType "TEXT" }}
+					{{- if $field.IndexAnalyzer }}
+					"analyzer": "{{ $field.IndexAnalyzer }}",
+					{{- end }}
+					{{- if $field.SearchAnalyzer }}
+					"search_analyzer": "{{ $field.SearchAnalyzer }}",
+					{{- end }}
+				{{- end }}
+			},
+			{{- end }}
+		},
+	}
+}
+{{- end}}
+

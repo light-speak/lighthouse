@@ -10,6 +10,13 @@ import (
 
 func PostScopePublished(ctx context.Context, values ...string) func(tx *gorm.DB) *gorm.DB {
 	return func(tx *gorm.DB) *gorm.DB {
+		return tx.Where("deleted_at is null")
+	}
+}
+
+
+func PostScopeHot(ctx context.Context, values ...string) func(tx *gorm.DB) *gorm.DB {
+	return func(tx *gorm.DB) *gorm.DB {
 		return tx
 	}
 }

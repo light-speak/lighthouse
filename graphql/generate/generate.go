@@ -15,6 +15,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/generate/merge"
 	"github.com/light-speak/lighthouse/graphql/generate/resolver"
 	"github.com/light-speak/lighthouse/graphql/generate/scope"
+	"github.com/light-speak/lighthouse/graphql/generate/searchable"
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -149,6 +150,7 @@ func generateDirectives(cfg *config.Config) {
 		}
 
 		var mergeFields []*merge.MergeField
+		var searchableModelOptions []*searchable.SearchableModelOption
 		for _, f := range t.Fields {
 			if requires := f.Directives.ForName("requires"); requires != nil {
 				if field := requires.Arguments.ForName("fields"); field != nil {
@@ -163,6 +165,36 @@ func generateDirectives(cfg *config.Config) {
 					})
 				}
 			}
+			var searchableFieldOption *searchable.SearchableFieldOption
+			if searchableDirective := f.Directives.ForName("searchable"); searchableDirective != nil {
+				if field := searchableDirective.Arguments.ForName("searchableType"); field != nil {
+					searchableFieldOption = &searchable.SearchableFieldOption{
+						FieldName:      f.Name,
+						SearchableType: field.Value.Raw,
+					}
+					searchableFieldOption.IndexAnalyzer = "IK_MAX_WORD"
+					searchableFieldOption.SearchAnalyzer = "IK_SMART"
+					if field := searchableDirective.Arguments.ForName("indexAnalyzer"); field != nil {
+						searchableFieldOption.IndexAnalyzer = field.Value.Raw
+					}
+					if field := searchableDirective.Arguments.ForName("searchAnalyzer"); field != nil {
+						searchableFieldOption.SearchAnalyzer = field.Value.Raw
+					}
+				}
+
+				if len(searchableModelOptions) == 0 || searchableModelOptions[len(searchableModelOptions)-1].ModelName != t.Name {
+					searchableModelOptions = append(searchableModelOptions, &searchable.SearchableModelOption{
+						ModelName: t.Name,
+						Fields:    []*searchable.SearchableFieldOption{searchableFieldOption},
+					})
+				} else {
+					searchableModelOptions[len(searchableModelOptions)-1].Fields = append(searchableModelOptions[len(searchableModelOptions)-1].Fields, searchableFieldOption)
+				}
+			}
+		}
+
+		if err := searchable.GenSearchableModels(searchableModelOptions); err != nil {
+			log.Error("%+v", err)
 		}
 
 		mergeTypes = append(mergeTypes, &merge.MergeType{
@@ -212,7 +244,7 @@ func Run() error {
 	}
 
 	err = api.Generate(cfg, api.ReplacePlugin(&p))
-	if err != nil { 
+	if err != nil {
 		log.Warn("生成环节出现错误，已自动忽略，部分Func将在后续过程中生成，请检查生成文件: %v", err)
 	}
 	generateDirectives(cfg)

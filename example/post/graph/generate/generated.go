@@ -58,7 +58,7 @@ type DirectiveRoot struct {
 	Page       func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	Resolve    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	Scope      func(ctx context.Context, obj interface{}, next graphql.Resolver, name string) (res interface{}, err error)
-	Searchable func(ctx context.Context, obj interface{}, next graphql.Resolver, typeArg *models.SearchableType, indexAnalyzer *models.SearchableAnalyzer, searchAnalyzer *models.SearchableAnalyzer) (res interface{}, err error)
+	Searchable func(ctx context.Context, obj interface{}, next graphql.Resolver, searchableType *models.SearchableType, indexAnalyzer *models.SearchableAnalyzer, searchAnalyzer *models.SearchableAnalyzer) (res interface{}, err error)
 	Size       func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	Sum        func(ctx context.Context, obj interface{}, next graphql.Resolver, model string, column string, scopes []*string) (res interface{}, err error)
 	Update     func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
@@ -522,7 +522,7 @@ enum SearchableAnalyzer {
 # 用于标记字段为可搜索，并指定搜索相关的参数
 directive @searchable(
     # 搜索类型，指定字段的数据类型
-    type: SearchableType
+    searchableType: SearchableType
     # 索引分析器，用于创建索引时的分词
     indexAnalyzer: SearchableAnalyzer = IK_MAX_WORD
     # 搜索分析器，用于搜索时的分词
@@ -533,7 +533,7 @@ directive @searchable(
 `, BuiltIn: false},
 	{Name: "../../schema/post.graphqls", Input: `type Post implements BaseModelSoftDelete @key(fields: "id") {
   id: ID!
-  title: String!
+  title: String! @searchable(searchableType: TEXT)
   content: String!
   createdAt: Time!
   updatedAt: Time!
@@ -549,13 +549,14 @@ type User @key(fields: "id") @extends {
 }
 
 extend type Query {
-  posts: [Post!]! @all(scopes: ["published"])
+  posts: [Post!]! @all(scopes: ["published","hot"])
   post(id: ID! @eq): Post @first
 }
 
 extend type Mutation {
   createPost(title: String!, content: String!, userId: ID!): Post @create
   publishPost(id: ID!): Post @resolve
+
 }`, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
 	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
@@ -959,11 +960,11 @@ func (ec *executionContext) dir_scope_argsName(
 func (ec *executionContext) dir_searchable_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.dir_searchable_argsType(ctx, rawArgs)
+	arg0, err := ec.dir_searchable_argsSearchableType(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["type"] = arg0
+	args["searchableType"] = arg0
 	arg1, err := ec.dir_searchable_argsIndexAnalyzer(ctx, rawArgs)
 	if err != nil {
 		return nil, err
@@ -976,21 +977,21 @@ func (ec *executionContext) dir_searchable_args(ctx context.Context, rawArgs map
 	args["searchAnalyzer"] = arg2
 	return args, nil
 }
-func (ec *executionContext) dir_searchable_argsType(
+func (ec *executionContext) dir_searchable_argsSearchableType(
 	ctx context.Context,
 	rawArgs map[string]interface{},
 ) (*models.SearchableType, error) {
 	// We won't call the directive if the argument is null.
 	// Set call_argument_directives_with_null to true to call directives
 	// even if the argument is null.
-	_, ok := rawArgs["type"]
+	_, ok := rawArgs["searchableType"]
 	if !ok {
 		var zeroVal *models.SearchableType
 		return zeroVal, nil
 	}
 
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-	if tmp, ok := rawArgs["type"]; ok {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("searchableType"))
+	if tmp, ok := rawArgs["searchableType"]; ok {
 		return ec.unmarshalOSearchableType2ᚖpostᚋgraphᚋmodelsᚐSearchableType(ctx, tmp)
 	}
 
@@ -1875,8 +1876,45 @@ func (ec *executionContext) _Post_title(ctx context.Context, field graphql.Colle
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Title, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Title, nil
+		}
+
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			searchableType, err := ec.unmarshalOSearchableType2ᚖpostᚋgraphᚋmodelsᚐSearchableType(ctx, "TEXT")
+			if err != nil {
+				var zeroVal string
+				return zeroVal, err
+			}
+			indexAnalyzer, err := ec.unmarshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx, "IK_MAX_WORD")
+			if err != nil {
+				var zeroVal string
+				return zeroVal, err
+			}
+			searchAnalyzer, err := ec.unmarshalOSearchableAnalyzer2ᚖpostᚋgraphᚋmodelsᚐSearchableAnalyzer(ctx, "IK_SMART")
+			if err != nil {
+				var zeroVal string
+				return zeroVal, err
+			}
+			if ec.directives.Searchable == nil {
+				var zeroVal string
+				return zeroVal, errors.New("directive searchable is not implemented")
+			}
+			return ec.directives.Searchable(ctx, obj, directive0, searchableType, indexAnalyzer, searchAnalyzer)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2189,7 +2227,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		}
 
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			scopes, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"published"})
+			scopes, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"published", "hot"})
 			if err != nil {
 				var zeroVal []*models.Post
 				return zeroVal, err

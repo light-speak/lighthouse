@@ -35,6 +35,7 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*models.Post, error) {
 	var posts []*models.Post
 	tx := r.Db
 	tx = tx.Scopes(models.PostScopePublished(ctx))
+	tx = tx.Scopes(models.PostScopeHot(ctx))
 
 	if err := resolver.ResolveData(ctx, tx, "posts", &posts, resolver.Option{Type: &resolver.Query, QueryType: &resolver.ListQuery}); err != nil {
 		return nil, err

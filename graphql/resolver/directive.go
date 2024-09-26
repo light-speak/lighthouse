@@ -106,3 +106,7 @@ var Resolve = func(ctx context.Context, obj interface{}, next graphql.Resolver) 
 var Inject = func(ctx context.Context, obj interface{}, next graphql.Resolver, field string, target string) (interface{}, error) {
 	return next(ctx)
 }
+
+var Searchable = func(ctx context.Context, obj interface{}, next graphql.Resolver, searchableType string) (interface{}, error) {
+	return next(ctx)
+}
