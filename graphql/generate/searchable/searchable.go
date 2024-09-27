@@ -43,6 +43,8 @@ func GenSearchableModels(options []*SearchableModelOption) error {
 		"lcFirst":       utils.LcFirst,
 		"ucFirst":       utils.UcFirst,
 		"ucFirstWithID": utils.UcFirstWithID,
+		"pluralize":     utils.Pluralize,
+		"toLower":       utils.ToLower,
 	}).Parse(searchableTemplate))
 
 	if err := tmpl.Execute(file, data); err != nil {

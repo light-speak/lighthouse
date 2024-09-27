@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"post/graph/generate"
 	"post/graph/models"
+	"search/kitex_gen/search"
 
 	"github.com/light-speak/lighthouse/graphql/resolver"
+	"github.com/light-speak/lighthouse/log"
 )
 
 // CreatePost is the resolver for the createPost field.
@@ -22,12 +24,36 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 	if err := resolver.ResolveData(ctx, tx, "createPost", createPost, resolver.Option{Type: &resolver.Mutation, MutationType: &resolver.CreateMutation}); err != nil {
 		return nil, err
 	}
+
 	return generate.MergePost(ctx, createPost)
 }
 
 // PublishPost is the resolver for the publishPost field.
 func (r *mutationResolver) PublishPost(ctx context.Context, id int64) (*models.Post, error) {
-	panic(fmt.Errorf("not implemented: PublishPost - publishPost"))
+	post := &models.Post{
+		Title:   "simple post2312321321321",
+		Content: "simple content1111111",
+		UserID:  1,
+	}
+	tx := r.Db
+	if err := tx.Create(post).Error; err != nil {
+		return nil, err
+	}
+	searchClient := (*r.Resolver.SearchClient)
+	document := &search.Document{
+		Id:      post.IndexName(),
+		Content: post.GetIndexData(),
+	}
+	if err := searchClient.IndexDocument(ctx, post.IndexName(), document); err != nil {
+		log.Error("Error indexing document: %v", err)
+		return nil, err
+	}
+	return generate.MergePost(ctx, post)
+}
+
+// SearchPost is the resolver for the searchPost field.
+func (r *mutationResolver) SearchPost(ctx context.Context, query string) ([]*models.Post, error) {
+	panic(fmt.Errorf("not implemented: SearchPost - searchPost"))
 }
 
 // Posts is the resolver for the posts field.

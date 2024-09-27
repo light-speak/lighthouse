@@ -39,16 +39,18 @@ func GenMergeModels(mergeTypes []*MergeType) error {
 
 	data := struct {
 		MergeTypes []*MergeType
-		Package string
+		Package    string
 	}{
 		MergeTypes: mergeTypes,
-		Package: packageName,
+		Package:    packageName,
 	}
 
 	tmpl := template.Must(template.New("generate").Funcs(template.FuncMap{
 		"lcFirst":       utils.LcFirst,
 		"ucFirst":       utils.UcFirst,
 		"ucFirstWithID": utils.UcFirstWithID,
+		"pluralize":     utils.Pluralize,
+		"toLower":       utils.ToLower,
 	}).Parse(mergeTemplate))
 
 	if err := tmpl.Execute(file, data); err != nil {

@@ -56,8 +56,10 @@ func gen(model *modelgen.Object, outputDir string, mod string) error {
 
 	tmpl := template.Must(template.New("modelloader_gen").
 		Funcs(template.FuncMap{
-			"ucFirst": utils.UcFirst,
-			"lcFirst": utils.LcFirst,
+			"ucFirst":   utils.UcFirst,
+			"lcFirst":   utils.LcFirst,
+			"pluralize": utils.Pluralize,
+			"toLower":   utils.ToLower,
 		}).
 		Parse(modelLoaderGenTemplate))
 	if err := tmpl.Execute(file, data); err != nil {

@@ -1,24 +1,67 @@
 package models
 
+import (
+	"encoding/json"
+	"github.com/light-speak/lighthouse/log"
+)
+
 {{ range $model := .SearchableModels }}
-func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) Mapping() map[string]interface{} {
-	return map[string]interface{}{
-		"properties": map[string]interface{}{
-			{{- range $index, $field := $model.Fields }}
-			"{{ $field.FieldName }}": map[string]interface{}{
-				"type": "{{ $field.SearchableType }}",
-				{{- if eq $field.SearchableType "TEXT" }}
+// Mapping 方法将生成映射信息的 JSON 字符串
+func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) Mapping() string {
+	mapping := map[string]interface{}{
+		"mappings": map[string]interface{}{
+			"properties": map[string]interface{}{
+				{{- range $index, $field := $model.Fields }}
+				"{{ $field.FieldName }}": map[string]interface{}{
+					"type": "{{ toLower $field.SearchableType }}",
+					{{- if eq $field.SearchableType "TEXT" }} 
 					{{- if $field.IndexAnalyzer }}
-					"analyzer": "{{ $field.IndexAnalyzer }}",
+					"analyzer": "{{ toLower $field.IndexAnalyzer }}",
 					{{- end }}
 					{{- if $field.SearchAnalyzer }}
-					"search_analyzer": "{{ $field.SearchAnalyzer }}",
+					"search_analyzer": "{{ toLower $field.SearchAnalyzer }}",
 					{{- end }}
+					{{- end }}
+				},
 				{{- end }}
 			},
-			{{- end }}
 		},
 	}
-}
-{{- end}}
 
+	// 将映射数据转换为 JSON 字符串
+	jsonBytes, err := json.Marshal(mapping)
+	if err != nil {
+		log.Error("Error converting to JSON: %v", err)
+		return "{}" 
+	}
+	return string(jsonBytes)
+}
+
+// SearchId 方法返回模型的 ID
+func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) SearchId() int64 {
+	return {{ lcFirst $model.ModelName }}.GetID()
+}
+
+// IndexName 方法返回索引名称
+func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) IndexName() string {
+	return "{{ pluralize $model.ModelName }}"
+}
+
+// GetIndexData 方法将返回模型数据的 JSON 字符串
+func ({{ lcFirst $model.ModelName }} *{{ ucFirst $model.ModelName }}) GetIndexData() string {
+	data := map[string]interface{}{
+		{{- range $index, $field := $model.Fields }}
+		"{{ $field.FieldName }}": {{ lcFirst $model.ModelName }}.{{ ucFirst $field.FieldName }},
+		{{- end }}
+	}
+
+	// 将数据转换为 JSON 字符串
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Error converting to JSON: %v", err)
+		return "{}" 
+	}
+	return string(jsonBytes)
+}
+
+{{- end }}

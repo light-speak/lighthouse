@@ -1,0 +1,11 @@
+[2024-09-27 21:26:10] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"title":{"analyzer":"IK_MAX_WORD","search_analyzer":"IK_SMART","type":"TEXT"}}}
+[2024-09-27 21:40:44] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"IK_MAX_WORD","search_analyzer":"IK_SMART","type":"TEXT"}}}}
+[2024-09-27 21:44:24] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"IK_MAX_WORD","search_analyzer":"IK_SMART","type":"text"}}}}
+[2024-09-27 21:44:43] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"ik_max_word","search_analyzer":"ik_smart","type":"text"}}}}
+[2024-09-27 21:50:04] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"ik_max_word","search_analyzer":"ik_smart","type":"text"}}}}
+[2024-09-27 22:06:24] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"ik_max_word","search_analyzer":"ik_smart","type":"text"}}}}
+[2024-09-27 22:06:34] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 创建索引: {"mappings":{"properties":{"title":{"analyzer":"ik_max_word","search_analyzer":"ik_smart","type":"text"}}}}
+[2024-09-27 23:59:12] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - IndexDocument: 21
+[2024-09-27 23:59:12] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 数据录入成功: 21
+[2024-09-28 00:00:48] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - IndexDocument: 22
+[2024-09-28 00:00:48] [ INFO ] /Users/zdw/go/pkg/mod/github.com/light-speak/lighthouse@v0.0.0-20240926071619-7f297ebfe579/log/init.go:68 - 数据录入成功: 22

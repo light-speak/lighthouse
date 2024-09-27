@@ -1,7 +1,7 @@
 type Post implements BaseModelSoftDelete @key(fields: "id") {
   id: ID!
   title: String! @searchable(searchableType: TEXT)
-  content: String!
+  content: String! @searchable(searchableType: TEXT)
   createdAt: Time!
   updatedAt: Time!
   deletedAt: Time
@@ -11,17 +11,17 @@ type Post implements BaseModelSoftDelete @key(fields: "id") {
 }
 
 type User @key(fields: "id") @extends {
-    id: ID! @external
-    posts: [Post!]! @provides(fields: "id")
+  id: ID! @external
+  posts: [Post!]! @provides(fields: "id")
 }
 
 extend type Query {
-  posts: [Post!]! @all(scopes: ["published","hot"])
+  posts: [Post!]! @all(scopes: ["published", "hot"])
   post(id: ID! @eq): Post @first
 }
 
 extend type Mutation {
   createPost(title: String!, content: String!, userId: ID!): Post @create
   publishPost(id: ID!): Post @resolve
-
+  searchPost(query: String!): [Post!]! @resolve
 }
