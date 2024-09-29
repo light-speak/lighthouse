@@ -7,6 +7,7 @@ import (
 
 func Run(c CommandList, args []string) error {
 	if len(args) < 2 {
+		printLogo()
 		return fmt.Errorf("please specify a command")
 	}
 
@@ -38,6 +39,8 @@ func Run(c CommandList, args []string) error {
 
 			// If no flags are provided or help flag is set, show help
 			if len(args) == 2 || *help {
+				fmt.Print("\033[33m")
+				printLogo()
 				fmt.Print("\033[1mCommand: ")
 				fmt.Printf("\033[32m%s [flags]\n", cmdName)
 				fmt.Printf("\033[0m%s\n", cmd.Usage())
@@ -68,4 +71,20 @@ func Run(c CommandList, args []string) error {
 	}
 
 	return fmt.Errorf("unknown command: %s", cmdName)
+}
+
+
+func printLogo() {
+	fmt.Print("\033[33m")
+	fmt.Print(`
+  _     _        _	 _    _
+   |     )        |       |    |
+   |    _    __   |__  _  |_   |__     _   _   _  ___   __
+   |     |  '   \     \     |      \     \  |   |   __|  _ \
+   |___  | |    | |   |   |_   |   | |    | |_  |  __ \ '__  
+       | |  ' - | |   |     /  |   |  '- /      /     /    |
+                |                 
+            \__ /           v0.0.1           by @light-speak
+	`)
+	fmt.Print("\033[0m\n")
 }

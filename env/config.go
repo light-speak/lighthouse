@@ -46,7 +46,13 @@ const (
 	Router AuthDriver = "router"
 )
 
-type LoggerLevel string
+type LoggerDriver string
+
+const (
+	Stdout        LoggerDriver = "stdout"
+	File          LoggerDriver = "file"
+	Elasticsearch LoggerDriver = "elasticsearch"
+)
 
 type Config struct {
 	App struct {
@@ -77,12 +83,21 @@ type Config struct {
 		Level    zerolog.Level
 		Path     string
 		Beautify bool
+		Stack    bool
+		Driver   LoggerDriver
 	}
 	Redis struct {
 		Host     string
 		Port     string
 		Password string
 		Db       int
+	}
+	Elasticsearch struct {
+		Enable   bool
+		Host     string
+		Port     string
+		User     string
+		Password string
 	}
 }
 
@@ -141,10 +156,14 @@ func init() {
 			Level    zerolog.Level
 			Path     string
 			Beautify bool
+			Stack    bool
+			Driver   LoggerDriver
 		}{
 			Level:    zerolog.Level(GetEnvInt("LOGGER_LEVEL", 0)),
 			Path:     GetEnv("LOGGER_PATH", "logs/app.log"),
-			Beautify: GetEnvBool("LOGGER_BEAUTIFY", true),
+			Beautify: GetEnvBool("LOGGER_BEAUTIFY", false),
+			Stack:    GetEnvBool("LOGGER_STACK", false),
+			Driver:   LoggerDriver(GetEnv("LOGGER_DRIVER", "stdout")),
 		},
 		Redis: struct {
 			Host     string
@@ -157,5 +176,20 @@ func init() {
 			Password: GetEnv("REDIS_PASSWORD", ""),
 			Db:       GetEnvInt("REDIS_DB", 0),
 		},
+		Elasticsearch: struct {
+			Enable   bool
+			Host     string
+			Port     string
+			User     string
+			Password string
+		}{
+			Enable:   GetEnvBool("ELASTICSEARCH_ENABLE", false),
+			Host:     GetEnv("ELASTICSEARCH_HOST", "localhost"),
+			Port:     GetEnv("ELASTICSEARCH_PORT", "9200"),
+			User:     GetEnv("ELASTICSEARCH_USER", "elastic"),
+			Password: GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
+		},
 	}
+
+	InitLogger()
 }
