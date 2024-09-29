@@ -9,10 +9,10 @@ const (
 )
 
 type Command interface {
-	Action() func(flagValues map[string]interface{}) error
 	Name() string
 	Usage() string
 	Args() []*CommandArg
+	Action() func(flagValues map[string]interface{}) error
 }
 
 type CommandArg struct {
@@ -20,6 +20,7 @@ type CommandArg struct {
 	Type     CommandArgType
 	Usage    string
 	Required bool
+	Default  interface{}
 }
 
 type CommandList interface {

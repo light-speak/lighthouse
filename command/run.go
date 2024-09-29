@@ -15,15 +15,20 @@ func Run(c CommandList, args []string) error {
 		if cmd.Name() == cmdName {
 			flagSet := flag.NewFlagSet(cmdName, flag.ContinueOnError)
 			flagValues := make(map[string]interface{})
+			help := flagSet.Bool("help", false, "show help")
 
 			for _, arg := range cmd.Args() {
 				switch arg.Type {
 				case String:
-					flagValues[arg.Name] = flagSet.String(arg.Name, "", arg.Usage)
+					defaultValue := ""
+					if arg.Default != nil {
+						defaultValue = arg.Default.(string)
+					}
+					flagValues[arg.Name] = flagSet.String(arg.Name, defaultValue, fmt.Sprintf("%s (required: %t)", arg.Usage, arg.Required))
 				case Int:
-					flagValues[arg.Name] = flagSet.Int(arg.Name, 0, arg.Usage)
+					flagValues[arg.Name] = flagSet.Int(arg.Name, 0, fmt.Sprintf("%s (required: %t) (default: %d)", arg.Usage, arg.Required, arg.Default))
 				case Bool:
-					flagValues[arg.Name] = flagSet.Bool(arg.Name, false, arg.Usage)
+					flagValues[arg.Name] = flagSet.Bool(arg.Name, false, fmt.Sprintf("%s (required: %t) (default: %t)", arg.Usage, arg.Required, arg.Default))
 				}
 			}
 
@@ -31,17 +36,29 @@ func Run(c CommandList, args []string) error {
 				return fmt.Errorf("failed to parse flags: %w", err)
 			}
 
+			// If no flags are provided or help flag is set, show help
+			if len(args) == 2 || *help {
+				fmt.Print("\033[1mCommand: ")
+				fmt.Printf("\033[32m%s [flags]\n", cmdName)
+				fmt.Printf("\033[0m%s\n", cmd.Usage())
+
+				flagSet.PrintDefaults()
+				return nil
+			}
+
+			// Only check for required parameters if help flag is not set
 			for _, arg := range cmd.Args() {
 				if arg.Required {
 					switch arg.Type {
 					case String:
 						if *flagValues[arg.Name].(*string) == "" {
-							return fmt.Errorf("missing required parameters: --%s", arg.Name)
+							return fmt.Errorf("missing required parameter: --%s", arg.Name)
 						}
 					case Int:
 						if *flagValues[arg.Name].(*int) == 0 {
-							return fmt.Errorf("missing required parameters: --%s", arg.Name)
+							return fmt.Errorf("missing required parameter: --%s", arg.Name)
 						}
+					case Bool:
 					}
 				}
 			}
