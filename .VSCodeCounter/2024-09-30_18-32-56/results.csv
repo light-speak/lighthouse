@@ -1,0 +1,31 @@
+"filename", "language", "Go", "Go Template", "Go Module File", "Go Checksum File", "comment", "blank", "total"
+"/Users/lintianyao/data/source/golang/house/command/args.go", "Go", 50, 0, 0, 0, 4, 9, 63
+"/Users/lintianyao/data/source/golang/house/command/cli/command.go", "Go", 13, 0, 0, 0, 0, 4, 17
+"/Users/lintianyao/data/source/golang/house/command/cli/generate/cmd/cmd.go", "Go", 68, 0, 0, 0, 1, 13, 82
+"/Users/lintianyao/data/source/golang/house/command/cli/generate/cmd/cmd.tpl", "Go Template", 0, 31, 0, 0, 0, 6, 37
+"/Users/lintianyao/data/source/golang/house/command/cli/version/version.go", "Go", 26, 0, 0, 0, 11, 11, 48
+"/Users/lintianyao/data/source/golang/house/command/command.go", "Go", 23, 0, 0, 0, 0, 6, 29
+"/Users/lintianyao/data/source/golang/house/command/command_test.go", "Go", 5, 0, 0, 0, 0, 3, 8
+"/Users/lintianyao/data/source/golang/house/command/run.go", "Go", 100, 0, 0, 0, 1, 17, 118
+"/Users/lintianyao/data/source/golang/house/env/config.go", "Go", 173, 0, 0, 0, 1, 19, 193
+"/Users/lintianyao/data/source/golang/house/env/env.go", "Go", 49, 0, 0, 0, 5, 7, 61
+"/Users/lintianyao/data/source/golang/house/env/env_test.go", "Go", 44, 0, 0, 0, 0, 8, 52
+"/Users/lintianyao/data/source/golang/house/env/log.go", "Go", 45, 0, 0, 0, 2, 8, 55
+"/Users/lintianyao/data/source/golang/house/example/user/go.mod", "Go Module File", 0, 0, 4, 0, 0, 4, 8
+"/Users/lintianyao/data/source/golang/house/example/user/main.go", "Go", 12, 0, 0, 0, 0, 4, 16
+"/Users/lintianyao/data/source/golang/house/go.mod", "Go Module File", 0, 0, 19, 0, 0, 4, 23
+"/Users/lintianyao/data/source/golang/house/go.sum", "Go Checksum File", 0, 0, 0, 47, 0, 1, 48
+"/Users/lintianyao/data/source/golang/house/graphql/graphql.go", "Go", 1, 0, 0, 0, 0, 0, 1
+"/Users/lintianyao/data/source/golang/house/log/log.go", "Go", 46, 0, 0, 0, 0, 11, 57
+"/Users/lintianyao/data/source/golang/house/main.go", "Go", 14, 0, 0, 0, 0, 5, 19
+"/Users/lintianyao/data/source/golang/house/plugins/elasticsearch/elasticsearch.go", "Go", 49, 0, 0, 0, 0, 13, 62
+"/Users/lintianyao/data/source/golang/house/plugins/file/file.go", "Go", 17, 0, 0, 0, 0, 4, 21
+"/Users/lintianyao/data/source/golang/house/template/funcs.go", "Go", 13, 0, 0, 0, 0, 5, 18
+"/Users/lintianyao/data/source/golang/house/template/import.go", "Go", 89, 0, 0, 0, 6, 7, 102
+"/Users/lintianyao/data/source/golang/house/template/template.go", "Go", 85, 0, 0, 0, 16, 19, 120
+"/Users/lintianyao/data/source/golang/house/utils/path.go", "Go", 64, 0, 0, 0, 6, 11, 81
+"/Users/lintianyao/data/source/golang/house/utils/path_test.go", "Go", 25, 0, 0, 0, 0, 5, 30
+"/Users/lintianyao/data/source/golang/house/utils/str.go", "Go", 36, 0, 0, 0, 4, 6, 46
+"/Users/lintianyao/data/source/golang/house/utils/str_test.go", "Go", 68, 0, 0, 0, 0, 10, 78
+"/Users/lintianyao/data/source/golang/house/version/version.go", "Go", 2, 0, 0, 0, 0, 2, 4
+"Total", "-", 1117, 31, 23, 47, 57, 222, 1497

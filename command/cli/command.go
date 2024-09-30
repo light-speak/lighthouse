@@ -1,8 +1,9 @@
-package generate
+package cli
 
 import (
 	"github.com/light-speak/lighthouse/command"
 	"github.com/light-speak/lighthouse/command/cli/generate/cmd"
+	"github.com/light-speak/lighthouse/command/cli/version"
 )
 
 type Lighthouse struct{}
@@ -10,5 +11,6 @@ type Lighthouse struct{}
 func (c *Lighthouse) GetCommands() []command.Command {
 	return []command.Command{
 		&cmd.GenCmd{},
+		&version.Version{},
 	}
 }

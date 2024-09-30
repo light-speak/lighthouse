@@ -80,11 +80,10 @@ type Config struct {
 		Driver AuthDriver
 	}
 	Logger struct {
-		Level    zerolog.Level
-		Path     string
-		Beautify bool
-		Stack    bool
-		Driver   LoggerDriver
+		Level  zerolog.Level
+		Path   string
+		Stack  bool
+		Driver LoggerDriver
 	}
 	Redis struct {
 		Host     string
@@ -153,17 +152,15 @@ func init() {
 			Driver: AuthDriver(GetEnv("AUTH_DRIVER", "jwt")),
 		},
 		Logger: struct {
-			Level    zerolog.Level
-			Path     string
-			Beautify bool
-			Stack    bool
-			Driver   LoggerDriver
+			Level  zerolog.Level
+			Path   string
+			Stack  bool
+			Driver LoggerDriver
 		}{
-			Level:    zerolog.Level(GetEnvInt("LOGGER_LEVEL", 0)),
-			Path:     GetEnv("LOGGER_PATH", "logs/app.log"),
-			Beautify: GetEnvBool("LOGGER_BEAUTIFY", false),
-			Stack:    GetEnvBool("LOGGER_STACK", false),
-			Driver:   LoggerDriver(GetEnv("LOGGER_DRIVER", "stdout")),
+			Level:  zerolog.Level(GetEnvInt("LOGGER_LEVEL", 0)),
+			Path:   GetEnv("LOGGER_PATH", "logs/app.log"),
+			Stack:  GetEnvBool("LOGGER_STACK", false),
+			Driver: LoggerDriver(GetEnv("LOGGER_DRIVER", "stdout")),
 		},
 		Redis: struct {
 			Host     string

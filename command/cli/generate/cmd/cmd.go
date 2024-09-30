@@ -1,13 +1,17 @@
 package cmd
 
 import (
-	"fmt"
+	_ "embed"
+	"path/filepath"
 
 	"github.com/light-speak/lighthouse/command"
+	"github.com/light-speak/lighthouse/template"
 )
 
-type GenCmd struct {
-}
+//go:embed cmd.tpl
+var temp string
+
+type GenCmd struct{}
 
 func (c *GenCmd) Name() string {
 	return "generate:command"
@@ -34,7 +38,7 @@ func (c *GenCmd) Args() []*command.CommandArg {
 			Name:     "path",
 			Usage:    "The path of the command",
 			Required: false,
-			Default:  "cmd",
+			Default:  "command",
 		},
 	}
 }
@@ -46,16 +50,32 @@ func (c *GenCmd) Action() func(flagValues map[string]interface{}) error {
 			return err
 		}
 
-		var scope, name string
-		if scope, err = command.GetStringArg(args); err != nil {
+		var scope, name, path *string
+		if scope, err = command.GetStringArg(args, "scope"); err != nil {
 			return err
 		}
-		if name, err = command.GetStringArg(args); err != nil {
+		if name, err = command.GetStringArg(args, "name"); err != nil {
 			return err
 		}
-	
+		if path, err = command.GetStringArg(args, "path"); err != nil {
+			return err
+		}
 
-		fmt.Printf("Generating command: %s in scope: %s\n", name, scope)
+		options := template.Options{
+			Path:     filepath.Clean(filepath.Join(*path, *name)),
+			Template: temp,
+			FileName: *name,
+			Editable: true,
+			Data: map[string]interface{}{
+				"Scope": *scope,
+				"Name":  *name,
+			},
+		}
+
+		if err := template.Render(&options); err != nil {
+			return err
+		}
+
 		return nil
 	}
 }

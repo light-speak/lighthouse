@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/light-speak/lighthouse/log"
@@ -26,27 +27,28 @@ func InitLogger() {
 
 	switch LighthouseConfig.Logger.Driver {
 	case Stdout:
-		output = os.Stdout
+		output = zerolog.ConsoleWriter{Out: os.Stdout}
 	case File:
 		fileOutput, err := file.NewFileOutput(LighthouseConfig.Logger.Path)
 		if err != nil {
-			log.Error().Msgf("Failed to initialize file output: %v", err)
 			output = os.Stdout
+			fmt.Printf("Failed to initialize file output: %v", err)
 		} else {
-			output = fileOutput
+			output = zerolog.MultiLevelWriter(fileOutput, os.Stdout)
 		}
 	case Elasticsearch:
 		esOutput, err := elasticsearch.NewElasticsearchOutput()
 		if err != nil {
-			log.Error().Msgf("Failed to initialize elasticsearch output: %v", err)
-			output = os.Stdout
+			fmt.Printf("Failed to initialize elasticsearch output: %v", err)
+			output = zerolog.MultiLevelWriter(os.Stdout, esOutput)
 		} else {
 			output = esOutput
 		}
 	default:
 		// Default to stdout if an unknown driver is specified
-		output = os.Stdout
+		output = zerolog.ConsoleWriter{Out: os.Stdout}
 	}
 
-	log.Log = zerolog.New(output).With().Timestamp().Logger()
+	cusLog := zerolog.New(output).With().Timestamp().Logger()
+	log.Log = &cusLog
 }

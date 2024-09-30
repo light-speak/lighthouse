@@ -22,30 +22,30 @@ func GetArgs(argDefs []*CommandArg, flagValues map[string]interface{}) (map[stri
 }
 
 // GetStringArg gets a string argument from the flag values
-func GetStringArg(args map[string]interface{}) (string, error) {
-	value, exists := args["name"]
+func GetStringArg(args map[string]interface{}, name string) (*string, error) {
+	value, exists := args[name]
 	if !exists || value == nil {
-		return "", fmt.Errorf("name is required")
+		return nil, fmt.Errorf("%s is required", name)
 	}
-	return value.(string), nil
+	return value.(*string), nil
 }
 
 // GetIntArg gets an int argument from the flag values
-func GetIntArg(args map[string]interface{}) (int, error) {
-	value, exists := args["name"]
+func GetIntArg(args map[string]interface{}, name string) (*int, error) {
+	value, exists := args[name]
 	if !exists || value == nil {
-		return 0, fmt.Errorf("name is required")
+		return nil, fmt.Errorf("%s is required", name)
 	}
-	return value.(int), nil
+	return value.(*int), nil
 }
 
 // GetBoolArg gets a bool argument from the flag values
-func GetBoolArg(args map[string]interface{}) (bool, error) {
-	value, exists := args["name"]
+func GetBoolArg(args map[string]interface{}, name string) (*bool, error) {
+	value, exists := args[name]
 	if !exists || value == nil {
-		return false, fmt.Errorf("name is required")
+		return nil, fmt.Errorf("%s is required", name)
 	}
-	return value.(bool), nil
+	return value.(*bool), nil
 }
 
 func GetDefaultValue(argDef *CommandArg) interface{} {
