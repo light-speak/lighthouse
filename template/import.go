@@ -12,17 +12,11 @@ type Import struct {
 }
 
 var importRegexMap = map[string]Import{
-	`command\.`: {
-		Path: "github.com/light-speak/lighthouse/command",
-	},
 	`time\.`: {
 		Path: "time",
 	},
 	`fmt\.`: {
 		Path: "fmt",
-	},
-	`log\.`: {
-		Path: "github.com/light-speak/lighthouse/log",
 	},
 	`os\.`: {
 		Path: "os",
@@ -48,10 +42,21 @@ var importRegexMap = map[string]Import{
 	`exec\.`: {
 		Path: "os/exec",
 	},
+	`template\.`: {
+		Path: "github.com/light-speak/lighthouse/template",
+	},
+	`command\.`: {
+		Path: "github.com/light-speak/lighthouse/command",
+	},
+	`log\.`: {
+		Path: "github.com/light-speak/lighthouse/log",
+	},
 }
 
 // AddImportRegex add a new import regex and path to the importRegexMap
 // it will auto import the package in the template
+// if alias is not empty, it will use the alias as the import alias
+// like import command "github.com/light-speak/lighthouse/command"
 func AddImportRegex(regex string, path string, alias string) error {
 	_, err := regexp.Compile(regex)
 	if err != nil {
@@ -89,6 +94,10 @@ func formatImport(imports []*Import) string {
 	}
 }
 
+// detectImports detect imports from content
+// if content used fmt.Println, it will add "fmt" to imports
+// default regex defined in importRegexMap
+// other regex will be added by AddImportRegex
 func detectImports(content string) []*Import {
 	imports := []*Import{}
 	for regex, imp := range importRegexMap {

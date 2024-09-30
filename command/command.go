@@ -8,6 +8,16 @@ const (
 	Bool
 )
 
+var commandArgTypeNames = map[CommandArgType]string{
+	String: "String",
+	Int:    "Int",
+	Bool:   "Bool",
+}
+
+func GetTypeName(argType CommandArgType) string {
+	return commandArgTypeNames[argType]
+}
+
 type Command interface {
 	Name() string
 	Usage() string

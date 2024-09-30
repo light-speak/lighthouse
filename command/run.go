@@ -1,18 +1,65 @@
 package command
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/light-speak/lighthouse/version"
 )
 
 func Run(c CommandList, args []string) error {
-	if len(args) < 2 {
-		printLogo()
-		return fmt.Errorf("please specify a command")
+	if len(args) == 2 {
+		var command *Command
+		for _, cmd := range c.GetCommands() {
+			if cmd.Name() == args[1] {
+				command = &cmd
+			}
+		}
+		if command == nil {
+			return fmt.Errorf("unknown command: %s", args[1])
+		}
+		return runREPL(*command)
 	}
 
+	return runCommand(c, args)
+}
+
+func runREPL(cmd Command) error {
+	printLogo()
+	fmt.Println("Welcome to use lighthouse cli. Type 'exit' to quit.")
+	fmt.Printf("\033[36m%s\033[0m\n", cmd.Usage())
+
+	scanner := bufio.NewScanner(os.Stdin)
+	args := make(map[string]interface{})
+	for _, arg := range cmd.Args() {
+		for {
+			fmt.Printf("\033[32mPlease input \033[35m%s\033[0m [%s] ", arg.Usage, GetTypeName(arg.Type))
+			if arg.Required {
+				fmt.Print("\033[31mrequired\033[0m")
+			} else {
+				fmt.Printf("\033[33mdefault: %s\033[0m", arg.Default)
+			}
+			fmt.Print(" : ")
+			if !scanner.Scan() {
+				return fmt.Errorf("failed to read input")
+			}
+			input := scanner.Text()
+			if input == "exit" {
+				return nil
+			}
+			if input != "" {
+				args[arg.Name] = &input
+				break
+			}
+			fmt.Println("Input cannot be empty. Please try again.")
+		}
+	}
+	return cmd.Action()(args)
+}
+
+func runCommand(c CommandList, args []string) error {
 	cmdName := args[1]
 	cmd := findCommand(c, cmdName)
 	if cmd == nil {
@@ -26,12 +73,12 @@ func Run(c CommandList, args []string) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	if len(args) == 2{
+	if len(args) == 2 {
 		cmd.Action()(flagValues)
 		return nil
 	}
-	if  *help {
-		// printHelp(cmd, cmdName, flagSet)
+	if *help {
+		printHelp(cmd, cmdName, flagSet)
 		return nil
 	}
 

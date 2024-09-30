@@ -2,8 +2,10 @@
 package version
 
 import (
-  "fmt"
-  "github.com/light-speak/lighthouse/command"
+	"fmt"
+
+	"github.com/light-speak/lighthouse/command"
+	"github.com/light-speak/lighthouse/version"
 )
 
 
@@ -43,7 +45,7 @@ func (c *Version) Action() func(flagValues map[string]interface{}) error {
 
 
 func printVersion() {
-	fmt.Println("Version: 0.0.1")
+	fmt.Printf("Version: %s\n", version.Version)
 }
 
 

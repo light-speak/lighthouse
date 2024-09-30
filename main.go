@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	
 	lighthouse := &cli.Lighthouse{}
 	if err := command.Run(lighthouse, os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)

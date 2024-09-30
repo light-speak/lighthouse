@@ -66,6 +66,7 @@ func (c *GenCmd) Action() func(flagValues map[string]interface{}) error {
 			Template: temp,
 			FileName: *name,
 			Editable: true,
+			FileExt:  "go",
 			Data: map[string]interface{}{
 				"Scope": *scope,
 				"Name":  *name,
