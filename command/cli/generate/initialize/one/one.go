@@ -36,6 +36,8 @@ func Run(module string) error {
 		InitMain,
 		InitCmd,
 		InitMod,
+		InitIdeHelper,
+		InitLighthouseYml,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -136,6 +138,38 @@ func InitMod() error {
 			"Module":  projectModule,
 			"Version": version.Version,
 		},
+	}
+	return template.Render(options)
+}
+
+func InitIdeHelper() error {
+	ideHelperTemplate, err := oneFs.ReadFile("tpl/ide-helper.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName),
+		Template:     string(ideHelperTemplate),
+		FileName:     "ide-helper",
+		FileExt:      "graphql",
+		Editable:     true,
+		SkipIfExists: true,
+	}
+	return template.Render(options)
+}
+
+func InitLighthouseYml() error {
+	lighthouseTemplate, err := oneFs.ReadFile("tpl/lighthouse.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName),
+		Template:     string(lighthouseTemplate),
+		FileName:     "lighthouse",
+		FileExt:      "yml",
+		Editable:     true,
+		SkipIfExists: true,
 	}
 	return template.Render(options)
 }

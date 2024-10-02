@@ -221,7 +221,7 @@ func getCommentPrefixAndSuffix(options *Options) (string, string) {
 	switch options.FileExt {
 	case "go", "json", "mod":
 		return "//", ""
-	case "yaml", "yml", "sh":
+	case "yaml", "yml", "sh", "graphql", "graphqls":
 		return "#", ""
 	case "xml", "md":
 		return "<!--", "-->"

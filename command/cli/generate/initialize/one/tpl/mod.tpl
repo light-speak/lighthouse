@@ -1,7 +1,7 @@
-module {{ .Module}}
+module {{ .Module }}
 
 go 1.23.1
 
 require (
-	github.com/light-speak/lighthouse {{ .Version}}
+	github.com/light-speak/lighthouse {{ .Version }}
 )

@@ -1,0 +1,84 @@
+# 自定义标量类型
+scalar DateTime
+
+# 定义一个对象类型
+type User {
+  "用户ID"
+  id: ID!
+  "用户名"
+  name: String!
+  "年龄"
+  age: Int
+  "邮箱"
+  email: String
+  "创建时间"
+  createdAt: DateTime
+}
+
+# 扩展 User 类型
+extend type User {
+  role: Role!
+}
+
+# 定义一个接口
+interface Node {
+  id: ID!
+}
+
+# 定义一个实现了接口的类型
+type Product implements Node {
+  id: ID!
+  name: String!
+  price: Float!
+  createdAt: DateTime
+}
+
+# 定义一个枚举
+enum Role {
+  ADMIN
+  USER
+  GUEST
+}
+
+# 定义一个输入类型
+input UserInput {
+  name: String!
+  age: Int
+  email: String
+}
+
+# 定义查询操作
+type Query {
+  getUser(id: ID!): User
+  listUsers: [User!]!
+  listProducts: [Product!]!
+}
+
+# 定义变更操作
+type Mutation {
+  createUser(input: UserInput!): User
+  deleteUser(id: ID!): Boolean
+}
+
+# 定义订阅操作
+type Subscription {
+  userCreated: User
+}
+
+# 定义一个指令
+directive @deprecated(
+  reason: String = "No longer supported"
+) on FIELD_DEFINITION | ENUM_VALUE
+
+# 应用指令
+type OldUser {
+  id: ID! @deprecated(reason: "Use 'User' type instead")
+  name: String! @deprecated
+}
+
+# 组合了不同类型的 schema
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
