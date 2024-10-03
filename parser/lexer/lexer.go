@@ -22,6 +22,7 @@ const (
 	Scalar       TokenType = "Scalar"
 	Union        TokenType = "Union"
 	Directive    TokenType = "Directive"
+	On           TokenType = "On"
 
 	LeftBrace    TokenType = "{"
 	RightBrace   TokenType = "}"
@@ -41,6 +42,7 @@ const (
 	Backslash    TokenType = "\\"
 	Exclamation  TokenType = "!"
 	Equal        TokenType = "="
+	And          TokenType = "&"
 )
 
 var keywords = map[string]TokenType{
@@ -57,6 +59,7 @@ var keywords = map[string]TokenType{
 	"scalar":       Scalar,
 	"union":        Union,
 	"directive":    Directive,
+	"on":           On,
 }
 
 type Token struct {
@@ -67,18 +70,24 @@ type Token struct {
 }
 
 type Lexer struct {
-	content       string
-	position      int
-	readPosition  int
-	length        int
-	line          int
-	linePosition  int
+	content      string
+	position     int
+	readPosition int
+	length       int
+	line         int
+	linePosition int
 	// current character
-	ch            byte
+	ch byte
 	// whitespaceSet is a set of whitespace characters
 	whitespaceSet map[byte]struct{}
 	// specialSet is a set of special characters
-	specialSet    map[byte]struct{}
+	specialSet map[byte]struct{}
+}
+
+// IsKeyword check if the word is a keyword
+func (l *Lexer) IsKeyword(word string) bool {
+	_, ok := keywords[word]
+	return ok
 }
 
 // NewLexer create a new lexer
@@ -94,7 +103,7 @@ func NewLexer(content string) *Lexer {
 		specialSet: map[byte]struct{}{
 			'{': {}, '}': {}, '(': {}, ')': {}, '[': {}, ']': {},
 			':': {}, ',': {}, ';': {}, '.': {}, '@': {}, '#': {},
-			'|': {}, '"': {}, '\'': {}, '!': {}, '=': {},
+			'|': {}, '"': {}, '\'': {}, '!': {}, '=': {}, '&': {},
 		},
 	}
 	l.readChar()
@@ -277,4 +286,3 @@ func (l *Lexer) PeekToken() *Token {
 
 	return token
 }
-

@@ -1,67 +1,57 @@
 package ast
 
-type ASTNode interface{}
-
-type TypeNode struct {
-	Name        string
-	Fields      []FieldNode
-	Description string
+type Node interface {
+	GetName() string
+	GetType() NodeType
+	GetDescription() string
+	GetImplements() []string
+	GetFields() []FieldNode
+	GetDirectives() []DirectiveNode
+	GetArgs() []ArgumentNode
+	IsDeprecated() bool
+	GetDeprecationReason() string
+	IsNonNull() bool
+	IsList() bool
+	GetElemType() *FieldType
+	GetDefaultValue() string
+	HasField(name string) bool
+	HasDirective(name string) bool
+	GetDirective(name string) *DirectiveNode
+	GetParent() Node
 }
 
-type FieldType string
+type NodeType string
 
 const (
-	FieldTypeString  FieldType = "String"
-	FieldTypeInt     FieldType = "Int"
-	FieldTypeFloat   FieldType = "Float"
-	FieldTypeBoolean FieldType = "Boolean"
-	FieldTypeID      FieldType = "ID"
+	NodeTypeType                NodeType = "Type"
+	NodeTypeField               NodeType = "Field"
+	NodeTypeArgument            NodeType = "Argument"
+	NodeTypeDirective           NodeType = "Directive"
+	NodeTypeDirectiveDefinition NodeType = "DirectiveDefinition"
+	NodeTypeScalar              NodeType = "Scalar"
+	NodeTypeUnion               NodeType = "Union"
+	NodeTypeEnum                NodeType = "Enum"
+	NodeTypeInterface           NodeType = "Interface"
+	NodeTypeInput               NodeType = "Input"
 )
 
-type FieldNode struct {
-	Name        string
-	Type        FieldType
-	Description string
-	Args        []ArgumentNode
-}
+type OperationType string
 
-type InterfaceNode struct {
-	Name        string
-	Fields      []FieldNode
-	Description string
-}
+const (
+	OperationTypeQuery        OperationType = "Query"
+	OperationTypeMutation     OperationType = "Mutation"
+	OperationTypeSubscription OperationType = "Subscription"
+	OperationTypeEntity       OperationType = "Entity"
+)
 
-type EnumNode struct {
-	Name        string
-	Values      []string
-	Description string
-}
-
-type ExtendNode struct {
-	Name        string
-	Fields      []FieldNode
-	Description string
-}
-
-type DirectiveNode struct {
-	Name        string
-	Args        []ArgumentNode
-	Description string
-}
-
-type ArgumentNode struct {
-	Name        string
-	Type        FieldType
-	Description string
-}
-
-type ScalarNode struct {
-	Name        string
-	Description string
-}
-
-type UnionNode struct {
-	Name        string
-	Types       []string
-	Description string
+// TODO: 最后再确定一下是什么类型，先填入Name
+type FieldType struct {
+	Name      string
+	IsScalar  bool
+	IsEnum    bool
+	IsUnion   bool
+	IsInput   bool
+	IsList    bool
+	ElemType  *FieldType
+	IsNonNull bool
 }

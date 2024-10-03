@@ -1,37 +1,34 @@
 # 自定义标量类型
-scalar DateTime
-
-# 定义一个对象类型
-type User {
-  "用户ID"
-  id: ID!
-  "用户名"
-  name: String!
-  "年龄"
-  age: Int
-  "邮箱"
-  email: String
-  "创建时间"
-  createdAt: DateTime
-}
-
-# 扩展 User 类型
-extend type User {
-  role: Role!
-}
+scalar DateTime 
 
 # 定义一个接口
 interface Node {
   id: ID!
 }
 
-# 定义一个实现了接口的类型
-type Product implements Node {
+interface Named {
+  name: String!
+}
+
+# 定义一个实现了多个接口的类型
+type User implements Node & Named {
+  id: ID!
+  name: String!
+  age: Int
+  email: String
+  createdAt: DateTime
+}
+
+# 定义另一个实现了多接口的类型
+type Product implements Node & Named {
   id: ID!
   name: String!
   price: Float!
   createdAt: DateTime
 }
+
+# 定义一个联合类型
+union SearchResult = User | Product
 
 # 定义一个枚举
 enum Role {
@@ -51,34 +48,26 @@ input UserInput {
 type Query {
   getUser(id: ID!): User
   listUsers: [User!]!
+  getProduct(id: ID!, name: String): Product
   listProducts: [Product!]!
+  search(query: String!): [SearchResult!]!
 }
 
 # 定义变更操作
 type Mutation {
   createUser(input: UserInput!): User
   deleteUser(id: ID!): Boolean
+  createProduct(name: String!, price: Float!): Product
+  deleteProduct(id: ID!): Boolean
 }
 
 # 定义订阅操作
 type Subscription {
   userCreated: User
+  productCreated: Product
 }
 
-# 定义一个指令
-directive @deprecated(
-  reason: String = "No longer supported"
-) on FIELD_DEFINITION | ENUM_VALUE
 
-# 应用指令
-type OldUser {
-  id: ID! @deprecated(reason: "Use 'User' type instead")
-  name: String! @deprecated
-}
-
-# 组合了不同类型的 schema
-schema {
-  query: Query
-  mutation: Mutation
-  subscription: Subscription
-}
+directive @test(name: String!) on FIELD_DEFINITION 
+directive @testOnObj on OBJECT
+directive @testOnArg on FIELD_DEFINITION 
