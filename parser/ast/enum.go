@@ -2,7 +2,7 @@ package ast
 
 type EnumNode struct {
 	Name        string
-	Values      []string
+	Values      []EnumValueNode
 	Description string
 	Directives  []DirectiveNode
 }

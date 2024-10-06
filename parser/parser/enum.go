@@ -19,28 +19,43 @@ func (p *Parser) parseEnum() *ast.EnumNode {
 	name := p.currToken.Value
 	p.expect(lexer.Letter)
 
-
 	directives := p.parseDirectives()
 
 	p.expect(lexer.LeftBrace)
 
-	var values []string
-	for p.currToken.Type != lexer.RightBrace {
-		values = append(values, p.currToken.Value)
-		p.expect(lexer.Letter)
-	}
-
-	p.expect(lexer.RightBrace)
-	
 	node := &ast.EnumNode{
 		Name:        name,
-		Values:      values,
 		Description: description,
 		Directives:  directives,
 	}
+
+	var values []ast.EnumValueNode
+	for p.currToken.Type != lexer.RightBrace {
+		values = append(values, p.parseEnumValue(node))
+	}
+
+	node.Values = values
+	p.expect(lexer.RightBrace)
+
 	if p.enumMap == nil {
 		p.enumMap = make(map[string]*ast.EnumNode)
 	}
 	p.enumMap[name] = node
 	return node
+}
+
+func (p *Parser) parseEnumValue(parent ast.Node) ast.EnumValueNode {
+	description := p.parseDescription()
+
+	name := p.currToken.Value
+	p.nextToken()
+
+	directives := p.parseDirectives()
+
+	return ast.EnumValueNode{
+		Name:        name,
+		Description: description,
+		Directives:  directives,
+		Parent:      parent,
+	}
 }
