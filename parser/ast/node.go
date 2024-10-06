@@ -46,9 +46,10 @@ const (
 	OperationTypeEntity       OperationType = "Entity"
 )
 
-// TODO: 最后再确定一下是什么类型，先填入Name
 type FieldType struct {
 	Name      string
+	AstType   *TypeNode
+	IsEntity  bool
 	IsScalar  bool
 	IsEnum    bool
 	IsUnion   bool

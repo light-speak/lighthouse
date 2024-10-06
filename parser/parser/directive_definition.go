@@ -24,11 +24,12 @@ func (p *Parser) parseDirectiveDefinition() *ast.DirectiveDefinitionNode {
 	node.Args = args
 	p.expect(lexer.On) // skip ON
 	locations := p.parseLocations()
+
 	node.Locations = locations
-	if p.directiveMap == nil {
-		p.directiveMap = make(map[string]*ast.DirectiveDefinitionNode)
+	if p.DirectiveMap == nil {
+		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
 	}
-	p.directiveMap[name] = node
+	p.DirectiveMap[name] = node
 	return node
 }
 

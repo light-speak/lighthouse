@@ -84,3 +84,4 @@ func (e *EnumNode) GetDirective(name string) *DirectiveNode {
 func (e *EnumNode) GetParent() Node {
 	return nil
 }
+

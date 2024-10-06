@@ -18,16 +18,16 @@ type Parser struct {
 	// currToken is the current token being processed, which helps the parser determine its state.
 	currToken *lexer.Token
 
-	// typeMap, enumMap, scalarMap, unionMap, inputMap, interfaceMap, and directiveMap are all maps
+	// TypeMap, enumMap, scalarMap, unionMap, inputMap, interfaceMap, and directiveMap are all maps
 	// that store parsed AST nodes. The keys are the names of the respective types, enums, scalars, unions,
 	// input types, interfaces, and directives, while the values are pointers to their corresponding AST node structures.
-	typeMap      map[string]*ast.TypeNode
-	enumMap      map[string]*ast.EnumNode
-	scalarMap    map[string]*ast.ScalarNode
-	unionMap     map[string]*ast.UnionNode
-	inputMap     map[string]*ast.InputNode
-	interfaceMap map[string]*ast.InterfaceNode
-	directiveMap map[string]*ast.DirectiveDefinitionNode
+	TypeMap      map[string]*ast.TypeNode
+	EnumMap      map[string]*ast.EnumNode
+	ScalarMap    map[string]*ast.ScalarNode
+	UnionMap     map[string]*ast.UnionNode
+	InputMap     map[string]*ast.InputNode
+	InterfaceMap map[string]*ast.InterfaceNode
+	DirectiveMap map[string]*ast.DirectiveDefinitionNode
 }
 
 // ReadGraphQLFile read graphql file and return a lexer
@@ -77,15 +77,17 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 				nodes[node.GetName()] = node
 			}
 		}
-		p.nextToken()
+		if p.currToken.Type != lexer.Directive && p.currToken.Type != lexer.Union {
+			p.nextToken()
+		}
 	}
 
 	return nodes
 }
 
-// peekToken return Previous Token
-func (p *Parser) peekToken() *lexer.Token {
-	return p.lexer.PeekToken()
+// PreviousToken return Previous Token
+func (p *Parser) PreviousToken() *lexer.Token {
+	return p.lexer.PreviousToken()
 }
 
 // expect check if the current token is the expected token

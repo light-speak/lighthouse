@@ -84,6 +84,9 @@ type Lexer struct {
 	whitespaceSet map[byte]struct{}
 	// specialSet is a set of special characters
 	specialSet map[byte]struct{}
+
+	currentToken  *Token
+	previousToken *Token
 }
 
 // IsKeyword check if the word is a keyword
@@ -146,18 +149,23 @@ func (l *Lexer) isSpecialChar(ch byte) bool {
 func (l *Lexer) NextToken() *Token {
 	l.skipWhitespace()
 
+	var token *Token
 	switch {
 	case l.isSpecialChar(l.ch):
-		return l.handleSpecialChar()
+		token = l.handleSpecialChar()
 	case isLetter(l.ch):
-		return l.handleLetter()
+		token = l.handleLetter()
 	case isDigit(l.ch):
-		return l.handleNumber()
+		token = l.handleNumber()
 	case l.ch == 0:
-		return &Token{Type: EOF, Line: l.line, LinePosition: l.linePosition}
+		token = &Token{Type: EOF, Line: l.line, LinePosition: l.linePosition}
 	default:
-		return l.handleUnrecognized()
+		token = l.handleUnrecognized()
 	}
+
+	l.previousToken = l.currentToken
+	l.currentToken = token
+	return token
 }
 
 // handleSpecialChar handle special character
@@ -270,21 +278,10 @@ func isDigit(ch byte) bool {
 	return ch >= '0' && ch <= '9'
 }
 
-// PeekToken return next token without move position
-func (l *Lexer) PeekToken() *Token {
-	currentPosition := l.position
-	currentReadPosition := l.readPosition
-	currentCh := l.ch
-	currentLine := l.line
-	currentLinePosition := l.linePosition
-
-	token := l.NextToken()
-
-	l.position = currentPosition
-	l.readPosition = currentReadPosition
-	l.ch = currentCh
-	l.line = currentLine
-	l.linePosition = currentLinePosition
-
-	return token
+// PreviousToken returns the previous token without moving the position
+func (l *Lexer) PreviousToken() *Token {
+	if l.previousToken != nil {
+		return l.previousToken
+	}
+	return &Token{Type: EOF}
 }

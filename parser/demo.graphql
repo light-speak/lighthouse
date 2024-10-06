@@ -93,7 +93,7 @@ fragment UserFields on User {
     name
     email
     age
-    role 
+    role
 }
 
 fragment ProductFields on Product {
@@ -105,6 +105,6 @@ fragment ProductFields on Product {
 
 # 定义指令
 directive @test(name: String!) on FIELD_DEFINITION
-directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION
+directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION | ARGUMENT_DEFINITION
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

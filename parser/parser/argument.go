@@ -39,8 +39,8 @@ func (p *Parser) parseArgument(parent ast.Node) ast.ArgumentNode {
 	description := p.parseDescription()
 	name := p.currToken.Value
 
-	p.nextToken() // skip name
-	p.expect(lexer.Colon)  // skip :
+	p.nextToken()         // skip name
+	p.expect(lexer.Colon) // skip :
 	var fieldType *ast.FieldType
 	var defaultValue *ast.ArgumentValue
 	var value *ast.ArgumentValue

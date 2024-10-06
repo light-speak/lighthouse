@@ -20,7 +20,6 @@ func (p *Parser) parseInterface() *ast.InterfaceNode {
 
 	node := &ast.InterfaceNode{Name: name, Description: description}
 
-
 	var fields []ast.FieldNode
 	for p.currToken.Type != lexer.RightBrace {
 		fields = append(fields, p.parseField(node))
@@ -29,9 +28,9 @@ func (p *Parser) parseInterface() *ast.InterfaceNode {
 	node.Fields = fields
 
 	p.expect(lexer.RightBrace)
-	if p.interfaceMap == nil {
-		p.interfaceMap = make(map[string]*ast.InterfaceNode)
+	if p.InterfaceMap == nil {
+		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
 	}
-	p.interfaceMap[name] = node
+	p.InterfaceMap[name] = node
 	return node
 }

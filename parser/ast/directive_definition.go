@@ -32,6 +32,33 @@ const (
 	LocationVariableDefinition   Location = `VARIABLE_DEFINITION`
 )
 
+var validLocations = map[Location]struct{}{
+	LocationQuery:                {},
+	LocationMutation:             {},
+	LocationSubscription:         {},
+	LocationField:                {},
+	LocationFragmentDefinition:   {},
+	LocationFragmentSpread:       {},
+	LocationInlineFragment:       {},
+	LocationSchema:               {},
+	LocationScalar:               {},
+	LocationObject:               {},
+	LocationFieldDefinition:      {},
+	LocationArgumentDefinition:   {},
+	LocationInterface:            {},
+	LocationUnion:                {},
+	LocationEnum:                 {},
+	LocationEnumValue:            {},
+	LocationInputObject:          {},
+	LocationInputFieldDefinition: {},
+	LocationVariableDefinition:   {},
+}
+
+func IsValidLocation(loc Location) bool {
+	_, exists := validLocations[loc]
+	return exists
+}
+
 func (d *DirectiveDefinitionNode) GetName() string {
 	return d.Name
 }

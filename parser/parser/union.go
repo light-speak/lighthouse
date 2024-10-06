@@ -10,24 +10,24 @@ import (
 func (p *Parser) parseUnion() *ast.UnionNode {
 	description := p.parseDescription()
 
-	p.nextToken()
+	p.expect(lexer.Union)
 	name := p.currToken.Value
 	p.nextToken()
 	p.expect(lexer.Equal)
 
 	var types []string
 	for {
-		p.nextToken()
 		types = append(types, p.currToken.Value)
-		if p.peekToken().Type != lexer.Pipe {
+		p.nextToken()
+		if p.currToken.Type != lexer.Pipe {
 			break
 		}
-		p.nextToken() // consume the '|'
+		p.expect(lexer.Pipe)
 	}
 	node := &ast.UnionNode{Name: name, Types: types, Description: description}
-	if p.unionMap == nil {
-		p.unionMap = make(map[string]*ast.UnionNode)
+	if p.UnionMap == nil {
+		p.UnionMap = make(map[string]*ast.UnionNode)
 	}
-	p.unionMap[name] = node
+	p.UnionMap[name] = node
 	return node
 }

@@ -38,9 +38,9 @@ func (p *Parser) parseInput() *ast.InputNode {
 	p.expect(lexer.RightBrace)
 	node.Fields = fields
 
-	if p.inputMap == nil {
-		p.inputMap = make(map[string]*ast.InputNode)
+	if p.InputMap == nil {
+		p.InputMap = make(map[string]*ast.InputNode)
 	}
-	p.inputMap[node.Name] = node
+	p.InputMap[node.Name] = node
 	return node
 }

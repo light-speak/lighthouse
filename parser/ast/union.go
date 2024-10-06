@@ -3,6 +3,7 @@ package ast
 type UnionNode struct {
 	Name        string
 	Types       []string
+	EntityTypes []*TypeNode
 	Description string
 }
 
@@ -31,46 +32,45 @@ func (u *UnionNode) GetDirectives() []DirectiveNode {
 }
 
 func (u *UnionNode) GetArgs() []ArgumentNode {
-	panic("not implemented") // TODO: Implement
+	return []ArgumentNode{}
 }
 
 func (u *UnionNode) IsDeprecated() bool {
-	panic("not implemented") // TODO: Implement
+	return false
 }
 
 func (u *UnionNode) GetDeprecationReason() string {
-	panic("not implemented") // TODO: Implement
+	return ""
 }
 
 func (u *UnionNode) IsNonNull() bool {
-	panic("not implemented") // TODO: Implement
+	return true
 }
 
 func (u *UnionNode) IsList() bool {
-	panic("not implemented") // TODO: Implement
+	return false
 }
 
 func (u *UnionNode) GetElemType() *FieldType {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (u *UnionNode) GetDefaultValue() string {
-	panic("not implemented") // TODO: Implement
+	return ""
 }
 
 func (u *UnionNode) HasField(name string) bool {
-	panic("not implemented") // TODO: Implement
+	return false
 }
 
 func (u *UnionNode) HasDirective(name string) bool {
-	panic("not implemented") // TODO: Implement
+	return false
 }
 
 func (u *UnionNode) GetDirective(name string) *DirectiveNode {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (u *UnionNode) GetParent() Node {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
-

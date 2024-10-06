@@ -89,3 +89,4 @@ func (i *InputNode) GetDirective(name string) *DirectiveNode {
 func (i *InputNode) GetParent() Node {
 	return nil
 }
+
