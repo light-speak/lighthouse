@@ -33,6 +33,8 @@ const (
 	NodeTypeEnum                NodeType = "Enum"
 	NodeTypeInterface           NodeType = "Interface"
 	NodeTypeInput               NodeType = "Input"
+	NodeTypeEnumValue           NodeType = "EnumValue"
+	NodeTypeFragment            NodeType = "Fragment"
 )
 
 type OperationType string
@@ -54,4 +56,10 @@ type FieldType struct {
 	IsList    bool
 	ElemType  *FieldType
 	IsNonNull bool
+}
+
+type ArgumentValue struct {
+	Value    string
+	Type     *FieldType
+	Children []*ArgumentValue
 }

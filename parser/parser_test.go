@@ -5,10 +5,11 @@ import (
 
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/parser/lexer"
+	"github.com/light-speak/lighthouse/parser/parser"
 )
 
 func TestReadGraphQLFile(t *testing.T) {
-	l, err := ReadGraphQLFile("demo.graphql")
+	l, err := parser.ReadGraphQLFile("demo.graphql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,11 +23,11 @@ func TestReadGraphQLFile(t *testing.T) {
 }
 
 func TestParseSchema(t *testing.T) {
-	l, err := ReadGraphQLFile("demo.graphql")
+	l, err := parser.ReadGraphQLFile("demo.graphql")
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := NewParser(l)
+	p := parser.NewParser(l)
 	nodes := p.ParseSchema()
 	for _, node := range nodes {
 		log.Debug().Msgf("Type: %s", node.GetType())

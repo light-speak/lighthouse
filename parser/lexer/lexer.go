@@ -22,6 +22,7 @@ const (
 	Scalar       TokenType = "Scalar"
 	Union        TokenType = "Union"
 	Directive    TokenType = "Directive"
+	Fragment     TokenType = "Fragment"
 	On           TokenType = "On"
 
 	LeftBrace    TokenType = "{"
@@ -51,15 +52,16 @@ var keywords = map[string]TokenType{
 	"interface":    Interface,
 	"enum":         Enum,
 	"input":        Input,
-	"query":        Query,
-	"mutation":     Mutation,
-	"subscription": Subscription,
+	"Query":        Query,
+	"Mutation":     Mutation,
+	"Subscription": Subscription,
 	"extend":       Extend,
 	"implements":   Implements,
 	"scalar":       Scalar,
 	"union":        Union,
 	"directive":    Directive,
 	"on":           On,
+	"fragment":     Fragment,
 }
 
 type Token struct {

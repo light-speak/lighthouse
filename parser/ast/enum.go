@@ -40,7 +40,7 @@ func (e *EnumNode) IsDeprecated() bool {
 }
 
 func (e *EnumNode) GetDeprecationReason() string {
-	return e.GetDirective("deprecated").Args[0].Value
+	return ""
 }
 
 func (e *EnumNode) IsNonNull() bool {

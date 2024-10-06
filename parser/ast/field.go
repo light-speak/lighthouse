@@ -42,7 +42,7 @@ func (f *FieldNode) IsDeprecated() bool {
 }
 
 func (f *FieldNode) GetDeprecationReason() string {
-	return f.GetDirective("deprecated").Args[0].Value
+	return ""
 }
 
 func (f *FieldNode) IsNonNull() bool {

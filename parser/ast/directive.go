@@ -73,3 +73,12 @@ func (d *DirectiveNode) GetDirective(name string) *DirectiveNode {
 func (d *DirectiveNode) GetParent() Node {
 	return nil
 }
+
+func (d *DirectiveNode) GetArgument(name string) *ArgumentNode {
+	for _, arg := range d.Args {
+		if arg.Name == name {
+			return &arg
+		}
+	}
+	return nil
+}

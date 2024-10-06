@@ -42,7 +42,7 @@ func (t *TypeNode) IsDeprecated() bool {
 }
 
 func (t *TypeNode) GetDeprecationReason() string {
-	return t.GetDirective("deprecated").Args[0].Value
+	return ""
 }
 
 func (t *TypeNode) IsNonNull() bool {

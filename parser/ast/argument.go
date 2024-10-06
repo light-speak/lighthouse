@@ -3,23 +3,15 @@ package ast
 type ArgumentNode struct {
 	Name         string
 	Type         *FieldType
-	Value        string
+	Value        *ArgumentValue
+	DefaultValue *ArgumentValue
 	Description  string
 	Directives   []DirectiveNode
-	DefaultValue string
 	Parent       Node
-}
-
-func (a *ArgumentNode) GetName() string {
-	return a.Name
 }
 
 func (a *ArgumentNode) GetType() NodeType {
 	return NodeTypeArgument
-}
-
-func (a *ArgumentNode) GetDescription() string {
-	return a.Description
 }
 
 func (a *ArgumentNode) GetImplements() []string {
@@ -43,7 +35,7 @@ func (a *ArgumentNode) IsDeprecated() bool {
 }
 
 func (a *ArgumentNode) GetDeprecationReason() string {
-	return a.GetDirective("deprecated").Args[0].Value
+	return ""
 }
 
 func (a *ArgumentNode) IsNonNull() bool {
@@ -59,7 +51,7 @@ func (a *ArgumentNode) GetElemType() *FieldType {
 }
 
 func (a *ArgumentNode) GetDefaultValue() string {
-	return a.DefaultValue
+	return a.DefaultValue.Value
 }
 
 func (a *ArgumentNode) HasField(name string) bool {

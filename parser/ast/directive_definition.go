@@ -4,20 +4,32 @@ type DirectiveDefinitionNode struct {
 	Name        string
 	Args        []ArgumentNode
 	Description string
-	Locations   []DirectiveDefinitionNodeLocation
+	Locations   []Location
 }
 
-type DirectiveDefinitionNodeLocation string
+type Location string
 
 const (
-	DirectiveDefinitionNodeLocationField     DirectiveDefinitionNodeLocation = "FIELD_DEFINITION"
-	DirectiveDefinitionNodeLocationArgument  DirectiveDefinitionNodeLocation = "ARGUMENT_DEFINITION"
-	DirectiveDefinitionNodeLocationInterface DirectiveDefinitionNodeLocation = "INTERFACE"
-	DirectiveDefinitionNodeLocationUnion     DirectiveDefinitionNodeLocation = "UNION"
-	DirectiveDefinitionNodeLocationEnum      DirectiveDefinitionNodeLocation = "ENUM"
-	DirectiveDefinitionNodeLocationInput     DirectiveDefinitionNodeLocation = "INPUT_OBJECT"
-	DirectiveDefinitionNodeLocationScalar    DirectiveDefinitionNodeLocation = "SCALAR"
-	DirectiveDefinitionNodeLocationObject    DirectiveDefinitionNodeLocation = "OBJECT"
+	LocationQuery              Location = `QUERY`
+	LocationMutation           Location = `MUTATION`
+	LocationSubscription       Location = `SUBSCRIPTION`
+	LocationField              Location = `FIELD`
+	LocationFragmentDefinition Location = `FRAGMENT_DEFINITION`
+	LocationFragmentSpread     Location = `FRAGMENT_SPREAD`
+	LocationInlineFragment     Location = `INLINE_FRAGMENT`
+
+	LocationSchema               Location = `SCHEMA`
+	LocationScalar               Location = `SCALAR`
+	LocationObject               Location = `OBJECT`
+	LocationFieldDefinition      Location = `FIELD_DEFINITION`
+	LocationArgumentDefinition   Location = `ARGUMENT_DEFINITION`
+	LocationInterface            Location = `INTERFACE`
+	LocationUnion                Location = `UNION`
+	LocationEnum                 Location = `ENUM`
+	LocationEnumValue            Location = `ENUM_VALUE`
+	LocationInputObject          Location = `INPUT_OBJECT`
+	LocationInputFieldDefinition Location = `INPUT_FIELD_DEFINITION`
+	LocationVariableDefinition   Location = `VARIABLE_DEFINITION`
 )
 
 func (d *DirectiveDefinitionNode) GetName() string {

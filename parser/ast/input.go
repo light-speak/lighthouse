@@ -40,7 +40,7 @@ func (i *InputNode) IsDeprecated() bool {
 }
 
 func (i *InputNode) GetDeprecationReason() string {
-	return i.GetDirective("deprecated").Args[0].Value
+	return ""
 }
 
 func (i *InputNode) IsNonNull() bool {
