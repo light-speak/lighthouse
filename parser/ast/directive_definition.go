@@ -103,14 +103,6 @@ func (d *DirectiveDefinitionNode) IsList() bool {
 	return false
 }
 
-func (d *DirectiveDefinitionNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (d *DirectiveDefinitionNode) GetDefaultValue() string {
-	return ""
-}
-
 func (d *DirectiveDefinitionNode) HasField(name string) bool {
 	return false
 }

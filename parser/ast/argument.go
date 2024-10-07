@@ -46,14 +46,6 @@ func (a *ArgumentNode) IsList() bool {
 	return a.Type.IsList
 }
 
-func (a *ArgumentNode) GetElemType() *FieldType {
-	return a.Type.ElemType
-}
-
-func (a *ArgumentNode) GetDefaultValue() string {
-	return a.DefaultValue.Value
-}
-
 func (a *ArgumentNode) HasField(name string) bool {
 	return false
 }

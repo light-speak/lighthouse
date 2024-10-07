@@ -2,9 +2,7 @@
 scalar DateTime
 
 # 定义接口
-interface Node {
-    id: ID!
-}
+interface Node { id: ID! }
 
 interface Named {
     name: String!

@@ -12,8 +12,6 @@ type Node interface {
 	GetDeprecationReason() string
 	IsNonNull() bool
 	IsList() bool
-	GetElemType() *FieldType
-	GetDefaultValue() string
 	HasField(name string) bool
 	HasDirective(name string) bool
 	GetDirective(name string) *DirectiveNode
@@ -46,21 +44,30 @@ const (
 	OperationTypeEntity       OperationType = "Entity"
 )
 
+type TypeCategory string
+
+const (
+	TypeCategoryScalar TypeCategory = "Scalar"
+	TypeCategoryEnum   TypeCategory = "Enum"
+	TypeCategoryInput  TypeCategory = "Input"
+	TypeCategoryUnion  TypeCategory = "Union"
+	TypeCategoryType   TypeCategory = "Type"
+)
+
 type FieldType struct {
-	Name      string
-	Type      *TypeNode
-	IsEntity  bool
-	IsScalar  bool
-	IsEnum    bool
-	IsUnion   bool
-	IsInput   bool
-	IsList    bool
-	ElemType  *FieldType
+	Name string
+	Type Node
+
+	TypeCategory TypeCategory
+
+	IsList   bool
+	ElemType *FieldType
+
 	IsNonNull bool
 }
 
 type ArgumentValue struct {
-	Value    string
+	Value    Value
 	Type     *FieldType
 	Children []*ArgumentValue
 }

@@ -4,10 +4,10 @@ type FragmentNode struct {
 	Description string
 	Name        string
 	On          string
-	// on Type 
-	Type        *TypeNode
-	Directives  []DirectiveNode
-	Fields      []FieldNode
+	// on Type
+	Type       *TypeNode
+	Directives []DirectiveNode
+	Fields     []FieldNode
 }
 
 func (f *FragmentNode) GetName() string {
@@ -54,13 +54,6 @@ func (f *FragmentNode) IsList() bool {
 	return false
 }
 
-func (f *FragmentNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (f *FragmentNode) GetDefaultValue() string {
-	return ""
-}
 
 func (f *FragmentNode) HasField(name string) bool {
 	for _, field := range f.Fields {

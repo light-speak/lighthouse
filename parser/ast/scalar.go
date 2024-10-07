@@ -3,6 +3,13 @@ package ast
 type ScalarNode struct {
 	Name        string
 	Description string
+	Scalar      ScalarType
+}
+
+type ScalarType interface {
+	ParseValue(value string) (interface{}, error)
+	Serialize(value interface{}) (string, error)
+	ParseLiteral(value Value) (interface{}, error)
 }
 
 func (s *ScalarNode) GetName() string {
@@ -47,14 +54,6 @@ func (s *ScalarNode) IsNonNull() bool {
 
 func (s *ScalarNode) IsList() bool {
 	return false
-}
-
-func (s *ScalarNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (s *ScalarNode) GetDefaultValue() string {
-	return ""
 }
 
 func (s *ScalarNode) HasField(name string) bool {

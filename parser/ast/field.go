@@ -52,15 +52,6 @@ func (f *FieldNode) IsNonNull() bool {
 func (f *FieldNode) IsList() bool {
 	return f.Type.IsList
 }
-
-func (f *FieldNode) GetElemType() *FieldType {
-	return f.Type.ElemType
-}
-
-func (f *FieldNode) GetDefaultValue() string {
-	return ""
-}
-
 func (f *FieldNode) HasField(name string) bool {
 	return false
 }

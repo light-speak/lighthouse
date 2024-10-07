@@ -49,15 +49,6 @@ func (d *DirectiveNode) IsNonNull() bool {
 func (d *DirectiveNode) IsList() bool {
 	return false
 }
-
-func (d *DirectiveNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (d *DirectiveNode) GetDefaultValue() string {
-	return ""
-}
-
 func (d *DirectiveNode) HasField(name string) bool {
 	return false
 }

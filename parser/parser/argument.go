@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"strconv"
+
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
 )
@@ -103,8 +105,24 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 	} else {
 		var values []*ast.ArgumentValue
 		for {
+			var value ast.Value
+			switch p.currToken.Type {
+			case lexer.Letter:
+				value = &ast.StringValue{Value: p.currToken.Value}
+			case lexer.IntNumber:
+				intValue, err := strconv.ParseInt(p.currToken.Value, 10, 64)
+				if err != nil {
+					panic("invalid integer value: " + err.Error())
+				}
+				value = &ast.IntValue{Value: intValue}
+			case lexer.Boolean:
+				boolValue := p.currToken.Value == "true"
+				value = &ast.BooleanValue{Value: boolValue}
+			default:
+				panic("unsupported token type: " + p.currToken.Type)
+			}
 			v := &ast.ArgumentValue{
-				Value: p.currToken.Value,
+				Value: value,
 				Type: &ast.FieldType{
 					Name: string(p.currToken.Type),
 				},

@@ -6,6 +6,7 @@ import (
 
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
+	"github.com/light-speak/lighthouse/parser/scalar"
 )
 
 // Parser is responsible for parsing the GraphQL schema.
@@ -99,5 +100,33 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 
 	if len(options) == 0 || options[0] {
 		p.nextToken()
+	}
+}
+
+func (p *Parser) AddReservedScalar() {
+	p.ScalarMap["ID"] = &ast.ScalarNode{
+		Name:        "ID",
+		Description: "The ID scalar type represents a unique identifier for a resource.",
+		Scalar:      &scalar.IDScalar{},
+	}
+	p.ScalarMap["String"] = &ast.ScalarNode{
+		Name:        "String",
+		Description: "The String scalar type represents a sequence of characters.",
+		Scalar:      &scalar.StringScalar{},
+	}
+	p.ScalarMap["Int"] = &ast.ScalarNode{
+		Name:        "Int",
+		Description: "The Int scalar type represents a signed 64-bit integer.",
+		Scalar:      &scalar.IntScalar{},
+	}
+	p.ScalarMap["Float"] = &ast.ScalarNode{
+		Name:        "Float",
+		Description: "The Float scalar type represents a signed double-precision floating-point number.",
+		Scalar:      &scalar.FloatScalar{},
+	}
+	p.ScalarMap["Boolean"] = &ast.ScalarNode{
+		Name:        "Boolean",
+		Description: "The Boolean scalar type represents a boolean value.",
+		Scalar:      &scalar.BooleanScalar{},
 	}
 }

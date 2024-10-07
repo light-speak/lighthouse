@@ -3,7 +3,7 @@ package ast
 type UnionNode struct {
 	Name        string
 	Types       []string
-	EntityTypes []*TypeNode
+	TypeNodes   []*TypeNode
 	Description string
 }
 
@@ -49,14 +49,6 @@ func (u *UnionNode) IsNonNull() bool {
 
 func (u *UnionNode) IsList() bool {
 	return false
-}
-
-func (u *UnionNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (u *UnionNode) GetDefaultValue() string {
-	return ""
 }
 
 func (u *UnionNode) HasField(name string) bool {

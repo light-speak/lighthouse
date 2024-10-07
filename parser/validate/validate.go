@@ -3,7 +3,6 @@ package validate
 import (
 	"fmt"
 
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/err"
 	"github.com/light-speak/lighthouse/parser/parser"
@@ -27,6 +26,8 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 		ast.NodeTypeFragment:            validateFragment,
 		ast.NodeTypeField:               validateField,
 	}
+
+	// log.Info().Msgf("scalars: %v", p.ScalarMap)
 
 	// Get the validation function based on the node type
 	if validateFunc, exists := validators[node.GetType()]; exists {
@@ -116,11 +117,70 @@ func validateField(node ast.Node) error {
 
 func validateArguments(node ast.Node) error {
 	for _, arg := range node.GetArgs() {
-		log.Info().Str("name", arg.Name).Str("type", arg.Type.Name).Msgf("%s", node.GetName())
+		elemType := arg.Type
+		typeName := ""
+		if elemType.IsList {
+			for elemType.IsList {
+				elemType = elemType.ElemType
+				if !elemType.IsList {
+					typeName = elemType.Name
+					break
+				}
+			}
+		} else {
+			typeName = elemType.Name
+		}
+		nodeType := GetValueTypeNode(typeName)
+		if nodeType == nil {
+			return &err.ValidateError{
+				Node:    node,
+				Message: fmt.Sprintf("type %s not found", typeName),
+			}
+		}
+		elemType.Type = nodeType
+		// log.Info().Str("type", typeName).
+		// 	Str("elemType", elemType.Name).
+		// 	Str("node", node.GetName()).
+		// 	Str("nodeType", string(nodeType.GetType())).
+		// 	Msgf("type %s found", typeName)
 	}
 	return nil
 }
 
 func validateDirectives(node ast.Node) error {
+	return nil
+}
+
+func GetValueTypeNode(name string) ast.Node {
+	typeNode, exists := p.TypeMap[name]
+	if exists {
+		return typeNode
+	}
+
+	unionNode, exists := p.UnionMap[name]
+	if exists {
+		return unionNode
+	}
+
+	interfaceNode, exists := p.InterfaceMap[name]
+	if exists {
+		return interfaceNode
+	}
+
+	inputNode, exists := p.InputMap[name]
+	if exists {
+		return inputNode
+	}
+
+	enumNode, exists := p.EnumMap[name]
+	if exists {
+		return enumNode
+	}
+
+	scalarNode, exists := p.ScalarMap[name]
+	if exists {
+		return scalarNode
+	}
+
 	return nil
 }

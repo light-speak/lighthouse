@@ -51,14 +51,6 @@ func (i *InputNode) IsList() bool {
 	return false
 }
 
-func (i *InputNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (i *InputNode) GetDefaultValue() string {
-	return ""
-}
-
 func (i *InputNode) HasField(name string) bool {
 	for _, field := range i.Fields {
 		if field.Name == name {
@@ -89,4 +81,3 @@ func (i *InputNode) GetDirective(name string) *DirectiveNode {
 func (i *InputNode) GetParent() Node {
 	return nil
 }
-

@@ -51,13 +51,6 @@ func (e *EnumValueNode) IsList() bool {
 	return false
 }
 
-func (e *EnumValueNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (e *EnumValueNode) GetDefaultValue() string {
-	return ""
-}
 
 func (e *EnumValueNode) HasField(name string) bool {
 	return false

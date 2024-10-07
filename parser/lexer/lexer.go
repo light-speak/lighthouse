@@ -3,11 +3,13 @@ package lexer
 type TokenType string
 
 const (
-	EOF     TokenType = "EOF"
-	Letter  TokenType = "Letter"
-	Number  TokenType = "Number"
-	Comment TokenType = "Comment"
-	Message TokenType = "Message"
+	EOF         TokenType = "EOF"
+	Letter      TokenType = "Letter"
+	Boolean     TokenType = "Boolean"
+	IntNumber   TokenType = "IntNumber"
+	FloatNumber TokenType = "FloatNumber"
+	Comment     TokenType = "Comment"
+	Message     TokenType = "Message"
 
 	Schema       TokenType = "Schema"
 	Type         TokenType = "Type"
@@ -62,6 +64,8 @@ var keywords = map[string]TokenType{
 	"directive":    Directive,
 	"on":           On,
 	"fragment":     Fragment,
+	"true":         Boolean,
+	"false":        Boolean,
 }
 
 type Token struct {
@@ -227,7 +231,7 @@ func (l *Lexer) readMessage() *Token {
 	}
 }
 
-// handleLetter handle letter
+// handleLetter handle letter and bool
 // for example: id, name, age, email, createdAt, role
 func (l *Lexer) handleLetter() *Token {
 	start := l.position
@@ -251,11 +255,22 @@ func (l *Lexer) handleLetter() *Token {
 // for example: 123, 1.23, 1.23e-10
 func (l *Lexer) handleNumber() *Token {
 	start := l.position
-	for isDigit(l.ch) {
+	isFloat := false
+
+	for isDigit(l.ch) || l.ch == '.' || l.ch == 'e' || l.ch == 'E' || l.ch == '-' || l.ch == '+' {
+		if l.ch == '.' || l.ch == 'e' || l.ch == 'E' {
+			isFloat = true
+		}
 		l.readChar()
 	}
+
+	tokenType := IntNumber
+	if isFloat {
+		tokenType = FloatNumber
+	}
+
 	return &Token{
-		Type:         Number,
+		Type:         tokenType,
 		Value:        l.content[start:l.position],
 		Line:         l.line,
 		LinePosition: l.linePosition,

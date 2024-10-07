@@ -50,14 +50,6 @@ func (i *InterfaceNode) IsList() bool {
 	return false
 }
 
-func (i *InterfaceNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (i *InterfaceNode) GetDefaultValue() string {
-	return ""
-}
-
 func (i *InterfaceNode) HasField(name string) bool {
 	for _, field := range i.Fields {
 		if field.Name == name {

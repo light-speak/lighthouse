@@ -1,12 +1,13 @@
 package ast
 
 type TypeNode struct {
-	Name          string
-	Implements    []string
-	Fields        []FieldNode
-	Description   string
-	OperationType OperationType
-	Directives    []DirectiveNode
+	Name           string
+	Implements     []string
+	ImplementTypes []*TypeNode
+	Fields         []FieldNode
+	Description    string
+	OperationType  OperationType
+	Directives     []DirectiveNode
 }
 
 func (t *TypeNode) GetName() string {
@@ -51,14 +52,6 @@ func (t *TypeNode) IsNonNull() bool {
 
 func (t *TypeNode) IsList() bool {
 	return false
-}
-
-func (t *TypeNode) GetElemType() *FieldType {
-	return nil
-}
-
-func (t *TypeNode) GetDefaultValue() string {
-	return ""
 }
 
 func (t *TypeNode) HasField(name string) bool {

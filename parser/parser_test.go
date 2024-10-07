@@ -41,10 +41,13 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := parser.NewParser(l)
-	
 
 	nodes := p.ParseSchema()
+	p.AddReservedScalar()
 	for _, node := range nodes {
-		validate.Validate(node, p)
+		err := validate.Validate(node, p)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
