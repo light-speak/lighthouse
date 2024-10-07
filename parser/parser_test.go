@@ -41,6 +41,7 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := parser.NewParser(l)
+	
 
 	nodes := p.ParseSchema()
 	for _, node := range nodes {

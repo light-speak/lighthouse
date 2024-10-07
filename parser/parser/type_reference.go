@@ -14,6 +14,7 @@ func (p *Parser) parseTypeReference() *ast.FieldType {
 		elemType := p.parseTypeReference()
 		p.expect(lexer.RightBracket) // skip ]
 		fieldType = &ast.FieldType{
+			Name:     "List",
 			IsList:   true,
 			ElemType: elemType,
 		}

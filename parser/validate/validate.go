@@ -47,7 +47,7 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 }
 
 func validateDirectiveDefinition(node ast.Node) error {
-	log.Warn().Msgf("DirectiveDefinitionNode Count: %d", len(p.DirectiveMap))
+	// log.Warn().Msgf("DirectiveDefinitionNode Count: %d", len(p.DirectiveMap))
 	directiveDefinition, ok := node.(*ast.DirectiveDefinitionNode)
 	if !ok {
 		return &err.ValidateError{
@@ -78,15 +78,15 @@ func validateScalar(node ast.Node) error {
 }
 
 func validateUnion(node ast.Node) error {
-	log.Warn().Msgf("Union Node Count: %d", len(p.UnionMap))
-	union, ok := node.(*ast.UnionNode)
-	if !ok {
-		return &err.ValidateError{
-			Node:    node,
-			Message: "node is not a union",
-		}
-	}
-	log.Warn().Msgf("Union Node Types: %v", union.Types)
+	// log.Warn().Msgf("Union Node Count: %d", len(p.UnionMap))
+	// union, ok := node.(*ast.UnionNode)
+	// if !ok {
+	// 	return &err.ValidateError{
+	// 		Node:    node,
+	// 		Message: "node is not a union",
+	// 	}
+	// }
+	// log.Warn().Msgf("Union Node Types: %v", union.Types)
 	return nil
 }
 
@@ -115,10 +115,8 @@ func validateField(node ast.Node) error {
 }
 
 func validateArguments(node ast.Node) error {
-	name := node.GetName()
-	log.Info().Msgf("Node: %s, Args: %d", name, len(node.GetArgs()))
 	for _, arg := range node.GetArgs() {
-		log.Info().Msgf("Arg: %s, Type: %s", arg.Name, arg.Type.Name)
+		log.Info().Str("name", arg.Name).Str("type", arg.Type.Name).Msgf("%s", node.GetName())
 	}
 	return nil
 }

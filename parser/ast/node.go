@@ -48,7 +48,7 @@ const (
 
 type FieldType struct {
 	Name      string
-	AstType   *TypeNode
+	Type      *TypeNode
 	IsEntity  bool
 	IsScalar  bool
 	IsEnum    bool

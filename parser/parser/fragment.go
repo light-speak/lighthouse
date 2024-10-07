@@ -22,14 +22,13 @@ func (p *Parser) parseFragment() *ast.FragmentNode {
 	node := &ast.FragmentNode{
 		Name:        name,
 		Description: description,
-		OnType:      onType,
+		On:          onType,
 		Directives:  directives,
 	}
 
 	var fields []ast.FieldNode
 	for p.currToken.Type != lexer.RightBrace && p.currToken.Type == lexer.Letter {
-		field := p.parseField(node)
-		fields = append(fields, field)
+		//TODO: parse fields
 	}
 
 	p.expect(lexer.RightBrace)

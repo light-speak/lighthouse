@@ -1,12 +1,13 @@
 package ast
 
 type FragmentNode struct {
-	Description   string
-	Name          string
-	OnType        string
-	OperationType *TypeNode
-	Directives    []DirectiveNode
-	Fields        []FieldNode
+	Description string
+	Name        string
+	On          string
+	// on Type 
+	Type        *TypeNode
+	Directives  []DirectiveNode
+	Fields      []FieldNode
 }
 
 func (f *FragmentNode) GetName() string {
