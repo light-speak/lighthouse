@@ -32,3 +32,7 @@ func (i *BooleanScalar) ParseLiteral(v value.Value) (interface{}, error) {
 		return nil, fmt.Errorf("invalid literal for Boolean: %v", v)
 	}
 }
+
+func init() {
+	
+}

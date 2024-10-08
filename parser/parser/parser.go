@@ -126,11 +126,11 @@ func (p *Parser) AddInput(node *ast.InputNode) {
 	p.InputMap[node.Name] = node
 }
 
-func (p *Parser) AddScalarType(node *ast.ScalarNode) {
+func (p *Parser) AddScalarType(name string, scalarType ast.ScalarType) {
 	if p.ScalarTypeMap == nil {
 		p.ScalarTypeMap = make(map[string]ast.ScalarType)
 	}
-	p.ScalarTypeMap[node.Name] = node.Scalar
+	p.ScalarTypeMap[name] = scalarType
 }
 
 func (p *Parser) AddInterface(node *ast.InterfaceNode) {
