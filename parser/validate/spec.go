@@ -8,6 +8,10 @@ import (
 	"github.com/light-speak/lighthouse/parser/err"
 )
 
+
+// validateDirectiveDefinition validates a directive definition node
+// 1. check if the directive locations are valid
+// 2. check if the directive arguments are valid
 func validateDirectiveDefinition(node ast.Node) error {
 	// log.Warn().Msgf("DirectiveDefinitionNode Count: %d", len(p.DirectiveMap))
 	directiveDefinition, ok := node.(*ast.DirectiveDefinitionNode)
@@ -31,6 +35,7 @@ func validateDirectiveDefinition(node ast.Node) error {
 	return nil
 }
 
+// validateScalar validates a scalar node
 func validateScalar(node ast.Node) error {
 	_, ok := node.(*ast.ScalarNode)
 	if !ok {
