@@ -32,14 +32,13 @@ func validateDirectiveDefinition(node ast.Node) error {
 }
 
 func validateScalar(node ast.Node) error {
-	scalar, ok := node.(*ast.ScalarNode)
+	_, ok := node.(*ast.ScalarNode)
 	if !ok {
 		return &err.ValidateError{
 			Node:    node,
 			Message: "node is not a scalar",
 		}
 	}
-	log.Debug().Msgf("scalar: %s", scalar.GetName())
 
 	return nil
 }
@@ -68,18 +67,54 @@ func validateUnion(node ast.Node) error {
 }
 
 func validateEnum(node ast.Node) error {
+	_, ok := node.(*ast.EnumNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a enum value",
+		}
+	}
+
 	return nil
 }
 
 func validateInterface(node ast.Node) error {
+	_, ok := node.(*ast.InterfaceNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a interface",
+		}
+	}
+
 	return nil
 }
 
 func validateInput(node ast.Node) error {
+	input, ok := node.(*ast.InputNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a input",
+		}
+	}
+
+	log.Info().Msgf("input: %s", input.GetName())
+
+	// for _, field := range input.Fields {
+	// 	log.Info().Msgf("field: %s", field.Type.Name)
+	// 	typeNode := getValueTypeNode(field.Type.Name)
+	// 	log.Info().Msgf("typeNode: %s", typeNode.GetType())
+	// 	if typeNode.GetType() == ast.NodeTypeInput {
+	// 		log.Info().Msgf("field TypeCategory: %s", field.Type.TypeCategory)
+	// 	}
+	// }
+
 	return nil
 }
 
 func validateEnumValue(node ast.Node) error {
+
 	return nil
 }
 
@@ -108,47 +143,53 @@ func validateFragment(node ast.Node) error {
 	}
 
 	fields := parentNode.GetFields()
-	fieldMap := make(map[string]bool)
+	fieldMap := make(map[string]*ast.FieldNode)
 	for _, field := range fields {
-		fieldMap[field.Name] = true
+		fieldMap[field.Name] = field
 	}
 
 	fragmentFields := fragment.Fields
-	for _, field := range fragmentFields {
-		if _, exists := fieldMap[field.Name]; !exists {
+	for i, field := range fragmentFields {
+		if parentField, exists := fieldMap[field.Name]; exists {
+			fragmentFields[i] = parentField
+		} else {
 			return &err.ValidateError{
 				Node:    node,
 				Message: fmt.Sprintf("field %s does not exist in parent type %s", field.Name, parentNode.GetName()),
 			}
 		}
 	}
-
+	fragment.Fields = fragmentFields
 	return nil
 }
 
 func validateType(node ast.Node) error {
-	// typeNode, ok := node.(*ast.TypeNode)
-	// if !ok {
-	// 	return &err.ValidateError{
-	// 		Node:    node,
-	// 		Message: "node is not a type",
-	// 	}
-	// }
-	// log.Debug().Msgf("type: %s", typeNode.GetName())
-	// for _, field := range typeNode.GetFields() {
-	// 	typeName := field.Type.Name
-	// 	typeNode := getValueTypeNode(typeName) // String Int , user: User ,
-	// 	if typeNode == nil {
-	// 		return &err.ValidateError{
-	// 			Node:    node,
-	// 			Message: fmt.Sprintf("type %s not found", typeName),
-	// 		}
-	// 	}
-	// }
+	typeNode, ok := node.(*ast.TypeNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a type",
+		}
+	}
+	log.Debug().Msgf("type: %s", typeNode.GetName())
+	for _, field := range typeNode.GetFields() {
+		err := validateFieldType(field.Type)
+		if err != nil {
+			return err
+		}
+		log.Info().Msgf("field type: %s", field.Type.TypeCategory)
+	}
 	return nil
 }
 
 func validateField(node ast.Node) error {
+	log.Info().Msgf("field: %s", node.GetName())
+	log.Info().Msgf("field: %s", node.(*ast.FieldNode).Name)
+	// fields := node.GetFields()
+	// for _, field := range fields {
+	// 	log.Info().Msgf("field: %s", field.GetName())
+	// }
+
 	return nil
 }
 
@@ -184,9 +225,9 @@ func validateFieldType(fieldType *ast.FieldType) error {
 }
 
 func validateDirectives(node ast.Node) error {
-	for _, directive := range node.GetDirectives() {
-		log.Debug().Msgf("directive: %s", directive.GetName())
-	}
+	// for _, directive := range node.GetDirectives() {
+	// 	log.Debug().Msgf("directive: %s", directive.GetName())
+	// }
 	return nil
 }
 
