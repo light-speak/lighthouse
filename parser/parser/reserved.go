@@ -8,6 +8,7 @@ import (
 func (p *Parser) AddReserved() {
 	p.addReservedScalarType()
 	p.addReservedScalar()
+	p.addReservedDirective()
 }
 
 func (p *Parser) MergeScalarType() {
@@ -42,6 +43,56 @@ func (p *Parser) addReservedScalar() {
 	p.AddScalar(&ast.ScalarNode{
 		Name:        "ID",
 		Description: "The ID scalar type represents a unique identifier.",
+	})
+}
+
+func (p *Parser) addReservedDirective() {
+	p.AddDirective(&ast.DirectiveDefinitionNode{
+		Name:        "skip",
+		Description: "Skips the current field or fragment when the argument is true.",
+		Locations:   []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
+		Args: []*ast.ArgumentNode{
+			{
+				Name: "if",
+				Type: &ast.FieldType{
+					Name:      "Boolean",
+					Type:      p.ScalarMap["Boolean"],
+					IsNonNull: false,
+				},
+			},
+		},
+	})
+
+	p.AddDirective(&ast.DirectiveDefinitionNode{
+		Name:        "include",
+		Description: "Includes the current field or fragment when the argument is true.",
+		Locations:   []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
+		Args: []*ast.ArgumentNode{
+			{
+				Name: "if",
+				Type: &ast.FieldType{
+					Name:      "Boolean",
+					Type:      p.ScalarMap["Boolean"],
+					IsNonNull: false,
+				},
+			},
+		},
+	})
+
+	p.AddDirective(&ast.DirectiveDefinitionNode{
+		Name:        "enum",
+		Description: "enum",
+		Locations:   []ast.Location{ast.LocationEnumValue},
+		Args: []*ast.ArgumentNode{
+			{
+				Name: "value",
+				Type: &ast.FieldType{
+					Name:      "Int",
+					Type:      p.ScalarMap["Int"],
+					IsNonNull: true,
+				},
+			},
+		},
 	})
 }
 

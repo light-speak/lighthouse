@@ -26,18 +26,18 @@ func (p *Parser) parseFragment() *ast.FragmentNode {
 		Directives:  directives,
 	}
 
-	var fields []*ast.FieldNode
-	for p.currToken.Type != lexer.RightBrace && p.currToken.Type == lexer.Letter {
-		field := ast.FieldNode{
-			Name: p.currToken.Value,
-		}
+	// var fields []*ast.FieldNode
+	// for p.currToken.Type != lexer.RightBrace && p.currToken.Type == lexer.Letter {
+	// 	field := ast.FieldNode{
+	// 		Name: p.currToken.Value,
+	// 	}
 
-		fields = append(fields, &field)
-		p.nextToken()
-	}
+	// 	fields = append(fields, &field)
+	// 	p.nextToken()
+	// }
 
-	p.expect(lexer.RightBrace)
-	node.Fields = fields
+	// p.expect(lexer.RightBrace)
+	// node.Fields = fields
 
 	return node
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/err"
+	"github.com/light-speak/lighthouse/parser/value"
 )
 
 // validateDirectiveDefinition validates a directive definition node
@@ -71,11 +72,28 @@ func validateUnion(node ast.Node) error {
 }
 
 func validateEnum(node ast.Node) error {
-	_, ok := node.(*ast.EnumNode)
+	enum, ok := node.(*ast.EnumNode)
 	if !ok {
 		return &err.ValidateError{
 			Node:    node,
 			Message: "node is not a enum value",
+		}
+	}
+
+	hasValue := false
+	for _, v := range enum.Values {
+		enumDirective := v.GetDirective("enum")
+		if enumDirective != nil {
+			ev, _ := value.ExtractValue(enumDirective.GetArg("value").Value.Value)
+			hasValue = true
+			v.Value = int8(ev.(int64))
+		} else {
+			if hasValue {
+				return &err.ValidateError{
+					Node:    node,
+					Message: "all enum values must have @enum(value: <int>) or none",
+				}
+			}
 		}
 	}
 
@@ -107,18 +125,6 @@ func validateInput(node ast.Node) error {
 		err := validateFieldType(field.Type)
 		if err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func validateEnumValue(node ast.Node) error {
-	_, ok := node.(*ast.EnumValueNode)
-	if !ok {
-		return &err.ValidateError{
-			Node:    node,
-			Message: "node is not a enum value",
 		}
 	}
 

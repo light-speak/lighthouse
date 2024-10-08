@@ -18,7 +18,6 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 		ast.NodeTypeEnum:                validateEnum,
 		ast.NodeTypeInterface:           validateInterface,
 		ast.NodeTypeInput:               validateInput,
-		ast.NodeTypeEnumValue:           validateEnumValue,
 		ast.NodeTypeFragment:            validateFragment,
 		ast.NodeTypeField:               validateField,
 		ast.NodeTypeType:                validateType,

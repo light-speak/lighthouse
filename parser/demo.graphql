@@ -45,9 +45,9 @@ union SearchResult = User | Product | Order
 
 # 定义枚举
 enum Role {
-  ADMIN
-  USER
-  GUEST
+  ADMIN @enum(value: 1)
+  USER @enum(value: 2)
+  GUEST @enum(value: 3)
 }
 
 # 定义输入类型
@@ -103,7 +103,15 @@ fragment UserFields on User {
   email
   age
   role
-  orders
+  orders {
+    id
+    total
+    product {
+      id
+      name
+      price
+    }
+  }
 }
 
 fragment ProductFields on Product {

@@ -4,6 +4,7 @@ import "github.com/light-speak/lighthouse/parser/value"
 
 type EnumValueNode struct {
 	Name        string
+	Value       int8
 	Description string
 	Directives  []*DirectiveNode
 	Parent      Node

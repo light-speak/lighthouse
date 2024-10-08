@@ -1,0 +1,16 @@
+{
+  "tabWidth": 2,
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": [
+        "*.graphql",
+        "*.gql",
+        "*.graphqls"
+      ],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}
