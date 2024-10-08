@@ -232,6 +232,7 @@ func validateDirectives(node ast.Node) error {
 }
 
 func getValueTypeNode(name string) ast.Node {
+
 	typeNode, exists := p.TypeMap[name]
 	if exists {
 		return typeNode

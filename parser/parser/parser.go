@@ -85,6 +85,8 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		}
 	}
 
+	p.MergeScalarType()
+
 	return nodes
 }
 
