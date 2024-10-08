@@ -99,16 +99,16 @@ func validateInput(node ast.Node) error {
 		}
 	}
 
-	log.Info().Msgf("input: %s", input.GetName())
+	// log.Info().Msgf("input: %v", p.InputMap)
 
-	// for _, field := range input.Fields {
-	// 	log.Info().Msgf("field: %s", field.Type.Name)
-	// 	typeNode := getValueTypeNode(field.Type.Name)
-	// 	log.Info().Msgf("typeNode: %s", typeNode.GetType())
-	// 	if typeNode.GetType() == ast.NodeTypeInput {
-	// 		log.Info().Msgf("field TypeCategory: %s", field.Type.TypeCategory)
-	// 	}
-	// }
+	for _, field := range input.Fields {
+		log.Info().Msgf("field Name: %s", field.Type.Name)
+		typeNode := getValueTypeNode(field.Type.Name)
+		// log.Info().Msgf("typeNode: %s", typeNode.GetType())
+		if typeNode.GetType() == ast.NodeTypeInput {
+			log.Info().Msgf("field TypeCategory: %s", field.Type.TypeCategory)
+		}
+	}
 
 	return nil
 }
@@ -171,13 +171,13 @@ func validateType(node ast.Node) error {
 			Message: "node is not a type",
 		}
 	}
-	log.Debug().Msgf("type: %s", typeNode.GetName())
+	// log.Debug().Msgf("type: %s", typeNode.GetName())
 	for _, field := range typeNode.GetFields() {
 		err := validateFieldType(field.Type)
 		if err != nil {
 			return err
 		}
-		log.Info().Msgf("field type: %s", field.Type.TypeCategory)
+		// log.Info().Msgf("field type: %s", field.Type.TypeCategory)
 	}
 	return nil
 }

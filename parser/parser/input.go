@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
 )
@@ -18,7 +19,7 @@ func (p *Parser) parseInput() *ast.InputNode {
 	// Input types are similar to regular types
 	description := p.parseDescription()
 
-	p.nextToken()
+	p.expect(lexer.Input)
 	name := p.currToken.Value
 	p.nextToken()
 
@@ -35,12 +36,9 @@ func (p *Parser) parseInput() *ast.InputNode {
 		field := p.parseField(node)
 		fields = append(fields, field)
 	}
-	p.expect(lexer.RightBrace)
 	node.Fields = fields
 
-	if p.InputMap == nil {
-		p.InputMap = make(map[string]*ast.InputNode)
-	}
-	p.InputMap[node.Name] = node
+	p.AddInput(node)
+	log.Info().Msgf("inputaaaaa: %s", node.GetName())
 	return node
 }

@@ -103,7 +103,6 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 	}
 }
 
-
 func (p *Parser) AddScalar(node *ast.ScalarNode) {
 	if p.ScalarMap == nil {
 		p.ScalarMap = make(map[string]*ast.ScalarNode)
@@ -116,4 +115,11 @@ func (p *Parser) AddDirective(node *ast.DirectiveDefinitionNode) {
 		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
 	}
 	p.DirectiveMap[node.Name] = node
+}
+
+func (p *Parser) AddInput(node *ast.InputNode) {
+	if p.InputMap == nil {
+		p.InputMap = make(map[string]*ast.InputNode)
+	}
+	p.InputMap[node.Name] = node
 }
