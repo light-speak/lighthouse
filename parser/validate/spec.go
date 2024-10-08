@@ -154,28 +154,32 @@ func validateField(node ast.Node) error {
 
 func validateArguments(node ast.Node) error {
 	for _, arg := range node.GetArgs() {
-		elemType := arg.Type
-		typeName := ""
-		if elemType.IsList {
-			for elemType.IsList {
-				elemType = elemType.ElemType
-				if !elemType.IsList {
-					typeName = elemType.Name
-					break
-				}
-			}
-		} else {
-			typeName = elemType.Name
+		if err := validateFieldType(arg.Type); err != nil {
+			return err
 		}
-		nodeType := getValueTypeNode(typeName)
-		if nodeType == nil {
-			return &err.ValidateError{
-				Node:    node,
-				Message: fmt.Sprintf("type %s not found", typeName),
-			}
-		}
-		elemType.Type = nodeType
 	}
+	return nil
+}
+
+func validateFieldType(fieldType *ast.FieldType) error {
+	elemType := fieldType
+	typeName := ""
+	if elemType.IsList {
+		for elemType.IsList {
+			elemType = elemType.ElemType
+			if !elemType.IsList {
+				typeName = elemType.Name
+				break
+			}
+		}
+	} else {
+		typeName = elemType.Name
+	}
+	nodeType := getValueTypeNode(typeName)
+	if nodeType == nil {
+		return fmt.Errorf("validate field type:  %s not found", typeName)
+	}
+	elemType.Type = nodeType
 	return nil
 }
 
