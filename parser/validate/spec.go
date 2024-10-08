@@ -104,14 +104,10 @@ func validateInput(node ast.Node) error {
 		}
 	}
 
-	// log.Info().Msgf("input: %v", p.InputMap)
-
 	for _, field := range input.Fields {
-		log.Info().Msgf("field Name: %s", field.Type.Name)
-		typeNode := getValueTypeNode(field.Type.Name)
-		// log.Info().Msgf("typeNode: %s", typeNode.GetType())
-		if typeNode.GetType() == ast.NodeTypeInput {
-			log.Info().Msgf("field TypeCategory: %s", field.Type.TypeCategory)
+		err := validateFieldType(field.Type)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -148,23 +144,20 @@ func validateFragment(node ast.Node) error {
 	}
 
 	fields := parentNode.GetFields()
-	fieldMap := make(map[string]*ast.FieldNode)
+	fieldMap := make(map[string]bool)
 	for _, field := range fields {
-		fieldMap[field.Name] = field
+		fieldMap[field.Name] = true
 	}
 
-	fragmentFields := fragment.Fields
-	for i, field := range fragmentFields {
-		if parentField, exists := fieldMap[field.Name]; exists {
-			fragmentFields[i] = parentField
-		} else {
+	for _, field := range fragment.GetFields() {
+		if _, exists := fieldMap[field.Name]; !exists {
 			return &err.ValidateError{
 				Node:    node,
 				Message: fmt.Sprintf("field %s does not exist in parent type %s", field.Name, parentNode.GetName()),
 			}
 		}
 	}
-	fragment.Fields = fragmentFields
+
 	return nil
 }
 
@@ -176,14 +169,49 @@ func validateType(node ast.Node) error {
 			Message: "node is not a type",
 		}
 	}
-	// log.Debug().Msgf("type: %s", typeNode.GetName())
 	for _, field := range typeNode.GetFields() {
 		err := validateFieldType(field.Type)
 		if err != nil {
 			return err
 		}
-		// log.Info().Msgf("field type: %s", field.Type.TypeCategory)
 	}
+
+	fieldMap := make(map[string]*ast.FieldNode)
+	for _, field := range typeNode.GetFields() {
+		fieldMap[field.Name] = field
+	}
+
+	for _, interfaceName := range typeNode.Implements {
+		interfaceNode := getValueTypeNode(interfaceName)
+		if interfaceNode == nil {
+			return &err.ValidateError{
+				Node:    node,
+				Message: fmt.Sprintf("interface %s not found", interfaceName),
+			}
+		}
+
+		// 检查接口中的字段是否在 typeNode 中存在，并且类型是否匹配
+		for _, interfaceField := range interfaceNode.GetFields() {
+			if typeField, exists := fieldMap[interfaceField.Name]; exists {
+				// 检查字段类型是否匹配
+				if !areTypesCompatible(typeField.Type, interfaceField.Type) {
+					return &err.ValidateError{
+						Node: node,
+						Message: fmt.Sprintf("field %s type mismatch: expected %s but got %s",
+							interfaceField.Name, interfaceField.Type.Name, typeField.Type.Name),
+					}
+				}
+			} else {
+				return &err.ValidateError{
+					Node: node,
+					Message: fmt.Sprintf("field %s from interface %s not implemented in type %s",
+						interfaceField.Name, interfaceName, typeNode.GetName()),
+				}
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -205,6 +233,12 @@ func validateArguments(node ast.Node) error {
 		}
 	}
 	return nil
+}
+
+// 检查类型是否兼容的辅助函数
+func areTypesCompatible(typeA, typeB *ast.FieldType) bool {
+	// todo: 检查非空
+	return typeA.Name == typeB.Name && typeA.TypeCategory == typeB.TypeCategory && typeA.IsList == typeB.IsList
 }
 
 func validateFieldType(fieldType *ast.FieldType) error {
