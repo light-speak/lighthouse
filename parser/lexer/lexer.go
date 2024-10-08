@@ -223,8 +223,14 @@ func (l *Lexer) readMessage() *Token {
 	if l.ch == '"' {
 		l.readChar()
 	}
+
+	tokenType := Message
+	if l.currentToken != nil && l.currentToken.Type == Colon {
+		tokenType = Letter
+	}
+
 	return &Token{
-		Type:         Message,
+		Type:         tokenType,
 		Value:        l.content[start:l.position],
 		Line:         l.line,
 		LinePosition: l.linePosition,

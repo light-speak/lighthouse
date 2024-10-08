@@ -12,5 +12,5 @@ type ValidateError struct {
 }
 
 func (e *ValidateError) Error() string {
-	return fmt.Sprintf("validate error: %s", e.Message)
+	return fmt.Sprintf("validate error: %s, node: %s", e.Message, e.Node.GetName())
 }

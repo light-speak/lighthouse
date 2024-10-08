@@ -127,24 +127,24 @@ func validateFragment(node ast.Node) error {
 }
 
 func validateType(node ast.Node) error {
-	typeNode, ok := node.(*ast.TypeNode)
-	if !ok {
-		return &err.ValidateError{
-			Node:    node,
-			Message: "node is not a type",
-		}
-	}
-	log.Debug().Msgf("type: %s", typeNode.GetName())
-	for _, field := range typeNode.GetFields() {
-		typeName := field.Type.Name
-		typeNode := getValueTypeNode(typeName) // String Int , user: User , 
-		if typeNode == nil {
-			return &err.ValidateError{
-				Node:    node,
-				Message: fmt.Sprintf("type %s not found", typeName),
-			}
-		}
-	}
+	// typeNode, ok := node.(*ast.TypeNode)
+	// if !ok {
+	// 	return &err.ValidateError{
+	// 		Node:    node,
+	// 		Message: "node is not a type",
+	// 	}
+	// }
+	// log.Debug().Msgf("type: %s", typeNode.GetName())
+	// for _, field := range typeNode.GetFields() {
+	// 	typeName := field.Type.Name
+	// 	typeNode := getValueTypeNode(typeName) // String Int , user: User ,
+	// 	if typeNode == nil {
+	// 		return &err.ValidateError{
+	// 			Node:    node,
+	// 			Message: fmt.Sprintf("type %s not found", typeName),
+	// 		}
+	// 	}
+	// }
 	return nil
 }
 
