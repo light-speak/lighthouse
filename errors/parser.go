@@ -1,9 +1,8 @@
-package err
+package errors
 
 import (
 	"fmt"
-
-	"github.com/light-speak/lighthouse/parser/ast"
+	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
 type ValidateError struct {
