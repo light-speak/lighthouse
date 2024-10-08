@@ -68,3 +68,7 @@ func (i *InputNode) GetDirectives() []*DirectiveNode {
 func (i *InputNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (i *InputNode) GetFields() []*FieldNode {
+	return i.Fields
+}

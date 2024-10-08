@@ -68,7 +68,7 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		lexer.Scalar:    func() ast.Node { return p.parseScalar() },
 		lexer.Union:     func() ast.Node { return p.parseUnion() },
 		lexer.Directive: func() ast.Node { return p.parseDirectiveDefinition() },
-		// lexer.Fragment:  func() ast.Node { return p.parseFragment() },
+		lexer.Fragment:  func() ast.Node { return p.parseFragment() },
 	}
 
 	for p.currToken.Type != lexer.EOF {

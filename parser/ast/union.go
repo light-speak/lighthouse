@@ -46,3 +46,7 @@ func (u *UnionNode) GetDirectives() []*DirectiveNode {
 func (u *UnionNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (u *UnionNode) GetFields() []*FieldNode {
+	return nil
+}

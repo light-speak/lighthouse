@@ -59,3 +59,7 @@ func (s *ScalarNode) GetDirectives() []*DirectiveNode {
 func (s *ScalarNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (s *ScalarNode) GetFields() []*FieldNode {
+	return nil
+}

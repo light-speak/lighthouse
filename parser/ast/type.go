@@ -69,3 +69,7 @@ func (t *TypeNode) GetDirectives() []*DirectiveNode {
 func (t *TypeNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (t *TypeNode) GetFields() []*FieldNode {
+	return t.Fields
+}

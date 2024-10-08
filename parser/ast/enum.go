@@ -61,3 +61,7 @@ func (e *EnumNode) GetDirectives() []*DirectiveNode {
 func (e *EnumNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (e *EnumNode) GetFields() []*FieldNode {
+	return nil
+}

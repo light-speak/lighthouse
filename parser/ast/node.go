@@ -14,6 +14,7 @@ type Node interface {
 
 	GetDirectives() []*DirectiveNode
 	GetArgs() []*ArgumentNode
+	GetFields() []*FieldNode
 }
 
 type NodeType string

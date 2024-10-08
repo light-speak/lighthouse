@@ -40,8 +40,7 @@ func validateScalar(node ast.Node) error {
 		}
 	}
 	log.Debug().Msgf("scalar: %s", scalar.GetName())
-	
-	
+
 	return nil
 }
 
@@ -85,6 +84,45 @@ func validateEnumValue(node ast.Node) error {
 }
 
 func validateFragment(node ast.Node) error {
+	nodeType := node.GetType()
+	if nodeType != ast.NodeTypeFragment {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a fragment",
+		}
+	}
+	fragment, ok := node.(*ast.FragmentNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a fragment",
+		}
+	}
+
+	parentNode := getValueTypeNode(fragment.On)
+	if parentNode == nil {
+		return &err.ValidateError{
+			Node:    node,
+			Message: fmt.Sprintf("type %s not found", fragment.On),
+		}
+	}
+
+	fields := parentNode.GetFields()
+	fieldMap := make(map[string]bool)
+	for _, field := range fields {
+		fieldMap[field.Name] = true
+	}
+
+	fragmentFields := fragment.Fields
+	for _, field := range fragmentFields {
+		if _, exists := fieldMap[field.Name]; !exists {
+			return &err.ValidateError{
+				Node:    node,
+				Message: fmt.Sprintf("field %s does not exist in parent type %s", field.Name, parentNode.GetName()),
+			}
+		}
+	}
+
 	return nil
 }
 

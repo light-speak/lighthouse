@@ -68,3 +68,7 @@ func (f *FragmentNode) GetDirectives() []*DirectiveNode {
 func (f *FragmentNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (f *FragmentNode) GetFields() []*FieldNode {
+	return f.Fields
+}

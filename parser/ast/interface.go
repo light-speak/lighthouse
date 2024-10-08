@@ -50,3 +50,7 @@ func (i *InterfaceNode) GetDirectives() []*DirectiveNode {
 func (i *InterfaceNode) GetArgs() []*ArgumentNode {
 	return nil
 }
+
+func (i *InterfaceNode) GetFields() []*FieldNode {
+	return i.Fields
+}
