@@ -3,7 +3,6 @@ package validate
 import (
 	"fmt"
 
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/err"
 )
@@ -110,6 +109,13 @@ func validateInput(node ast.Node) error {
 }
 
 func validateEnumValue(node ast.Node) error {
+	_, ok := node.(*ast.EnumValueNode)
+	if !ok {
+		return &err.ValidateError{
+			Node:    node,
+			Message: "node is not a enum value",
+		}
+	}
 
 	return nil
 }
@@ -211,13 +217,6 @@ func validateType(node ast.Node) error {
 }
 
 func validateField(node ast.Node) error {
-	log.Info().Msgf("field: %s", node.GetName())
-	log.Info().Msgf("field: %s", node.(*ast.FieldNode).Name)
-	// fields := node.GetFields()
-	// for _, field := range fields {
-	// 	log.Info().Msgf("field: %s", field.GetName())
-	// }
-
 	return nil
 }
 
