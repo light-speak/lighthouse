@@ -54,14 +54,6 @@ func (p *Parser) parseType() *ast.TypeNode {
 
 	node.OperationType = operationType
 
-	if p.TypeMap == nil {
-		p.TypeMap = make(map[string]*ast.TypeNode)
-	}
-	if existingTypeNode, ok := p.TypeMap[name]; ok {
-
-		existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
-	} else {
-		p.TypeMap[name] = node
-	}
-	return p.TypeMap[name]
+	p.AddType(name, node)
+	return node
 }

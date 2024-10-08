@@ -8,7 +8,6 @@ import (
 	"github.com/light-speak/lighthouse/parser/err"
 )
 
-
 // validateDirectiveDefinition validates a directive definition node
 // 1. check if the directive locations are valid
 // 2. check if the directive arguments are valid
@@ -36,6 +35,7 @@ func validateDirectiveDefinition(node ast.Node) error {
 }
 
 // validateScalar validates a scalar node
+// 1. check node is scalar node
 func validateScalar(node ast.Node) error {
 	_, ok := node.(*ast.ScalarNode)
 	if !ok {
@@ -190,10 +190,10 @@ func validateType(node ast.Node) error {
 			}
 		}
 
-		// 检查接口中的字段是否在 typeNode 中存在，并且类型是否匹配
+		// check if the fields in the interface are implemented in the type
 		for _, interfaceField := range interfaceNode.GetFields() {
 			if typeField, exists := fieldMap[interfaceField.Name]; exists {
-				// 检查字段类型是否匹配
+				// check if the field type is compatible
 				if !areTypesCompatible(typeField.Type, interfaceField.Type) {
 					return &err.ValidateError{
 						Node: node,
@@ -235,7 +235,7 @@ func validateArguments(node ast.Node) error {
 	return nil
 }
 
-// 检查类型是否兼容的辅助函数
+// areTypesCompatible checks if two field types are compatible
 func areTypesCompatible(typeA, typeB *ast.FieldType) bool {
 	// todo: 检查非空
 	return typeA.Name == typeB.Name && typeA.TypeCategory == typeB.TypeCategory && typeA.IsList == typeB.IsList
@@ -271,7 +271,6 @@ func validateDirectives(node ast.Node) error {
 }
 
 func getValueTypeNode(name string) ast.Node {
-
 	typeNode, exists := p.TypeMap[name]
 	if exists {
 		return typeNode

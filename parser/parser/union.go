@@ -25,9 +25,6 @@ func (p *Parser) parseUnion() *ast.UnionNode {
 		p.expect(lexer.Pipe)
 	}
 	node := &ast.UnionNode{Name: name, Types: types, Description: description}
-	if p.UnionMap == nil {
-		p.UnionMap = make(map[string]*ast.UnionNode)
-	}
-	p.UnionMap[name] = node
+	p.AddUnion(node)
 	return node
 }

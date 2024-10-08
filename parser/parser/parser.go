@@ -141,3 +141,35 @@ func (p *Parser) AddInterface(node *ast.InterfaceNode) {
 	}
 	p.InterfaceMap[node.Name] = node
 }
+
+func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinitionNode) {
+	if p.DirectiveMap == nil {
+		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
+	}
+	p.DirectiveMap[node.Name] = node
+}
+
+func (p *Parser) AddEnum(node *ast.EnumNode) {
+	if p.EnumMap == nil {
+		p.EnumMap = make(map[string]*ast.EnumNode)
+	}
+	p.EnumMap[node.Name] = node
+}
+
+func (p *Parser) AddUnion(node *ast.UnionNode) {
+	if p.UnionMap == nil {
+		p.UnionMap = make(map[string]*ast.UnionNode)
+	}
+	p.UnionMap[node.Name] = node
+}
+
+func (p *Parser) AddType(name string, node *ast.TypeNode) {
+	if p.TypeMap == nil {
+		p.TypeMap = make(map[string]*ast.TypeNode)
+	}
+	if existingTypeNode, ok := p.TypeMap[name]; ok {
+		existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
+	} else {
+		p.TypeMap[name] = node
+	}
+}

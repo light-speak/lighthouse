@@ -37,10 +37,7 @@ func (p *Parser) parseEnum() *ast.EnumNode {
 	node.Values = values
 	p.expect(lexer.RightBrace)
 
-	if p.EnumMap == nil {
-		p.EnumMap = make(map[string]*ast.EnumNode)
-	}
-	p.EnumMap[name] = node
+	p.AddEnum(node)
 	return node
 }
 

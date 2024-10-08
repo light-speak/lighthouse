@@ -26,10 +26,7 @@ func (p *Parser) parseDirectiveDefinition() *ast.DirectiveDefinitionNode {
 	locations := p.parseLocations()
 
 	node.Locations = locations
-	if p.DirectiveMap == nil {
-		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
-	}
-	p.DirectiveMap[name] = node
+	p.AddDirectiveDefinition(node)
 	return node
 }
 
