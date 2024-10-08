@@ -1,6 +1,6 @@
 # 自定义标量类型
 scalar DateTime
-    @scalar(type: "github.com/light-speak/lighthouse/parser/scalar.DateTime")
+    @scalar(name: "github.com/light-speak/lighthouse/parser/scalar.DateTime")
 
 # 定义接口
 interface Node {

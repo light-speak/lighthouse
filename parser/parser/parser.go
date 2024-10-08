@@ -28,6 +28,8 @@ type Parser struct {
 	InputMap     map[string]*ast.InputNode
 	InterfaceMap map[string]*ast.InterfaceNode
 	DirectiveMap map[string]*ast.DirectiveDefinitionNode
+
+	ScalarTypeMap map[string]ast.ScalarType
 }
 
 // ReadGraphQLFile read graphql file and return a lexer
@@ -122,4 +124,18 @@ func (p *Parser) AddInput(node *ast.InputNode) {
 		p.InputMap = make(map[string]*ast.InputNode)
 	}
 	p.InputMap[node.Name] = node
+}
+
+func (p *Parser) AddScalarType(node *ast.ScalarNode) {
+	if p.ScalarTypeMap == nil {
+		p.ScalarTypeMap = make(map[string]ast.ScalarType)
+	}
+	p.ScalarTypeMap[node.Name] = node.Scalar
+}
+
+func (p *Parser) AddInterface(node *ast.InterfaceNode) {
+	if p.InterfaceMap == nil {
+		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
+	}
+	p.InterfaceMap[node.Name] = node
 }

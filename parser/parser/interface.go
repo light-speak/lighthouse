@@ -27,10 +27,6 @@ func (p *Parser) parseInterface() *ast.InterfaceNode {
 
 	node.Fields = fields
 
-	p.expect(lexer.RightBrace)
-	if p.InterfaceMap == nil {
-		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
-	}
-	p.InterfaceMap[name] = node
+	p.AddInterface(node)
 	return node
 }
