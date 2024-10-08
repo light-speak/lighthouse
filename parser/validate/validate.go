@@ -21,6 +21,7 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 		ast.NodeTypeEnumValue:           validateEnumValue,
 		ast.NodeTypeFragment:            validateFragment,
 		ast.NodeTypeField:               validateField,
+		ast.NodeTypeType:                validateType,
 	}
 
 	// log.Info().Msgf("scalars: %v", p.ScalarMap)
