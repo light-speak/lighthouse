@@ -43,7 +43,6 @@ func TestValidate(t *testing.T) {
 	p := parser.NewParser(l)
 
 	nodes := p.ParseSchema()
-	p.AddReservedScalar()
 	for _, node := range nodes {
 		err := validate.Validate(node, p)
 		if err != nil {

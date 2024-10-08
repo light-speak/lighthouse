@@ -1,13 +1,15 @@
 package parser
 
-import "github.com/light-speak/lighthouse/parser/lexer"
+import (
+	"strings"
+
+	"github.com/light-speak/lighthouse/parser/lexer"
+)
 
 // parseDescription parses a description if present
 func (p *Parser) parseDescription() string {
 	if p.PreviousToken().Type == lexer.Message {
-		p.expect(lexer.Message)
-		description := p.currToken.Value[1 : len(p.currToken.Value)-1] // Remove quotes
-		p.nextToken()
+		description := strings.Split(p.PreviousToken().Value, "\"")[1]
 		return description
 	}
 	return ""

@@ -20,7 +20,7 @@ func (p *Parser) parseInterface() *ast.InterfaceNode {
 
 	node := &ast.InterfaceNode{Name: name, Description: description}
 
-	var fields []ast.FieldNode
+	var fields []*ast.FieldNode
 	for p.currToken.Type != lexer.RightBrace {
 		fields = append(fields, p.parseField(node))
 	}

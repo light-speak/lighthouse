@@ -29,7 +29,7 @@ func (p *Parser) parseEnum() *ast.EnumNode {
 		Directives:  directives,
 	}
 
-	var values []ast.EnumValueNode
+	var values []*ast.EnumValueNode
 	for p.currToken.Type != lexer.RightBrace {
 		values = append(values, p.parseEnumValue(node))
 	}
@@ -44,7 +44,7 @@ func (p *Parser) parseEnum() *ast.EnumNode {
 	return node
 }
 
-func (p *Parser) parseEnumValue(parent ast.Node) ast.EnumValueNode {
+func (p *Parser) parseEnumValue(parent ast.Node) *ast.EnumValueNode {
 	description := p.parseDescription()
 
 	name := p.currToken.Value
@@ -52,7 +52,7 @@ func (p *Parser) parseEnumValue(parent ast.Node) ast.EnumValueNode {
 
 	directives := p.parseDirectives()
 
-	return ast.EnumValueNode{
+	return &ast.EnumValueNode{
 		Name:        name,
 		Description: description,
 		Directives:  directives,

@@ -11,9 +11,7 @@ func (p *Parser) parseScalar() *ast.ScalarNode {
 	name := p.currToken.Value
 	p.nextToken()
 	node := &ast.ScalarNode{Name: name, Description: description}
-	if p.ScalarMap == nil {
-		p.ScalarMap = make(map[string]*ast.ScalarNode)
-	}
-	p.ScalarMap[name] = node
+
+	p.AddScalar(node)
 	return node
 }

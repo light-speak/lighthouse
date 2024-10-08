@@ -6,7 +6,6 @@ import (
 
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
-	"github.com/light-speak/lighthouse/parser/scalar"
 )
 
 // Parser is responsible for parsing the GraphQL schema.
@@ -43,6 +42,7 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 // NewParser create a new parser
 func NewParser(lexer *lexer.Lexer) *Parser {
 	p := &Parser{lexer: lexer}
+	p.AddReserved()
 	p.nextToken() // Initialize currToken
 	return p
 }
@@ -103,30 +103,17 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 	}
 }
 
-func (p *Parser) AddReservedScalar() {
-	p.ScalarMap["ID"] = &ast.ScalarNode{
-		Name:        "ID",
-		Description: "The ID scalar type represents a unique identifier for a resource.",
-		Scalar:      &scalar.IDScalar{},
+
+func (p *Parser) AddScalar(node *ast.ScalarNode) {
+	if p.ScalarMap == nil {
+		p.ScalarMap = make(map[string]*ast.ScalarNode)
 	}
-	p.ScalarMap["String"] = &ast.ScalarNode{
-		Name:        "String",
-		Description: "The String scalar type represents a sequence of characters.",
-		Scalar:      &scalar.StringScalar{},
+	p.ScalarMap[node.Name] = node
+}
+
+func (p *Parser) AddDirective(node *ast.DirectiveDefinitionNode) {
+	if p.DirectiveMap == nil {
+		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
 	}
-	p.ScalarMap["Int"] = &ast.ScalarNode{
-		Name:        "Int",
-		Description: "The Int scalar type represents a signed 64-bit integer.",
-		Scalar:      &scalar.IntScalar{},
-	}
-	p.ScalarMap["Float"] = &ast.ScalarNode{
-		Name:        "Float",
-		Description: "The Float scalar type represents a signed double-precision floating-point number.",
-		Scalar:      &scalar.FloatScalar{},
-	}
-	p.ScalarMap["Boolean"] = &ast.ScalarNode{
-		Name:        "Boolean",
-		Description: "The Boolean scalar type represents a boolean value.",
-		Scalar:      &scalar.BooleanScalar{},
-	}
+	p.DirectiveMap[node.Name] = node
 }

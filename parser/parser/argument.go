@@ -5,12 +5,13 @@ import (
 
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
+	"github.com/light-speak/lighthouse/parser/value"
 )
 
 // parseArguments parse arguments
 // (id: ID!, name: String!)
-func (p *Parser) parseArguments(parent ast.Node) []ast.ArgumentNode {
-	var args []ast.ArgumentNode
+func (p *Parser) parseArguments(parent ast.Node) []*ast.ArgumentNode {
+	var args []*ast.ArgumentNode
 	if p.currToken.Type != lexer.LeftParent {
 		return args
 	}
@@ -37,7 +38,7 @@ func (p *Parser) parseDefaultValue() *ast.ArgumentValue {
 }
 
 // parseArgument parse an argument node
-func (p *Parser) parseArgument(parent ast.Node) ast.ArgumentNode {
+func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
 	description := p.parseDescription()
 	name := p.currToken.Value
 
@@ -61,7 +62,7 @@ func (p *Parser) parseArgument(parent ast.Node) ast.ArgumentNode {
 	// parse directives
 	directives := p.parseDirectives()
 
-	return ast.ArgumentNode{
+	return &ast.ArgumentNode{
 		Name:         name,
 		Type:         fieldType,
 		Description:  description,
@@ -81,7 +82,7 @@ func (p *Parser) parseArgument(parent ast.Node) ast.ArgumentNode {
 // @directive(arg: Boolean, arg2: String, arg3: Int, arg4: [[User]!]!, arg5: ID)
 // The colon has been parsed in the previous step, so only the value needs to be parsed here
 func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
-	var value *ast.ArgumentValue
+	var argValue *ast.ArgumentValue
 
 	if p.currToken.Type == lexer.LeftBracket {
 		p.expect(lexer.LeftBracket) // skip [
@@ -95,7 +96,7 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 		}
 		p.expect(lexer.RightBracket) // skip ]
 
-		value = &ast.ArgumentValue{
+		argValue = &ast.ArgumentValue{
 			Children: values,
 			Type: &ast.FieldType{
 				Name:   "List",
@@ -105,29 +106,29 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 	} else {
 		var values []*ast.ArgumentValue
 		for {
-			var value ast.Value
+			var v value.Value
 			switch p.currToken.Type {
 			case lexer.Letter:
-				value = &ast.StringValue{Value: p.currToken.Value}
+				v = &value.StringValue{Value: p.currToken.Value}
 			case lexer.IntNumber:
 				intValue, err := strconv.ParseInt(p.currToken.Value, 10, 64)
 				if err != nil {
 					panic("invalid integer value: " + err.Error())
 				}
-				value = &ast.IntValue{Value: intValue}
+				v = &value.IntValue{Value: intValue}
 			case lexer.Boolean:
 				boolValue := p.currToken.Value == "true"
-				value = &ast.BooleanValue{Value: boolValue}
+				v = &value.BooleanValue{Value: boolValue}
 			default:
 				panic("unsupported token type: " + p.currToken.Type)
 			}
-			v := &ast.ArgumentValue{
-				Value: value,
+			vi := &ast.ArgumentValue{
+				Value: v,
 				Type: &ast.FieldType{
 					Name: string(p.currToken.Type),
 				},
 			}
-			values = append(values, v)
+			values = append(values, vi)
 			p.nextToken()
 
 			if p.currToken.Type != lexer.Comma {
@@ -137,9 +138,9 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 		}
 
 		if len(values) == 1 {
-			value = values[0]
+			argValue = values[0]
 		} else {
-			value = &ast.ArgumentValue{
+			argValue = &ast.ArgumentValue{
 				Children: values,
 				Type: &ast.FieldType{
 					IsList: true,
@@ -150,8 +151,8 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 	}
 
 	if p.currToken.Type == lexer.Exclamation {
-		value.Type.IsNonNull = true
+		argValue.Type.IsNonNull = true
 		p.expect(lexer.Exclamation)
 	}
-	return value
+	return argValue
 }

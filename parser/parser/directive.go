@@ -5,8 +5,8 @@ import (
 	"github.com/light-speak/lighthouse/parser/lexer"
 )
 
-func (p *Parser) parseDirectives() []ast.DirectiveNode {
-	var directives []ast.DirectiveNode
+func (p *Parser) parseDirectives() []*ast.DirectiveNode {
+	var directives []*ast.DirectiveNode
 	if p.currToken.Type != lexer.At {
 		return directives
 	}
@@ -20,7 +20,7 @@ func (p *Parser) parseDirectives() []ast.DirectiveNode {
 	return directives
 }
 
-func (p *Parser) parseDirective() ast.DirectiveNode {
+func (p *Parser) parseDirective() *ast.DirectiveNode {
 	p.expect(lexer.At)
 	name := p.currToken.Value
 	p.nextToken() // skip name
@@ -29,10 +29,10 @@ func (p *Parser) parseDirective() ast.DirectiveNode {
 		Name: name,
 	}
 
-	var args []ast.ArgumentNode
+	var args []*ast.ArgumentNode
 	if p.currToken.Type == lexer.LeftParent {
 		args = p.parseArguments(directive)
 	}
 	directive.Args = args
-	return *directive
+	return directive
 }

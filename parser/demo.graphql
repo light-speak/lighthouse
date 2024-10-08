@@ -1,14 +1,18 @@
 # 自定义标量类型
 scalar DateTime
+    @scalar(type: "github.com/light-speak/lighthouse/parser/scalar.DateTime")
 
 # 定义接口
-interface Node { id: ID! }
+interface Node {
+    id: ID!
+}
 
 interface Named {
     name: String!
 }
 
 # 定义实现了多个接口的类型
+"用户啊"
 type User implements Node & Named {
     id: ID!
     name: String!
@@ -21,6 +25,7 @@ type User implements Node & Named {
 }
 
 # 定义另一个实现了多接口的类型
+"商品啊"
 type Product implements Node & Named {
     id: ID!
     name: String!
@@ -104,5 +109,3 @@ fragment ProductFields on Product {
 # 定义指令
 directive @test(name: String!) on FIELD_DEFINITION
 directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

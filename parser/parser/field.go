@@ -12,7 +12,7 @@ import (
 // age: Int
 // email: String
 // createdAt: DateTime
-func (p *Parser) parseField(parent ast.Node) ast.FieldNode {
+func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
 	description := p.parseDescription()
 
 	name := p.currToken.Value
@@ -23,7 +23,7 @@ func (p *Parser) parseField(parent ast.Node) ast.FieldNode {
 		Description: description,
 	}
 	// parse arguments
-	var args []ast.ArgumentNode
+	var args []*ast.ArgumentNode
 	if p.currToken.Type == lexer.LeftParent {
 		args = p.parseArguments(field)
 	}
@@ -39,5 +39,5 @@ func (p *Parser) parseField(parent ast.Node) ast.FieldNode {
 	field.Directives = directives
 	field.Parent = parent
 
-	return *field
+	return field
 }

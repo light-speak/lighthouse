@@ -32,7 +32,7 @@ func (p *Parser) parseType() *ast.TypeNode {
 		Directives:  directives,
 	}
 
-	var fields []ast.FieldNode
+	var fields []*ast.FieldNode
 
 	for p.currToken.Type != lexer.RightBrace && p.currToken.Type == lexer.Letter {
 		field := p.parseField(node)

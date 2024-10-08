@@ -29,7 +29,7 @@ func (p *Parser) parseInput() *ast.InputNode {
 		Description: description,
 	}
 
-	var fields []ast.FieldNode
+	var fields []*ast.FieldNode
 
 	for p.currToken.Type != lexer.RightBrace {
 		field := p.parseField(node)

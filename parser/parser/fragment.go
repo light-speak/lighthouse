@@ -26,7 +26,7 @@ func (p *Parser) parseFragment() *ast.FragmentNode {
 		Directives:  directives,
 	}
 
-	var fields []ast.FieldNode
+	var fields []*ast.FieldNode
 	for p.currToken.Type != lexer.RightBrace && p.currToken.Type == lexer.Letter {
 		//TODO: parse fields
 	}

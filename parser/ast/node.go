@@ -1,21 +1,19 @@
 package ast
 
+import "github.com/light-speak/lighthouse/parser/value"
+
 type Node interface {
 	GetName() string
 	GetType() NodeType
 	GetDescription() string
-	GetImplements() []string
-	GetFields() []FieldNode
-	GetDirectives() []DirectiveNode
-	GetArgs() []ArgumentNode
-	IsDeprecated() bool
-	GetDeprecationReason() string
-	IsNonNull() bool
-	IsList() bool
-	HasField(name string) bool
-	HasDirective(name string) bool
+	IsDeprecated() (bool, string)
+	GetField(name string) *FieldNode
 	GetDirective(name string) *DirectiveNode
+	GetArg(name string) *ArgumentNode
 	GetParent() Node
+
+	GetDirectives() []*DirectiveNode
+	GetArgs() []*ArgumentNode
 }
 
 type NodeType string
@@ -67,7 +65,7 @@ type FieldType struct {
 }
 
 type ArgumentValue struct {
-	Value    Value
+	Value    value.Value
 	Type     *FieldType
 	Children []*ArgumentValue
 }

@@ -17,7 +17,7 @@ func (p *Parser) parseDirectiveDefinition() *ast.DirectiveDefinitionNode {
 
 	node := &ast.DirectiveDefinitionNode{Name: name, Description: description}
 
-	var args []ast.ArgumentNode
+	var args []*ast.ArgumentNode
 	if p.currToken.Type == lexer.LeftParent {
 		args = p.parseArguments(node)
 	}
@@ -39,7 +39,8 @@ func (p *Parser) parseLocations() []ast.Location {
 	var locations []ast.Location
 
 	for {
-		locations = append(locations, ast.Location(p.currToken.Value))
+		location := ast.Location(p.currToken.Value)
+		locations = append(locations, location)
 		p.expect(lexer.Letter)
 		if p.currToken.Type != lexer.Pipe {
 			break
