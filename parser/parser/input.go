@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/parser/ast"
 	"github.com/light-speak/lighthouse/parser/lexer"
 )
@@ -39,6 +38,5 @@ func (p *Parser) parseInput() *ast.InputNode {
 	node.Fields = fields
 
 	p.AddInput(node)
-	log.Info().Msgf("inputaaaaa: %s", node.GetName())
 	return node
 }
