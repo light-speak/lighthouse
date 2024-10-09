@@ -9,9 +9,23 @@ import (
 
 func generateObjectType(node ast.Node) string {
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("type %s {\n", node.GetName()))
 
-	for _, field := range node.GetFields() {
+	typeNode := node.(*ast.TypeNode)
+	// 生成类型声明，检查是否有实现的接口
+	if len(typeNode.Implements) > 0 {
+		builder.WriteString(fmt.Sprintf("type %s implements ", typeNode.Name))
+		for i, iface := range typeNode.Implements {
+			if i > 0 {
+				builder.WriteString(" & ")
+			}
+			builder.WriteString(iface)
+		}
+		builder.WriteString(" {\n")
+	} else {
+		builder.WriteString(fmt.Sprintf("type %s {\n", node.GetName()))
+	}
+
+	for _, field := range typeNode.Fields {
 		builder.WriteString(fmt.Sprintf("  %s", field.Name))
 
 		// 检查该字段是否有参数
@@ -47,12 +61,15 @@ func generateSchema(nodes []ast.Node) string {
 	for _, node := range nodes {
 		nextLine := true
 		switch node.GetNodeType() {
-		case ast.NodeTypeType:
-			// 生成 Object Type 定义
-			schemaBuilder.WriteString(generateObjectType(node))
+		case ast.NodeTypeScalar:
+			// 生成 Scalar 定义
+			schemaBuilder.WriteString(generateScalarType(node))
 		case ast.NodeTypeInterface:
 			// 生成 Interface 定义
 			schemaBuilder.WriteString(generateInterfaceType(node))
+		case ast.NodeTypeType:
+			// 生成 Object Type 定义
+			schemaBuilder.WriteString(generateObjectType(node))
 		case ast.NodeTypeEnum:
 			// 生成 Enum 定义
 			schemaBuilder.WriteString(generateEnumType(node))
@@ -71,6 +88,13 @@ func generateSchema(nodes []ast.Node) string {
 	}
 
 	return schemaBuilder.String()
+}
+
+func generateScalarType(node ast.Node) string {
+	var builder strings.Builder
+	scalarNode := node.(*ast.ScalarNode)
+	builder.WriteString(fmt.Sprintf("scalar %s\n", scalarNode.Name))
+	return builder.String()
 }
 
 // 生成 Enum 类型定义
