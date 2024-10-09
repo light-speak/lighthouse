@@ -163,22 +163,19 @@ func (p *Parser) AddUnion(node *ast.UnionNode) {
 	}
 	p.UnionMap[node.Name] = node
 }
+
 func (p *Parser) AddType(name string, node *ast.TypeNode) {
 	if p.TypeMap == nil {
 		p.TypeMap = make(map[string]*ast.TypeNode)
 	}
 	if existingTypeNode, ok := p.TypeMap[name]; ok {
-		updatedFields := make(map[string]*ast.FieldNode)
-		for _, field := range existingTypeNode.Fields {
-			updatedFields[field.Name] = field
+		for _, field := range node.Fields {
+			field := existingTypeNode.GetField(field.Name)
+			if field != nil {
+				panic(fmt.Sprintf("duplicate field: %s in type: %s, line ", field.Name, name))
+			}
 		}
-		for _, newField := range node.Fields {
-			updatedFields[newField.Name] = newField
-		}
-		existingTypeNode.Fields = make([]*ast.FieldNode, 0, len(updatedFields))
-		for _, field := range updatedFields {
-			existingTypeNode.Fields = append(existingTypeNode.Fields, field)
-		}
+		existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
 	} else {
 		p.TypeMap[name] = node
 	}
