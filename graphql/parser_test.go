@@ -56,5 +56,5 @@ func TestValidate(t *testing.T) {
 		schemaNodes = append(schemaNodes, node)
 	}
 	schema := generateSchema(schemaNodes)
-	log.Debug().Msgf("schema: \n\n%s", schema)
+	log.Debug().Msgf("\n%s", schema)
 }
