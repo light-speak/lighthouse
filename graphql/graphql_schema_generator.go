@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/log"
 )
 
 func generateObjectType(node ast.Node) string {
@@ -46,6 +45,7 @@ func generateObjectType(node ast.Node) string {
 func generateSchema(nodes []ast.Node) string {
 	var schemaBuilder strings.Builder
 	for _, node := range nodes {
+		nextLine := true
 		switch node.GetNodeType() {
 		case ast.NodeTypeType:
 			// 生成 Object Type 定义
@@ -62,8 +62,12 @@ func generateSchema(nodes []ast.Node) string {
 		case ast.NodeTypeUnion:
 			// 生成 Union 定义
 			schemaBuilder.WriteString(generateUnionType(node))
+		default:
+			nextLine = false
 		}
-		schemaBuilder.WriteString("\n")
+		if nextLine {
+			schemaBuilder.WriteString("\n")
+		}
 	}
 
 	return schemaBuilder.String()
@@ -76,7 +80,6 @@ func generateEnumType(node ast.Node) string {
 	builder.WriteString(fmt.Sprintf("enum %s {\n", enumNode.Name))
 
 	for _, field := range enumNode.Values {
-		log.Debug().Msgf("enum value: %+v", field.Value)
 		builder.WriteString(fmt.Sprintf("  %s\n", field.Name))
 	}
 

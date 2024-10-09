@@ -106,77 +106,122 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 		p.nextToken()
 	}
 }
-
-// TODO : check repeat
-func (p *Parser) AddScalar(node *ast.ScalarNode) {
+func (p *Parser) AddScalar(node *ast.ScalarNode) ast.Node {
 	if p.ScalarMap == nil {
 		p.ScalarMap = make(map[string]*ast.ScalarNode)
 	}
-	p.ScalarMap[node.Name] = node
-}
-
-func (p *Parser) AddDirective(node *ast.DirectiveDefinitionNode) {
-	if p.DirectiveMap == nil {
-		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Scalar '%s' already defined", node.Name))
 	}
-	p.DirectiveMap[node.Name] = node
+	p.ScalarMap[node.Name] = node
+	return p.ScalarMap[node.Name]
 }
 
-func (p *Parser) AddInput(node *ast.InputNode) {
+func (p *Parser) AddInput(node *ast.InputNode) ast.Node {
 	if p.InputMap == nil {
 		p.InputMap = make(map[string]*ast.InputNode)
 	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Input '%s' already defined", node.Name))
+	}
 	p.InputMap[node.Name] = node
+	return p.InputMap[node.Name]
+}
+
+func (p *Parser) AddInterface(node *ast.InterfaceNode) ast.Node {
+	if p.InterfaceMap == nil {
+		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
+	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Interface '%s' already defined", node.Name))
+	}
+	p.InterfaceMap[node.Name] = node
+	return p.InterfaceMap[node.Name]
+}
+
+func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinitionNode) ast.Node {
+	if p.DirectiveMap == nil {
+		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
+	}
+	if _, exists := p.DirectiveMap[node.Name]; exists {
+		panic(fmt.Sprintf("Duplicate directive definition: '%s'", node.Name))
+	}
+	p.DirectiveMap[node.Name] = node
+	return p.DirectiveMap[node.Name]
+}
+
+func (p *Parser) AddEnum(node *ast.EnumNode) ast.Node {
+	if p.EnumMap == nil {
+		p.EnumMap = make(map[string]*ast.EnumNode)
+	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Enum '%s' already defined", node.Name))
+	}
+	p.EnumMap[node.Name] = node
+	return p.EnumMap[node.Name]
+}
+
+func (p *Parser) AddUnion(node *ast.UnionNode) ast.Node {
+	if p.UnionMap == nil {
+		p.UnionMap = make(map[string]*ast.UnionNode)
+	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Union '%s' already defined", node.Name))
+	}
+	p.UnionMap[node.Name] = node
+	return p.UnionMap[node.Name]
+}
+
+func (p *Parser) AddType(name string, node *ast.TypeNode, extends bool) ast.Node {
+	if p.TypeMap == nil {
+		p.TypeMap = make(map[string]*ast.TypeNode)
+	}
+	if existingTypeNode, ok := p.TypeMap[name]; ok {
+		if extends {
+			for _, field := range node.Fields {
+				if existingField := existingTypeNode.GetField(field.Name); existingField != nil {
+					panic(fmt.Sprintf("Duplicate field: '%s' in type: '%s'", field.Name, name))
+				}
+			}
+			existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
+		} else {
+			panic(fmt.Sprintf("Duplicate type definition: '%s'", name))
+		}
+	} else {
+		if p.isNameConflict(name) {
+			panic(fmt.Sprintf("Name conflict: Type '%s' already defined", name))
+		}
+		p.TypeMap[name] = node
+	}
+	return p.TypeMap[name]
 }
 
 func (p *Parser) AddScalarType(name string, scalarType ast.ScalarType) {
 	if p.ScalarTypeMap == nil {
 		p.ScalarTypeMap = make(map[string]ast.ScalarType)
 	}
+	if _, exists := p.ScalarTypeMap[name]; exists {
+		panic(fmt.Sprintf("Duplicate ScalarType definition: '%s'", name))
+	}
 	p.ScalarTypeMap[name] = scalarType
 }
 
-func (p *Parser) AddInterface(node *ast.InterfaceNode) {
-	if p.InterfaceMap == nil {
-		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
-	}
-	p.InterfaceMap[node.Name] = node
-}
-
-func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinitionNode) {
+func (p *Parser) AddDirective(node *ast.DirectiveDefinitionNode) ast.Node {
 	if p.DirectiveMap == nil {
 		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
 	}
+	if _, exists := p.DirectiveMap[node.Name]; exists {
+		panic(fmt.Sprintf("Duplicate directive definition: '%s'", node.Name))
+	}
 	p.DirectiveMap[node.Name] = node
+	return p.DirectiveMap[node.Name]
 }
 
-func (p *Parser) AddEnum(node *ast.EnumNode) {
-	if p.EnumMap == nil {
-		p.EnumMap = make(map[string]*ast.EnumNode)
-	}
-	p.EnumMap[node.Name] = node
-}
-
-func (p *Parser) AddUnion(node *ast.UnionNode) {
-	if p.UnionMap == nil {
-		p.UnionMap = make(map[string]*ast.UnionNode)
-	}
-	p.UnionMap[node.Name] = node
-}
-
-func (p *Parser) AddType(name string, node *ast.TypeNode) {
-	if p.TypeMap == nil {
-		p.TypeMap = make(map[string]*ast.TypeNode)
-	}
-	if existingTypeNode, ok := p.TypeMap[name]; ok {
-		for _, field := range node.Fields {
-			field := existingTypeNode.GetField(field.Name)
-			if field != nil {
-				panic(fmt.Sprintf("duplicate field: %s in type: %s, line ", field.Name, name))
-			}
-		}
-		existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
-	} else {
-		p.TypeMap[name] = node
-	}
+func (p *Parser) isNameConflict(name string) bool {
+	return (p.ScalarMap != nil && p.ScalarMap[name] != nil) ||
+		(p.TypeMap != nil && p.TypeMap[name] != nil) ||
+		(p.InputMap != nil && p.InputMap[name] != nil) ||
+		(p.InterfaceMap != nil && p.InterfaceMap[name] != nil) ||
+		(p.EnumMap != nil && p.EnumMap[name] != nil) ||
+		(p.UnionMap != nil && p.UnionMap[name] != nil)
 }

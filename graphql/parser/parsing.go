@@ -17,7 +17,7 @@ import (
 //	  email: String
 //	  createdAt: DateTime
 //	}
-func (p *Parser) parseType() *ast.TypeNode {
+func (p *Parser) parseType(extends ...bool) ast.Node {
 	node := &ast.TypeNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -35,8 +35,7 @@ func (p *Parser) parseType() *ast.TypeNode {
 	p.expect(lexer.RightBrace)
 	node.Fields = fields
 
-	p.AddType(node.GetName(), node)
-	return node
+	return p.AddType(node.GetName(), node, len(extends) > 0)
 }
 
 // parseDescription parses a description if present
@@ -292,7 +291,7 @@ func (p *Parser) parseSingleArgumentValue() *ast.ArgumentValue {
 
 // parseDirectiveDefinition parses a directive definition node
 // Example: directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-func (p *Parser) parseDirectiveDefinition() *ast.DirectiveDefinitionNode {
+func (p *Parser) parseDirectiveDefinition() ast.Node {
 	description := p.parseDescription()
 	p.expect(lexer.Directive)
 	node := &ast.DirectiveDefinitionNode{
@@ -309,8 +308,7 @@ func (p *Parser) parseDirectiveDefinition() *ast.DirectiveDefinitionNode {
 	p.expect(lexer.On)
 	node.Locations = p.parseLocations()
 
-	p.AddDirectiveDefinition(node)
-	return node
+	return p.AddDirectiveDefinition(node)
 }
 
 // parseLocations parse locations
@@ -337,7 +335,7 @@ func (p *Parser) parseLocations() []ast.Location {
 //	  USER
 //	  GUEST
 //	}
-func (p *Parser) parseEnum() *ast.EnumNode {
+func (p *Parser) parseEnum() ast.Node {
 	node := &ast.EnumNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -354,8 +352,7 @@ func (p *Parser) parseEnum() *ast.EnumNode {
 
 	p.expect(lexer.RightBrace)
 
-	p.AddEnum(node)
-	return node
+	return p.AddEnum(node)
 }
 
 func (p *Parser) parseEnumValue(parent ast.Node) *ast.EnumValueNode {
@@ -379,15 +376,16 @@ func (p *Parser) parseEnumValue(parent ast.Node) *ast.EnumValueNode {
 //	extend type User {
 //	  role: Role!
 //	}
-func (p *Parser) parseExtend() *ast.TypeNode {
+func (p *Parser) parseExtend() ast.Node {
 	p.parseDescription() // Skip extend description
 
 	p.nextToken()               // Skip 'extend'
 	p.expect(lexer.Type, false) // Ensure the next token is 'type', but not move to next token, continue parsing
 
 	// Parse the extended type using parseType
-	return p.parseType()
+	return p.parseType(true)
 }
+
 func (p *Parser) parseFragment() *ast.FragmentNode {
 	node := &ast.FragmentNode{
 		BaseNode: ast.BaseNode{
@@ -462,7 +460,7 @@ func (p *Parser) parseInterface() *ast.InterfaceNode {
 
 // parseScalar parses a scalar node
 // Example: scalar DateTime
-func (p *Parser) parseScalar() *ast.ScalarNode {
+func (p *Parser) parseScalar() ast.Node {
 	node := &ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -471,8 +469,7 @@ func (p *Parser) parseScalar() *ast.ScalarNode {
 		},
 	}
 
-	p.AddScalar(node)
-	return node
+	return p.AddScalar(node)
 }
 
 // parseTypeReference parses a type reference
@@ -506,7 +503,7 @@ func (p *Parser) parseTypeReference() *ast.FieldType {
 
 // parseUnion parses a union node
 // Example: union User = Product | Order
-func (p *Parser) parseUnion() *ast.UnionNode {
+func (p *Parser) parseUnion() ast.Node {
 	node := &ast.UnionNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -517,8 +514,7 @@ func (p *Parser) parseUnion() *ast.UnionNode {
 
 	p.expect(lexer.Equal)
 	node.Types = p.parseUnionTypes()
-	p.AddUnion(node)
-	return node
+	return p.AddUnion(node)
 }
 
 // parseUnionTypes parses the types in a union definition

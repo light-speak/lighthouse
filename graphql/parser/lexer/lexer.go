@@ -1,5 +1,7 @@
 package lexer
 
+import "strconv"
+
 type TokenType string
 
 const (
@@ -286,7 +288,7 @@ func (l *Lexer) handleNumber() *Token {
 // handleUnrecognized handle unrecognized character
 // for example: %, ^, &, *
 func (l *Lexer) handleUnrecognized() *Token {
-	panic("unrecognized character: " + string(l.ch))
+	panic("unrecognized character: " + string(l.ch) + " , at line " + strconv.Itoa(l.line) + " position " + strconv.Itoa(l.linePosition))
 }
 
 // isLetter check if the character is a letter
