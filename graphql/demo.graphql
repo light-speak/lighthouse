@@ -50,6 +50,13 @@ enum Role {
   GUEST @enum(value: 3)
 }
 
+# 定义枚举
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
 # 定义输入类型
 input UserInput {
   name: String!
