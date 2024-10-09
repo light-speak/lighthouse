@@ -56,6 +56,7 @@ type FieldType struct {
 	IsList       bool         // Indicates if the field is a list type
 	ElemType     *FieldType   // Element type if IsList is true
 	IsNonNull    bool         // Indicates if the field is non-nullable
+	Level        int          // Level of nesting for list types
 }
 
 // ArgumentValue represents a value for an argument

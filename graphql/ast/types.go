@@ -4,7 +4,7 @@ package ast
 type TypeNode struct {
 	BaseNode
 	Implements     []string
-	ImplementTypes []*TypeNode
+	ImplementTypes []Node
 	Fields         []*FieldNode
 }
 

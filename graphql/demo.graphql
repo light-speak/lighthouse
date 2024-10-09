@@ -74,7 +74,7 @@ type UserLocation {
 # 定义查询操作
 type Query {
   getUser(id: ID!): User
-  listUsers: [User!]!
+  listUsers: [User!]! @paginate
   getProduct(id: ID!, name: String): Product
   listProducts: [Product!]!
   search(query: String!): [SearchResult!]!

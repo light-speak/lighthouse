@@ -9,6 +9,7 @@ func (p *Parser) AddReserved() {
 	p.addReservedScalarType()
 	p.addReservedScalar()
 	p.addReservedDirective()
+	p.addReservedType()
 }
 
 func (p *Parser) MergeScalarType() {
@@ -116,6 +117,31 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+
+	p.AddDirective(&ast.DirectiveDefinitionNode{
+		BaseNode: ast.BaseNode{
+			Name:        "paginate",
+			Description: "paginate",
+		},
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: []*ast.ArgumentNode{
+			{
+				BaseNode: ast.BaseNode{
+					Name: "scopes",
+				},
+				Type: &ast.FieldType{
+					Name:      "Int",
+					IsList:    true,
+					IsNonNull: false,
+					ElemType: &ast.FieldType{
+						Name:      "String",
+						Type:      p.ScalarMap["String"],
+						IsNonNull: true,
+					},
+				},
+			},
+		},
+	})
 }
 
 func (p *Parser) addReservedScalarType() {
@@ -124,4 +150,54 @@ func (p *Parser) addReservedScalarType() {
 	p.AddScalarType("Float", &scalar.FloatScalar{})
 	p.AddScalarType("String", &scalar.StringScalar{})
 	p.AddScalarType("ID", &scalar.IDScalar{})
+}
+
+func (p *Parser) addReservedType() {
+	p.AddType("PaginateInfo", &ast.TypeNode{
+		BaseNode: ast.BaseNode{
+			Name:        "PaginateInfo",
+			Description: "The PaginateInfo type represents information about a paginated list.",
+		},
+		Fields: []*ast.FieldNode{
+			{
+				BaseNode: ast.BaseNode{
+					Name: "currentPage",
+				},
+				Type: &ast.FieldType{
+					Name:      "Int",
+					Type:      p.ScalarMap["Int"],
+					IsNonNull: true,
+				},
+			},
+			{
+				BaseNode: ast.BaseNode{
+					Name: "totalPage",
+				},
+				Type: &ast.FieldType{
+					Name:      "Int",
+					Type:      p.ScalarMap["Int"],
+					IsNonNull: true,
+				},
+			},
+			{
+				BaseNode: ast.BaseNode{
+					Name: "hasNextPage",
+				},
+				Type: &ast.FieldType{
+					Name:      "Boolean",
+					Type:      p.ScalarMap["Boolean"],
+					IsNonNull: true,
+				},
+			},
+			{
+				BaseNode: ast.BaseNode{
+					Name: "totalCount",
+				},
+				Type: &ast.FieldType{
+					Name: "Int",
+					Type: p.ScalarMap["Int"],
+				},
+			},
+		},
+	}, false)
 }

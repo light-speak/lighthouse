@@ -2,11 +2,11 @@ package ast
 
 type FieldNode struct {
 	BaseNode
-	Type     *FieldType
-	Value    Value
-	Args     []*ArgumentNode
-	Parent   Node
-	Children []*FieldNode
+	Type      *FieldType
+	Value     Value
+	Args      []*ArgumentNode
+	Parent    Node
+	Children  []*FieldNode
 }
 
 func (f *FieldNode) GetNodeType() NodeType { return NodeTypeField }

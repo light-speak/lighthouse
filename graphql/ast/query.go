@@ -3,7 +3,7 @@ package ast
 type FragmentNode struct {
 	BaseNode
 	On     string
-	Type   *TypeNode
+	Type   Node
 	Fields []*FieldNode
 }
 
