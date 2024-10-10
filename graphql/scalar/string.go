@@ -20,10 +20,9 @@ func (s *StringScalar) Serialize(v interface{}) (string, error) {
 }
 
 func (s *StringScalar) ParseLiteral(v ast.Value) (interface{}, error) {
-	switch vt := v.(type) {
-	case *ast.StringValue:
+	if vt, ok := v.(*ast.StringValue); ok {
 		return vt.Value, nil
-	default:
-		return nil, fmt.Errorf("invalid literal for String: %v", v)
 	}
+	return nil, fmt.Errorf("invalid literal for String: %v", v)
 }
+

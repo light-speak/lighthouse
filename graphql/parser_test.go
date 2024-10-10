@@ -3,7 +3,6 @@ package graphql
 import (
 	"testing"
 
-	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 	"github.com/light-speak/lighthouse/graphql/validate"
@@ -16,7 +15,10 @@ func TestReadGraphQLFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	for {
-		token := l.NextToken()
+		token, err := l.NextToken()
+		if err != nil {
+			t.Fatal(err)
+		}
 		log.Debug().Msgf("%+v", token.Value)
 		if token.Type == lexer.EOF {
 			break
@@ -51,10 +53,6 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	schemaNodes := make([]ast.Node, 0, len(nodes))
-	for _, node := range nodes {
-		schemaNodes = append(schemaNodes, node)
-	}
-	schema := generateSchema(schemaNodes)
-	log.Debug().Msgf("\n%s", schema)
+	schema := generateSchema(nodes)
+	log.Debug().Msgf("schema: \n\n%s", schema)
 }

@@ -274,15 +274,27 @@ func validateFieldType(fieldType *ast.FieldType) error {
 
 	return nil
 }
-
 func validateDirectives(node ast.Node) error {
+	directiveNames := make(map[string]int)
 	for _, directive := range node.GetDirectives() {
-		if directiveDefinition := getDirectiveDefinition(directive.GetName()); directiveDefinition == nil {
+		directiveName := directive.GetName()
+		directiveDefinition := getDirectiveDefinition(directiveName)
+		if directiveDefinition == nil {
 			return &errors.ValidateError{
 				Node:    node,
-				Message: fmt.Sprintf("directive %s not found", directive.GetName()),
+				Message: fmt.Sprintf("directive %s not found", directiveName),
 			}
 		}
+
+		if count, exists := directiveNames[directiveName]; exists {
+			if !directiveDefinition.Repeatable {
+				return &errors.ValidateError{
+					Node:    node,
+					Message: fmt.Sprintf("directive %s is not repeatable but used %d times", directiveName, count+1),
+				}
+			}
+		}
+		directiveNames[directiveName]++
 	}
 	return nil
 }
@@ -315,6 +327,9 @@ func getValueTypeNode(name string) ast.Node {
 
 func addPaginationResponseType(fieldType *ast.FieldType) ast.Node {
 	elemName := fieldType.Name
+	if existingTypeNode, ok := p.TypeMap[fmt.Sprintf("%sPaginateResponse", elemName)]; ok {
+		return existingTypeNode
+	}
 	return p.AddType(fmt.Sprintf("%sPaginateResponse", elemName), &ast.TypeNode{
 		BaseNode: ast.BaseNode{
 			Name:        fmt.Sprintf("%sPaginateResponse", elemName),

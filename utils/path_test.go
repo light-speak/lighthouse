@@ -20,10 +20,3 @@ func TestGetModPath(t *testing.T) {
 	t.Logf("Mod path: %s", modPath)
 }
 
-func TestGetCallerPath(t *testing.T) {
-	callerPath, err := GetCallerPath()
-	if err != nil {
-		t.Fatalf("GetCallerPath() failed: %v", err)
-	}
-	t.Logf("Caller path: %s", callerPath)
-}

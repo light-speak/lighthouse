@@ -1,0 +1,11 @@
+type Post @key(fields: "id") {
+  id: ID!
+  title: String!
+  content: String!
+  userId: ID!
+  user: User!
+}
+
+extend type Query {
+  posts: [Post!]! @paginate
+}

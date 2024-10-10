@@ -32,7 +32,6 @@ func (p *Parser) parseType(extends ...bool) {
 		field := p.parseField(node)
 		fields = append(fields, field)
 	}
-	p.expect(lexer.RightBrace)
 	node.Fields = fields
 
 	p.AddType(node.GetName(), node, len(extends) > 0)
@@ -304,7 +303,10 @@ func (p *Parser) parseDirectiveDefinition() {
 	if p.currToken.Type == lexer.LeftParent {
 		node.Args = p.parseArguments(node)
 	}
-
+	if p.currToken.Type == lexer.Repeatable {
+		node.Repeatable = true
+		p.expect(lexer.Repeatable)
+	}
 	p.expect(lexer.On)
 	node.Locations = p.parseLocations()
 

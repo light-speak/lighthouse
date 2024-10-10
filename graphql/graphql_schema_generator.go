@@ -56,14 +56,18 @@ func generateObjectType(node ast.Node) string {
 	return builder.String()
 }
 
-func generateSchema(nodes []ast.Node) string {
+func generateSchema(nodes map[string]ast.Node) string {
 	var schemaBuilder strings.Builder
+
+	var scalarNodes []ast.Node
+
 	for _, node := range nodes {
 		nextLine := true
 		switch node.GetNodeType() {
 		case ast.NodeTypeScalar:
 			// 生成 Scalar 定义
-			schemaBuilder.WriteString(generateScalarType(node))
+			scalarNodes = append(scalarNodes, node)
+			nextLine = false
 		case ast.NodeTypeInterface:
 			// 生成 Interface 定义
 			schemaBuilder.WriteString(generateInterfaceType(node))
@@ -87,12 +91,21 @@ func generateSchema(nodes []ast.Node) string {
 		}
 	}
 
+	schemaBuilder.WriteString("\n# ============== Scalar ==============\n")
+	for _, scalarNode := range scalarNodes {
+		schemaBuilder.WriteString(generateScalarType(scalarNode))
+	}
+
 	return schemaBuilder.String()
 }
 
 func generateScalarType(node ast.Node) string {
 	var builder strings.Builder
 	scalarNode := node.(*ast.ScalarNode)
+	// not generate id , int , float , string , boolean
+	if scalarNode.Name == "ID" || scalarNode.Name == "Int" || scalarNode.Name == "Float" || scalarNode.Name == "String" || scalarNode.Name == "Boolean" {
+		return ""
+	}
 	builder.WriteString(fmt.Sprintf("scalar %s\n", scalarNode.Name))
 	return builder.String()
 }

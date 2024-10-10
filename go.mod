@@ -6,6 +6,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.33.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

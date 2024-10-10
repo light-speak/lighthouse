@@ -21,14 +21,12 @@ func (i *BooleanScalar) Serialize(v interface{}) (string, error) {
 	if boolValue, ok := v.(bool); ok {
 		return strconv.FormatBool(boolValue), nil
 	}
-	return "", fmt.Errorf("value is not an boolean: %v", v)
+	return "", fmt.Errorf("value is not a boolean: %v", v)
 }
 
 func (i *BooleanScalar) ParseLiteral(v ast.Value) (interface{}, error) {
-	switch vt := v.(type) {
-	case *ast.BooleanValue:
+	if vt, ok := v.(*ast.BooleanValue); ok {
 		return vt.Value, nil
-	default:
-		return nil, fmt.Errorf("invalid literal for Boolean: %v", v)
 	}
+	return nil, fmt.Errorf("invalid literal for Boolean: %v", v)
 }

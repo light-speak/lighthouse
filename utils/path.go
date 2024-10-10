@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -45,15 +44,6 @@ func GetModPath(path *string) (string, error) {
 	}
 
 	return "", fmt.Errorf("go.mod file not found")
-}
-
-// GetCallerPath Get the path of the caller
-func GetCallerPath() (string, error) {
-	_, currentFilePath, _, ok := runtime.Caller(1)
-	if !ok {
-		return "", fmt.Errorf("failed to get caller information")
-	}
-	return filepath.Dir(currentFilePath), nil
 }
 
 // GetPackageFromPath Get the package name from the path ending

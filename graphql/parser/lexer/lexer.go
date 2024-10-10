@@ -1,6 +1,8 @@
 package lexer
 
-import "strconv"
+import (
+	"github.com/light-speak/lighthouse/errors"
+)
 
 type TokenType string
 
@@ -48,6 +50,8 @@ const (
 	Exclamation  TokenType = "!"
 	Equal        TokenType = "="
 	And          TokenType = "&"
+	Repeatable   TokenType = "repeatable"
+	TripleDot    TokenType = "..."
 )
 
 var keywords = map[string]TokenType{
@@ -68,6 +72,8 @@ var keywords = map[string]TokenType{
 	"fragment":     Fragment,
 	"true":         Boolean,
 	"false":        Boolean,
+	"repeatable":   Repeatable,
+	"...":          TripleDot,
 }
 
 type Token struct {
@@ -77,13 +83,19 @@ type Token struct {
 	LinePosition int
 }
 
+type Content struct {
+	Path    *string
+	Content string
+}
+
 type Lexer struct {
-	content      string
-	position     int
-	readPosition int
-	length       int
-	line         int
-	linePosition int
+	contents       []*Content
+	currentContent *Content
+	contentIndex   int
+	position       int
+	readPosition   int
+	line           int
+	linePosition   int
 	// current character
 	ch byte
 	// whitespaceSet is a set of whitespace characters
@@ -103,11 +115,11 @@ func (l *Lexer) IsKeyword(word string) bool {
 
 // NewLexer create a new lexer
 // and init specialSet and whitespaceSet
-func NewLexer(content string) *Lexer {
+func NewLexer(contents []*Content) *Lexer {
 	l := &Lexer{
-		content: content,
-		length:  len(content),
-		line:    1,
+		contents:     contents,
+		contentIndex: 0,
+		line:         1,
 		whitespaceSet: map[byte]struct{}{
 			' ': {}, '\t': {}, '\n': {}, '\r': {},
 		},
@@ -117,20 +129,41 @@ func NewLexer(content string) *Lexer {
 			'|': {}, '"': {}, '\'': {}, '!': {}, '=': {}, '&': {},
 		},
 	}
+	l.switchToNextContent()
 	l.readChar()
 	return l
 }
 
+// switchToNextContent switches to the next content file
+func (l *Lexer) switchToNextContent() bool {
+	if l.contentIndex < len(l.contents) {
+		l.currentContent = l.contents[l.contentIndex]
+		l.contentIndex++
+		l.position = 0
+		l.readPosition = 0
+		l.line = 1
+		l.linePosition = 0
+		return true
+	}
+	return false
+}
+
 // readChar read next character
 func (l *Lexer) readChar() {
-	if l.readPosition >= l.length {
-		l.ch = 0
+	if l.readPosition >= len(l.currentContent.Content) {
+		if l.switchToNextContent() {
+			l.ch = l.currentContent.Content[0]
+			l.position = 0
+			l.readPosition = 1
+		} else {
+			l.ch = 0
+		}
 	} else {
-		l.ch = l.content[l.readPosition]
+		l.ch = l.currentContent.Content[l.readPosition]
+		l.position = l.readPosition
+		l.readPosition++
 	}
-	l.position = l.readPosition
 	l.linePosition++
-	l.readPosition++
 }
 
 // skipWhitespace skip whitespace
@@ -152,10 +185,9 @@ func (l *Lexer) isSpecialChar(ch byte) bool {
 }
 
 // NextToken get next token
-func (l *Lexer) NextToken() *Token {
+func (l *Lexer) NextToken() (token *Token, err error) {
 	l.skipWhitespace()
 
-	var token *Token
 	switch {
 	case l.isSpecialChar(l.ch):
 		token = l.handleSpecialChar()
@@ -166,12 +198,15 @@ func (l *Lexer) NextToken() *Token {
 	case l.ch == 0:
 		token = &Token{Type: EOF, Line: l.line, LinePosition: l.linePosition}
 	default:
-		token = l.handleUnrecognized()
+		token, err = l.handleUnrecognized()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	l.previousToken = l.currentToken
 	l.currentToken = token
-	return token
+	return token, nil
 }
 
 // handleSpecialChar handle special character
@@ -205,7 +240,7 @@ func (l *Lexer) readComment() *Token {
 	}
 	return &Token{
 		Type:         Comment,
-		Value:        l.content[start:l.position],
+		Value:        l.currentContent.Content[start:l.position],
 		Line:         l.line,
 		LinePosition: l.linePosition,
 	}
@@ -233,7 +268,7 @@ func (l *Lexer) readMessage() *Token {
 
 	return &Token{
 		Type:         tokenType,
-		Value:        l.content[start:l.position],
+		Value:        l.currentContent.Content[start:l.position],
 		Line:         l.line,
 		LinePosition: l.linePosition,
 	}
@@ -246,7 +281,7 @@ func (l *Lexer) handleLetter() *Token {
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
-	word := l.content[start:l.position]
+	word := l.currentContent.Content[start:l.position]
 	tokType, ok := keywords[word]
 	if !ok {
 		tokType = Letter
@@ -279,7 +314,7 @@ func (l *Lexer) handleNumber() *Token {
 
 	return &Token{
 		Type:         tokenType,
-		Value:        l.content[start:l.position],
+		Value:        l.currentContent.Content[start:l.position],
 		Line:         l.line,
 		LinePosition: l.linePosition,
 	}
@@ -287,8 +322,13 @@ func (l *Lexer) handleNumber() *Token {
 
 // handleUnrecognized handle unrecognized character
 // for example: %, ^, &, *
-func (l *Lexer) handleUnrecognized() *Token {
-	panic("unrecognized character: " + string(l.ch) + " , at line " + strconv.Itoa(l.line) + " position " + strconv.Itoa(l.linePosition))
+func (l *Lexer) handleUnrecognized() (*Token, error) {
+	return nil, &errors.LexerError{
+		Path:         l.currentContent.Path,
+		Line:         l.line,
+		LinePosition: l.linePosition,
+		Message:      "unrecognized character: " + string(l.ch),
+	}
 }
 
 // isLetter check if the character is a letter

@@ -16,8 +16,9 @@ func (d *DirectiveNode) GetArg(name string) *ArgumentNode {
 
 type DirectiveDefinitionNode struct {
 	BaseNode
-	Args      []*ArgumentNode
-	Locations []Location
+	Args       []*ArgumentNode
+	Locations  []Location
+	Repeatable bool
 }
 
 func (d *DirectiveDefinitionNode) GetNodeType() NodeType    { return NodeTypeDirectiveDefinition }

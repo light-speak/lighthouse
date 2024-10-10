@@ -43,7 +43,19 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return lexer.NewLexer(string(content)), nil
+	return lexer.NewLexer([]*lexer.Content{{Path: &path, Content: string(content)}}), nil
+}
+
+func ReadGraphQLFiles(paths []string) (*lexer.Lexer, error) {
+	contents := make([]*lexer.Content, 0)
+	for _, path := range paths {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		contents = append(contents, &lexer.Content{Path: &path, Content: string(content)})
+	}
+	return lexer.NewLexer(contents), nil
 }
 
 // NewParser create a new parser
@@ -54,8 +66,13 @@ func NewParser(lexer *lexer.Lexer) *Parser {
 }
 
 // nextToken move to next token
-func (p *Parser) nextToken() {
-	p.currToken = p.lexer.NextToken()
+func (p *Parser) nextToken() error {
+	var err error
+	p.currToken, err = p.lexer.NextToken()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ParseSchema parse schema
