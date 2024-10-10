@@ -186,6 +186,7 @@ func validateType(node ast.Node) error {
 					Type:      respType,
 					IsNonNull: true,
 				}
+				addPaginateArgument(field)
 			}
 		}
 	}
@@ -359,4 +360,43 @@ func addPaginationResponseType(fieldType *ast.FieldType) ast.Node {
 			},
 		},
 	}, false)
+}
+
+func addPaginateArgument(field *ast.FieldNode) {
+	field.Args = append(field.Args, &ast.ArgumentNode{
+		BaseNode: ast.BaseNode{
+			Name: "page",
+		},
+		Type: &ast.FieldType{
+			Name:      "Int",
+			Type:      p.ScalarMap["Int"],
+			IsNonNull: false,
+		},
+		DefaultValue: &ast.ArgumentValue{
+			Value: &ast.IntValue{Value: 1},
+			Type: &ast.FieldType{
+				Name:      "Int",
+				Type:      p.ScalarMap["Int"],
+				IsNonNull: true,
+			},
+		},
+	})
+	field.Args = append(field.Args, &ast.ArgumentNode{
+		BaseNode: ast.BaseNode{
+			Name: "size",
+		},
+		Type: &ast.FieldType{
+			Name:      "Int",
+			Type:      p.ScalarMap["Int"],
+			IsNonNull: false,
+		},
+		DefaultValue: &ast.ArgumentValue{
+			Value: &ast.IntValue{Value: 10},
+			Type: &ast.FieldType{
+				Name:      "Int",
+				Type:      p.ScalarMap["Int"],
+				IsNonNull: true,
+			},
+		},
+	})
 }

@@ -57,7 +57,6 @@ func (p *Parser) addReservedScalar() {
 	})
 }
 
-
 func (p *Parser) addReservedScalarType() {
 	p.AddScalarType("Boolean", &scalar.BooleanScalar{})
 	p.AddScalarType("Int", &scalar.IntScalar{})

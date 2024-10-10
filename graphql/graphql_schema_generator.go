@@ -37,18 +37,12 @@ func generateObjectType(node ast.Node) string {
 				}
 				// 生成参数类型
 				builder.WriteString(fmt.Sprintf("%s: %s", arg.Name, generateFieldType(arg.Type)))
-				if arg.Type.IsNonNull {
-					builder.WriteString("!")
-				}
 			}
 			builder.WriteString(")")
 		}
 
 		// 生成字段类型
 		builder.WriteString(fmt.Sprintf(": %s", generateFieldType(field.Type)))
-		if field.Type.IsNonNull {
-			builder.WriteString("!")
-		}
 		builder.WriteString("\n")
 	}
 
@@ -176,10 +170,19 @@ func generateInterfaceType(node ast.Node) string {
 	return builder.String()
 }
 
-// 生成字段的类型定义
+// Generate field type definition
 func generateFieldType(fieldType *ast.FieldType) string {
+	var typeName string
 	if fieldType.IsList {
-		return fmt.Sprintf("[%s]", generateFieldType(fieldType.ElemType))
+		typeName = fmt.Sprintf("[%s]", generateFieldType(fieldType.ElemType))
+		if fieldType.IsNonNull {
+			typeName += "!"
+		}
+	} else {
+		typeName = fieldType.Name
+		if fieldType.IsNonNull {
+			typeName += "!"
+		}
 	}
-	return fieldType.Name
+	return typeName
 }
