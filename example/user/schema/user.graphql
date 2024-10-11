@@ -7,3 +7,8 @@ type User @key(fields: "id") @model {
 extend type Query {
   users: [User!]! @paginate
 }
+
+interface Userable {
+  userId: ID!
+  user: User!
+}

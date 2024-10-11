@@ -61,6 +61,10 @@ func (o *Options) addFunc() {
 	o.Funcs["section"] = UserCodeSection
 	o.Funcs["fields"] = ast.Fields
 	o.Funcs["genModel"] = ast.Model
+	o.Funcs["add"] = Add
+	o.Funcs["sub"] = Sub
+	o.Funcs["mul"] = Mul
+	o.Funcs["div"] = Div
 }
 
 func Render(options *Options) error {

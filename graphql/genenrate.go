@@ -6,7 +6,7 @@ import (
 
 	"github.com/light-speak/lighthouse/config"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/graphql/model/generate"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/template"
@@ -66,10 +66,10 @@ func Generate() error {
 		}
 	}
 
-	if err := model.GenType(typeNodes, currentPath); err != nil {
+	if err := generate.GenType(typeNodes, currentPath); err != nil {
 		return err
 	}
-	if err := model.GenResponse(responseNodes, currentPath); err != nil {
+	if err := generate.GenResponse(responseNodes, currentPath); err != nil {
 		return err
 	}
 

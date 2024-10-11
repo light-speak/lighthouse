@@ -16,8 +16,16 @@ type Post struct {
   model.ModelSoftDelete
   Title string `json:"title" gorm:"index" `
   Content string `json:"content" `
-  UserId int64 `json:"userId" gorm:"index" `
+  UserId int64 `gorm:"index" json:"userId" `
   User User `json:"user" `
 }
 
 func (*Post) IsModel() bool { return true }
+
+
+func init() {
+	model.GetDB().AutoMigrate(
+    &User{},
+    &Post{},
+  )
+}

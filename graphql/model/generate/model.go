@@ -1,4 +1,4 @@
-package model
+package generate
 
 import (
 	"embed"
