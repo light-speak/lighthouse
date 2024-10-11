@@ -12,6 +12,8 @@ import (
 // It contains a lexer for tokenizing the input and the current token being processed.
 // The various maps are used to store different types of AST nodes for quick lookup and management during parsing.
 type Parser struct {
+	QueryParser *QueryParser
+
 	// lexer is the Lexer instance used for lexical analysis, converting the input GraphQL text into a stream of tokens.
 	lexer *lexer.Lexer
 
@@ -24,18 +26,29 @@ type Parser struct {
 	// TypeMap, enumMap, scalarMap, unionMap, inputMap, interfaceMap, and directiveMap are all maps
 	// that store parsed AST nodes. The keys are the names of the respective types, enums, scalars, unions,
 	// input types, interfaces, and directives, while the values are pointers to their corresponding AST node structures.
-	TypeMap          map[string]*ast.TypeNode
-	EnumMap          map[string]*ast.EnumNode
-	ScalarMap        map[string]*ast.ScalarNode
-	UnionMap         map[string]*ast.UnionNode
-	InputMap         map[string]*ast.InputNode
-	InterfaceMap     map[string]*ast.InterfaceNode
-	DirectiveMap     map[string]*ast.DirectiveDefinitionNode
-	FragmentMap      map[string]*ast.FragmentNode
-	OperationMap     map[string]*ast.OperationNode
-	OperationArgsMap map[string]*ast.ArgumentNode
-
+	TypeMap       map[string]*ast.TypeNode
+	EnumMap       map[string]*ast.EnumNode
+	ScalarMap     map[string]*ast.ScalarNode
+	UnionMap      map[string]*ast.UnionNode
+	InputMap      map[string]*ast.InputNode
+	InterfaceMap  map[string]*ast.InterfaceNode
+	DirectiveMap  map[string]*ast.DirectiveDefinitionNode
+	FragmentMap   map[string]*ast.FragmentNode
 	ScalarTypeMap map[string]ast.ScalarType
+}
+
+type QueryParser struct {
+	Parser        *Parser
+	QueryId       string
+	OperationNode *ast.OperationNode
+	FragmentMap   map[string]*ast.FragmentNode
+}
+
+func (p *QueryParser) AddFragment(node *ast.FragmentNode) {
+	if p.FragmentMap == nil {
+		p.FragmentMap = make(map[string]*ast.FragmentNode)
+	}
+	p.FragmentMap[node.Name] = node
 }
 
 // ReadGraphQLFile read graphql file and return a lexer
@@ -64,6 +77,16 @@ func NewParser(lexer *lexer.Lexer) *Parser {
 	p := &Parser{lexer: lexer}
 	p.nextToken() // Initialize currToken
 	return p
+}
+
+// NewQueryParser create a new query parser, which is used to parse query
+// it will parse the operation and fragments
+// and store them in the QueryParser
+func (p *Parser) NewQueryParser(queryLexer *lexer.Lexer) *QueryParser {
+	p.lexer = queryLexer
+	p.QueryParser = &QueryParser{Parser: p}
+	p.nextToken()
+	return p.QueryParser
 }
 
 // nextToken move to next token
@@ -104,8 +127,12 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 			p.nextToken()
 		}
 	}
-	p.AddReserved()
-	p.MergeScalarType()
+
+	if p.QueryParser == nil {
+		p.AddReserved()
+		p.MergeScalarType()
+	}
+
 	return p.Nodes
 }
 
@@ -134,17 +161,6 @@ func (p *Parser) AddScalar(node *ast.ScalarNode) {
 		panic(fmt.Sprintf("Name conflict: Scalar '%s' already defined", node.Name))
 	}
 	p.ScalarMap[node.Name] = node
-	p.Nodes[node.Name] = node
-}
-
-func (p *Parser) AddOperation(node *ast.OperationNode) {
-	if p.OperationMap == nil {
-		p.OperationMap = make(map[string]*ast.OperationNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Operation '%s' already defined", node.Name))
-	}
-	p.OperationMap[node.Name] = node
 	p.Nodes[node.Name] = node
 }
 
@@ -201,16 +217,6 @@ func (p *Parser) AddUnion(node *ast.UnionNode) {
 	}
 	p.UnionMap[node.Name] = node
 	p.Nodes[node.Name] = node
-}
-
-func (p *Parser) AddOperationArgs(name string, node *ast.ArgumentNode) {
-	if p.OperationArgsMap == nil {
-		p.OperationArgsMap = make(map[string]*ast.ArgumentNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Argument Name conflict: '%s' already defined", node.Name))
-	}
-	p.OperationArgsMap[name] = node
 }
 
 func (p *Parser) AddType(name string, node *ast.TypeNode, extends bool) ast.Node {
@@ -271,6 +277,10 @@ func (p *Parser) isNameConflict(name string) bool {
 }
 
 func (p *Parser) AddFragment(node *ast.FragmentNode) {
+	if p.QueryParser != nil {
+		p.QueryParser.AddFragment(node)
+		return
+	}
 	if p.FragmentMap == nil {
 		p.FragmentMap = make(map[string]*ast.FragmentNode)
 	}

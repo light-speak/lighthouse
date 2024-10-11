@@ -53,7 +53,7 @@ func validateUnion(node ast.Node) error {
 
 	union.TypeNodes = make([]ast.Node, 0, len(union.Types))
 	for _, t := range union.Types {
-		if node := getValueTypeNode(t); node == nil {
+		if node := getValueTypeType(t); node == nil {
 			return &errors.ValidateError{
 				Node:    union,
 				Message: fmt.Sprintf("type %s not found", t),
@@ -62,6 +62,7 @@ func validateUnion(node ast.Node) error {
 			union.TypeNodes = append(union.TypeNodes, node)
 		}
 	}
+
 	return nil
 }
 
@@ -129,11 +130,14 @@ func validateFragment(node ast.Node) error {
 		}
 	}
 
-	typeNode := getValueTypeNode(fragment.On)
+	typeNode := getValueTypeType(fragment.On)
+	if typeNode == nil {
+		typeNode = getValueTypeInterface(fragment.On)
+	}
 	if typeNode == nil {
 		return &errors.ValidateError{
 			Node:    node,
-			Message: "fragment on must be a type",
+			Message: "fragment on must be a type or interface",
 		}
 	}
 	fragment.Type = typeNode
@@ -154,7 +158,7 @@ func validateType(node ast.Node) error {
 	implementFields := make([]*ast.FieldNode, 0, len(typeNode.Implements))
 
 	for _, interfaceName := range typeNode.Implements {
-		interfaceNode := getValueTypeNode(interfaceName)
+		interfaceNode := getValueTypeInterface(interfaceName)
 		if interfaceNode == nil {
 			return &errors.ValidateError{
 				Node:    node,
@@ -272,6 +276,7 @@ func areTypesCompatible(typeA, typeB *ast.FieldType) bool {
 	return typeA.Name == typeB.Name && typeA.TypeCategory == typeB.TypeCategory && typeA.IsList == typeB.IsList
 }
 
+// validateFieldType validates a field type
 func validateFieldType(fieldType *ast.FieldType) error {
 	levels := 0
 
@@ -290,6 +295,8 @@ func validateFieldType(fieldType *ast.FieldType) error {
 
 	return nil
 }
+
+// validateDirectives validates the directives of a node
 func validateDirectives(node ast.Node) error {
 	directiveNames := make(map[string]int)
 	for _, directive := range node.GetDirectives() {
@@ -320,13 +327,13 @@ func getDirectiveDefinition(name string) *ast.DirectiveDefinitionNode {
 }
 
 func getValueTypeNode(name string) ast.Node {
-	if node, exists := p.TypeMap[name]; exists {
+	if node := getValueTypeType(name); node != nil {
+		return node
+	}
+	if node := getValueTypeInterface(name); node != nil {
 		return node
 	}
 	if node, exists := p.UnionMap[name]; exists {
-		return node
-	}
-	if node, exists := p.InterfaceMap[name]; exists {
 		return node
 	}
 	if node, exists := p.InputMap[name]; exists {
@@ -336,6 +343,33 @@ func getValueTypeNode(name string) ast.Node {
 		return node
 	}
 	if node, exists := p.ScalarMap[name]; exists {
+		return node
+	}
+	return nil
+}
+
+func getValueTypeFragment(name string) *ast.FragmentNode {
+	if p.QueryParser != nil {
+		if node, exists := p.QueryParser.FragmentMap[name]; exists {
+			return node
+		}
+	} else {
+		if node, exists := p.FragmentMap[name]; exists {
+			return node
+		}
+	}
+	return nil
+}
+
+func getValueTypeType(name string) ast.Node {
+	if node, exists := p.TypeMap[name]; exists {
+		return node
+	}
+	return nil
+}
+
+func getValueTypeInterface(name string) ast.Node {
+	if node, exists := p.InterfaceMap[name]; exists {
 		return node
 	}
 	return nil

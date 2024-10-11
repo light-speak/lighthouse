@@ -1,0 +1,8 @@
+{
+  //graphql globs
+  "schemas": [
+      "graphql/**/*.graphql",
+      "graphql/**/*.graphqls",
+      "graphql/**/*.gql"
+  ]
+}

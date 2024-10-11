@@ -64,6 +64,24 @@ func TestParseOperation(t *testing.T) {
 	}
 	p := parser.NewParser(l)
 
-	p.ParseSchema()
+	serviceNodes := p.ParseSchema()
+	schema := generateSchema(serviceNodes)
+	log.Debug().Msgf("schema: \n\n%s", schema)
 
+	nl, err := parser.ReadGraphQLFile("query_example.graphql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	qp := p.NewQueryParser(nl)
+	qp.Parser.ParseSchema()
+	for _, node := range qp.FragmentMap {
+		err := validate.Validate(node, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = validate.Validate(qp.OperationNode, p)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

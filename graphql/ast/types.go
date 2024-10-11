@@ -10,11 +10,9 @@ type TypeNode struct {
 	Go             string
 }
 
-func (t *TypeNode) GetNodeType() NodeType   { return NodeTypeType }
-func (t *TypeNode) GetFields() []*FieldNode { return t.Fields }
-func (t *TypeNode) GetField(name string) *FieldNode {
-	return findField(t.Fields, name)
-}
+func (t *TypeNode) GetNodeType() NodeType           { return NodeTypeType }
+func (t *TypeNode) GetFields() []*FieldNode         { return t.Fields }
+func (t *TypeNode) GetField(name string) *FieldNode { return findField(t.Fields, name) }
 func (t *TypeNode) GoType() string {
 	if t.Go != "" {
 		return t.Go
@@ -28,11 +26,9 @@ type InputNode struct {
 	Fields []*FieldNode
 }
 
-func (i *InputNode) GetNodeType() NodeType   { return NodeTypeInput }
-func (i *InputNode) GetFields() []*FieldNode { return i.Fields }
-func (i *InputNode) GetField(name string) *FieldNode {
-	return findField(i.Fields, name)
-}
+func (i *InputNode) GetNodeType() NodeType           { return NodeTypeInput }
+func (i *InputNode) GetFields() []*FieldNode         { return i.Fields }
+func (i *InputNode) GetField(name string) *FieldNode { return findField(i.Fields, name) }
 
 // InterfaceNode represents a GraphQL interface
 type InterfaceNode struct {
@@ -40,11 +36,9 @@ type InterfaceNode struct {
 	Fields []*FieldNode
 }
 
-func (i *InterfaceNode) GetNodeType() NodeType   { return NodeTypeInterface }
-func (i *InterfaceNode) GetFields() []*FieldNode { return i.Fields }
-func (i *InterfaceNode) GetField(name string) *FieldNode {
-	return findField(i.Fields, name)
-}
+func (i *InterfaceNode) GetNodeType() NodeType           { return NodeTypeInterface }
+func (i *InterfaceNode) GetFields() []*FieldNode         { return i.Fields }
+func (i *InterfaceNode) GetField(name string) *FieldNode { return findField(i.Fields, name) }
 
 // UnionNode represents a GraphQL union
 type UnionNode struct {
@@ -82,24 +76,10 @@ type OperationNode struct {
 	BaseNode
 	Type   OperationType
 	Args   []*ArgumentNode
-	Select []*SubOperationNode
+	Fields []*FieldNode
 }
 
-func (t *OperationNode) GetNodeType() NodeType   { return NodeTypeOperation }
-func (t *OperationNode) GetFields() []*FieldNode { return nil }
-func (t *OperationNode) GetField(name string) *FieldNode {
-	return nil
-}
-
-type SubOperationNode struct {
-	BaseNode
-	Args      []*ArgumentNode
-	Fields    []*FieldNode
-	Fragments []*FragmentNode
-}
-
-func (s *SubOperationNode) GetNodeType() NodeType   { return NodeTypeSubOperation }
-func (s *SubOperationNode) GetFields() []*FieldNode { return s.Fields }
-func (s *SubOperationNode) GetField(name string) *FieldNode {
-	return findField(s.Fields, name)
-}
+func (t *OperationNode) GetNodeType() NodeType           { return NodeTypeOperation }
+func (t *OperationNode) GetArgs() []*ArgumentNode        { return t.Args }
+func (t *OperationNode) GetFields() []*FieldNode         { return t.Fields }
+func (t *OperationNode) GetField(name string) *FieldNode { return findField(t.Fields, name) }

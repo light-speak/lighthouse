@@ -7,13 +7,15 @@ import (
 type TokenType string
 
 const (
-	EOF         TokenType = "EOF"
-	Letter      TokenType = "Letter"
-	Boolean     TokenType = "Boolean"
-	IntNumber   TokenType = "IntNumber"
-	FloatNumber TokenType = "FloatNumber"
-	Comment     TokenType = "Comment"
-	Message     TokenType = "Message"
+	EOF         TokenType = "EOF"         // end of file
+	Letter      TokenType = "Letter"      // id, name, age, email, createdAt, role, user_name
+	Boolean     TokenType = "Boolean"     // true, false
+	IntNumber   TokenType = "IntNumber"   // 123
+	FloatNumber TokenType = "FloatNumber" // 1.23, 1.23e-10
+	Comment     TokenType = "Comment"     // # this is a comment
+	Message     TokenType = "Message"     // "hello", "world", "123", "1.23", "1.23e-10"
+	Variable    TokenType = "Variable"    // $id
+	Null        TokenType = "Null"        // null
 
 	Schema            TokenType = "Schema"
 	Type              TokenType = "Type"
@@ -81,6 +83,7 @@ var keywords = map[string]TokenType{
 	"false":        Boolean,
 	"repeatable":   Repeatable,
 	"...":          TripleDot,
+	"null":         Null,
 }
 
 type Token struct {
@@ -185,7 +188,7 @@ func (l *Lexer) skipWhitespace() {
 }
 
 // isSpecialChar check if the character is a special character
-// for example: {, }, (, ), [, ], :, ,
+// for example: {, }, (, ), [, ], :, , ...
 func (l *Lexer) isSpecialChar(ch byte) bool {
 	_, ok := l.specialSet[ch]
 	return ok
@@ -226,6 +229,10 @@ func (l *Lexer) handleSpecialChar() *Token {
 		return l.readComment()
 	case '"':
 		return l.readMessage()
+	case '.':
+		return l.readTripleDot()
+	case '$':
+		return l.readVariable()
 	default:
 		tok := &Token{
 			Type:         TokenType(l.ch),
@@ -235,6 +242,44 @@ func (l *Lexer) handleSpecialChar() *Token {
 		}
 		l.readChar()
 		return tok
+	}
+}
+
+// readVariable read variable
+func (l *Lexer) readVariable() *Token {
+	start := l.position
+	l.readChar()
+	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '_' {
+		l.readChar()
+	}
+	return &Token{
+		Type:         Variable,
+		Value:        l.currentContent.Content[start:l.position],
+		Line:         l.line,
+		LinePosition: l.linePosition,
+	}
+}
+
+// readTripleDot read triple dot
+func (l *Lexer) readTripleDot() *Token {
+	start := l.position
+	for i := 0; i < 3; i++ {
+		if l.ch != '.' {
+			// if don't find three consecutive dots, return a single dot token
+			return &Token{
+				Type:         Dot,
+				Value:        ".",
+				Line:         l.line,
+				LinePosition: l.linePosition,
+			}
+		}
+		l.readChar()
+	}
+	return &Token{
+		Type:         TripleDot,
+		Value:        l.currentContent.Content[start:l.position],
+		Line:         l.line,
+		LinePosition: l.linePosition,
 	}
 }
 
@@ -281,11 +326,11 @@ func (l *Lexer) readMessage() *Token {
 	}
 }
 
-// handleLetter handle letter and bool
-// for example: id, name, age, email, createdAt, role
+// handleLetter handle letter, bool, and underscore
+// for example: id, name, age, email, createdAt, role, user_name
 func (l *Lexer) handleLetter() *Token {
 	start := l.position
-	for isLetter(l.ch) || isDigit(l.ch) {
+	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '_' {
 		l.readChar()
 	}
 	word := l.currentContent.Content[start:l.position]
