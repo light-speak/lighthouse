@@ -1,5 +1,5 @@
 # 自定义标量类型
-scalar DateTime
+scalar TestScalar
 
 # 定义接口
 interface Node {

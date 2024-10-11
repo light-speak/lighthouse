@@ -6,7 +6,6 @@ import (
 
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
-	"github.com/light-speak/lighthouse/log"
 )
 
 // Parser is responsible for parsing the GraphQL schema.
@@ -98,7 +97,6 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 	}
 
 	for p.currToken.Type != lexer.EOF {
-		log.Debug().Msgf("p.currToken.Type + %v", p.currToken.Type)
 		if parseFunc, ok := tokenTypeToParseFunc[p.currToken.Type]; ok {
 			parseFunc()
 		}
@@ -106,6 +104,8 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 			p.nextToken()
 		}
 	}
+	p.AddReserved()
+	p.MergeScalarType()
 	return p.Nodes
 }
 
