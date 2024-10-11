@@ -15,22 +15,26 @@ const (
 	Comment     TokenType = "Comment"
 	Message     TokenType = "Message"
 
-	Schema       TokenType = "Schema"
-	Type         TokenType = "Type"
-	Interface    TokenType = "Interface"
-	Enum         TokenType = "Enum"
-	Input        TokenType = "Input"
-	Query        TokenType = "Query"
-	Mutation     TokenType = "Mutation"
-	Subscription TokenType = "Subscription"
-	Extend       TokenType = "Extend"
-	Implements   TokenType = "Implements"
-	Scalar       TokenType = "Scalar"
-	Union        TokenType = "Union"
-	Directive    TokenType = "Directive"
-	Fragment     TokenType = "Fragment"
-	On           TokenType = "On"
+	Schema            TokenType = "Schema"
+	Type              TokenType = "Type"
+	Interface         TokenType = "Interface"
+	Enum              TokenType = "Enum"
+	Input             TokenType = "Input"
+	Query             TokenType = "Query"
+	Mutation          TokenType = "Mutation"
+	Subscription      TokenType = "Subscription"
+	LowerQuery        TokenType = "query"
+	LowerMutation     TokenType = "mutation"
+	LowerSubscription TokenType = "subscription"
+	Extend            TokenType = "Extend"
+	Implements        TokenType = "Implements"
+	Scalar            TokenType = "Scalar"
+	Union             TokenType = "Union"
+	Directive         TokenType = "Directive"
+	Fragment          TokenType = "Fragment"
+	On                TokenType = "On"
 
+	Dollar       TokenType = "$"
 	LeftBrace    TokenType = "{"
 	RightBrace   TokenType = "}"
 	LeftParent   TokenType = "("
@@ -60,6 +64,9 @@ var keywords = map[string]TokenType{
 	"interface":    Interface,
 	"enum":         Enum,
 	"input":        Input,
+	"query":        LowerQuery,
+	"mutation":     LowerMutation,
+	"subscription": LowerSubscription,
 	"Query":        Query,
 	"Mutation":     Mutation,
 	"Subscription": Subscription,
@@ -333,7 +340,7 @@ func (l *Lexer) handleUnrecognized() (*Token, error) {
 
 // isLetter check if the character is a letter
 func isLetter(ch byte) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_'
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '$'
 }
 
 // isDigit check if the character is a digit

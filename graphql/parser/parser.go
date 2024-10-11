@@ -6,6 +6,7 @@ import (
 
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
+	"github.com/light-speak/lighthouse/log"
 )
 
 // Parser is responsible for parsing the GraphQL schema.
@@ -24,14 +25,16 @@ type Parser struct {
 	// TypeMap, enumMap, scalarMap, unionMap, inputMap, interfaceMap, and directiveMap are all maps
 	// that store parsed AST nodes. The keys are the names of the respective types, enums, scalars, unions,
 	// input types, interfaces, and directives, while the values are pointers to their corresponding AST node structures.
-	TypeMap      map[string]*ast.TypeNode
-	EnumMap      map[string]*ast.EnumNode
-	ScalarMap    map[string]*ast.ScalarNode
-	UnionMap     map[string]*ast.UnionNode
-	InputMap     map[string]*ast.InputNode
-	InterfaceMap map[string]*ast.InterfaceNode
-	DirectiveMap map[string]*ast.DirectiveDefinitionNode
-	FragmentMap  map[string]*ast.FragmentNode
+	TypeMap          map[string]*ast.TypeNode
+	EnumMap          map[string]*ast.EnumNode
+	ScalarMap        map[string]*ast.ScalarNode
+	UnionMap         map[string]*ast.UnionNode
+	InputMap         map[string]*ast.InputNode
+	InterfaceMap     map[string]*ast.InterfaceNode
+	DirectiveMap     map[string]*ast.DirectiveDefinitionNode
+	FragmentMap      map[string]*ast.FragmentNode
+	OperationMap     map[string]*ast.OperationNode
+	OperationArgsMap map[string]*ast.ArgumentNode
 
 	ScalarTypeMap map[string]ast.ScalarType
 }
@@ -80,18 +83,22 @@ func (p *Parser) nextToken() error {
 func (p *Parser) ParseSchema() map[string]ast.Node {
 	p.Nodes = make(map[string]ast.Node)
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
-		lexer.Type:      func() { p.parseType() },
-		lexer.Extend:    func() { p.parseExtend() },
-		lexer.Enum:      func() { p.parseEnum() },
-		lexer.Interface: func() { p.parseInterface() },
-		lexer.Input:     func() { p.parseInput() },
-		lexer.Scalar:    func() { p.parseScalar() },
-		lexer.Union:     func() { p.parseUnion() },
-		lexer.Directive: func() { p.parseDirectiveDefinition() },
-		lexer.Fragment:  func() { p.parseFragment() },
+		lexer.LowerQuery:        func() { p.parseOperation() },
+		lexer.LowerMutation:     func() { p.parseOperation() },
+		lexer.LowerSubscription: func() { p.parseOperation() },
+		lexer.Type:              func() { p.parseType() },
+		lexer.Extend:            func() { p.parseExtend() },
+		lexer.Enum:              func() { p.parseEnum() },
+		lexer.Interface:         func() { p.parseInterface() },
+		lexer.Input:             func() { p.parseInput() },
+		lexer.Scalar:            func() { p.parseScalar() },
+		lexer.Union:             func() { p.parseUnion() },
+		lexer.Directive:         func() { p.parseDirectiveDefinition() },
+		lexer.Fragment:          func() { p.parseFragment() },
 	}
 
 	for p.currToken.Type != lexer.EOF {
+		log.Debug().Msgf("p.currToken.Type + %v", p.currToken.Type)
 		if parseFunc, ok := tokenTypeToParseFunc[p.currToken.Type]; ok {
 			parseFunc()
 		}
@@ -99,8 +106,6 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 			p.nextToken()
 		}
 	}
-	p.AddReserved()
-	p.MergeScalarType()
 	return p.Nodes
 }
 
@@ -129,6 +134,17 @@ func (p *Parser) AddScalar(node *ast.ScalarNode) {
 		panic(fmt.Sprintf("Name conflict: Scalar '%s' already defined", node.Name))
 	}
 	p.ScalarMap[node.Name] = node
+	p.Nodes[node.Name] = node
+}
+
+func (p *Parser) AddOperation(node *ast.OperationNode) {
+	if p.OperationMap == nil {
+		p.OperationMap = make(map[string]*ast.OperationNode)
+	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Name conflict: Operation '%s' already defined", node.Name))
+	}
+	p.OperationMap[node.Name] = node
 	p.Nodes[node.Name] = node
 }
 
@@ -185,6 +201,16 @@ func (p *Parser) AddUnion(node *ast.UnionNode) {
 	}
 	p.UnionMap[node.Name] = node
 	p.Nodes[node.Name] = node
+}
+
+func (p *Parser) AddOperationArgs(name string, node *ast.ArgumentNode) {
+	if p.OperationArgsMap == nil {
+		p.OperationArgsMap = make(map[string]*ast.ArgumentNode)
+	}
+	if p.isNameConflict(node.Name) {
+		panic(fmt.Sprintf("Argument Name conflict: '%s' already defined", node.Name))
+	}
+	p.OperationArgsMap[name] = node
 }
 
 func (p *Parser) AddType(name string, node *ast.TypeNode, extends bool) ast.Node {

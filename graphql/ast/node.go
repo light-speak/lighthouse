@@ -28,6 +28,8 @@ type ScalarType interface {
 type NodeType string
 
 const (
+	NodeTypeOperation           NodeType = "Operation"
+	NodeTypeSubOperation        NodeType = "SubOperation"
 	NodeTypeType                NodeType = "Type"
 	NodeTypeField               NodeType = "Field"
 	NodeTypeArgument            NodeType = "Argument"
@@ -50,6 +52,7 @@ const (
 	TypeCategoryInput  TypeCategory = "Input"
 	TypeCategoryUnion  TypeCategory = "Union"
 	TypeCategoryType   TypeCategory = "Type"
+	TypeFragmentType   TypeCategory = "Fragment"
 )
 
 // FieldType represents the type of a field in the GraphQL schema
