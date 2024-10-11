@@ -13,12 +13,15 @@ type Node interface {
 	GetDirectives() []*DirectiveNode
 	GetArgs() []*ArgumentNode
 	GetFields() []*FieldNode
+
+	GoType() string
 }
 
 type ScalarType interface {
 	ParseValue(v string) (interface{}, error)
 	Serialize(v interface{}) (string, error)
 	ParseLiteral(v Value) (interface{}, error)
+	GoType() string
 }
 
 type NodeType string
@@ -57,6 +60,35 @@ type FieldType struct {
 	ElemType     *FieldType   // Element type if IsList is true
 	IsNonNull    bool         // Indicates if the field is non-nullable
 	Level        int          // Level of nesting for list types
+}
+
+func (f *FieldType) GoType() string {
+	if f.IsList {
+		return f.listGoType()
+	}
+	return f.singleGoType()
+}
+
+func (f *FieldType) listGoType() string {
+	elemType := f.ElemType.GoType()
+	if !f.IsNonNull {
+		return "*[]" + elemType
+	}
+	return "[]" + elemType
+}
+
+func (f *FieldType) singleGoType() string {
+	var baseType string
+	if scalar, ok := f.Type.(*ScalarNode); ok {
+		baseType = scalar.Scalar.GoType()
+	} else {
+		baseType = f.Type.GoType()
+	}
+	
+	if !f.IsNonNull {
+		return "*" + baseType
+	}
+	return baseType
 }
 
 // ArgumentValue represents a value for an argument
@@ -110,6 +142,9 @@ func (b *BaseNode) IsDeprecated() (bool, string) {
 	}
 	return true, reason.(string)
 }
+
+// GoType returns the Go type of the node
+func (b *BaseNode) GoType() string { return b.GetName() }
 
 // Common methods for all node types
 func (b *BaseNode) GetArg(name string) *ArgumentNode { return nil }

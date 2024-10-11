@@ -6,3 +6,14 @@ go 1.23.1
 replace github.com/light-speak/lighthouse => ../../
 
 require github.com/light-speak/lighthouse v0.0.1
+
+require (
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/rs/zerolog v1.33.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	gorm.io/gorm v1.25.12 // indirect
+)

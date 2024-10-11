@@ -30,3 +30,7 @@ func (i *IDScalar) ParseLiteral(v ast.Value) (interface{}, error) {
 	}
 	return nil, fmt.Errorf("invalid literal for Int: %v", v)
 }
+
+func (i *IDScalar) GoType() string {
+	return "int64"
+}

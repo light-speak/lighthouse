@@ -30,3 +30,7 @@ func (f *FloatScalar) ParseLiteral(v ast.Value) (interface{}, error) {
 	}
 	return nil, fmt.Errorf("invalid literal for Float: %v", v)
 }
+
+func (f *FloatScalar) GoType() string {
+	return "float64"
+}

@@ -5,4 +5,5 @@ schema:
     - graphqls
   path:
     - schema
-
+  model:
+    orm: gorm

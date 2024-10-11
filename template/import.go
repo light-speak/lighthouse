@@ -51,6 +51,9 @@ var importRegexMap = map[string]Import{
 	`log\.`: {
 		Path: "github.com/light-speak/lighthouse/log",
 	},
+	`model\.`: {
+		Path: "github.com/light-speak/lighthouse/graphql/model",
+	},
 }
 
 // AddImportRegex add a new import regex and path to the importRegexMap

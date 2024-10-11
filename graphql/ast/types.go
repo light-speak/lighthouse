@@ -3,15 +3,23 @@ package ast
 // TypeNode represents a GraphQL type
 type TypeNode struct {
 	BaseNode
+	IsResponse     bool
 	Implements     []string
 	ImplementTypes []Node
 	Fields         []*FieldNode
+	Go             string
 }
 
 func (t *TypeNode) GetNodeType() NodeType   { return NodeTypeType }
 func (t *TypeNode) GetFields() []*FieldNode { return t.Fields }
 func (t *TypeNode) GetField(name string) *FieldNode {
 	return findField(t.Fields, name)
+}
+func (t *TypeNode) GoType() string {
+	if t.Go != "" {
+		return t.Go
+	}
+	return t.GetName()
 }
 
 // InputNode represents a GraphQL input type

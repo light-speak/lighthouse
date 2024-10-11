@@ -14,8 +14,8 @@ type Config struct {
 }
 
 type SchemaConfig struct {
-	Ext  []string `yaml:"ext"`
-	Path []string `yaml:"path"`
+	Ext   []string    `yaml:"ext"`
+	Path  []string    `yaml:"path"`
 }
 
 func ReadConfig(path string) (*Config, error) {
@@ -42,5 +42,6 @@ func ReadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, &errors.ConfigError{Message: err.Error()}
 	}
+
 	return &config, nil
 }

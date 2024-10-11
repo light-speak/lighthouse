@@ -26,3 +26,6 @@ func (s *StringScalar) ParseLiteral(v ast.Value) (interface{}, error) {
 	return nil, fmt.Errorf("invalid literal for String: %v", v)
 }
 
+func (s *StringScalar) GoType() string {
+	return "string"
+}

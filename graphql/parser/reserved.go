@@ -71,6 +71,7 @@ func (p *Parser) addReservedType() {
 			Name:        "PaginateInfo",
 			Description: "The PaginateInfo type represents information about a paginated list.",
 		},
+		Go: "model.PaginateInfo",
 		Fields: []*ast.FieldNode{
 			{
 				BaseNode: ast.BaseNode{

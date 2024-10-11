@@ -31,3 +31,6 @@ func (i *IntScalar) ParseLiteral(v ast.Value) (interface{}, error) {
 	return nil, fmt.Errorf("invalid literal for Int: %v", v)
 }
 
+func (i *IntScalar) GoType() string {
+	return "int64"
+}

@@ -336,6 +336,7 @@ func addPaginationResponseType(fieldType *ast.FieldType) ast.Node {
 			Name:        fmt.Sprintf("%sPaginateResponse", elemName),
 			Description: fmt.Sprintf("The %sPaginateResponse type represents a paginated list of %s.", elemName, elemName),
 		},
+		IsResponse: true,
 		Fields: []*ast.FieldNode{
 			{
 				BaseNode: ast.BaseNode{

@@ -114,6 +114,11 @@ func (p *Parser) addReservedDirective() {
 			description: "The field is defined in another schema.",
 			locations:   []ast.Location{ast.LocationObject},
 		},
+		{
+			name:        "softDelete",
+			description: "The field is defined in another schema.",
+			locations:   []ast.Location{ast.LocationObject},
+		},
 	}
 
 	for _, d := range directives {

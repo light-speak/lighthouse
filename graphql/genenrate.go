@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/config"
+	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
-	"github.com/light-speak/lighthouse/log"
 )
 
 func Generate() error {
@@ -39,17 +40,37 @@ func Generate() error {
 		return err
 	}
 
-	p := parser.NewParser(lexer)
-	nodes := p.ParseSchema()
+	Parser = parser.NewParser(lexer)
+	nodes := Parser.ParseSchema()
 
 	for _, node := range nodes {
-		err := validate.Validate(node, p)
+		err := validate.Validate(node, Parser)
 		if err != nil {
 			return err
 		}
 	}
-	schema := generateSchema(nodes)
-	log.Debug().Msgf("schema: \n\n%s", schema)
+
+	typeNodes := []*ast.TypeNode{}
+	responseNodes := []*ast.TypeNode{}
+
+	for _, node := range nodes {
+		switch node.GetNodeType() {
+		case ast.NodeTypeType:
+			typeNode, _ := node.(*ast.TypeNode)
+			if typeNode.IsResponse {
+				responseNodes = append(responseNodes, typeNode)
+			} else {
+				typeNodes = append(typeNodes, typeNode)
+			}
+		}
+	}
+
+	if err := model.GenType(typeNodes, currentPath); err != nil {
+		return err
+	}
+	if err := model.GenResponse(responseNodes, currentPath); err != nil {
+		return err
+	}
 
 	return nil
 }
