@@ -1,9 +1,7 @@
 "test user"
-type User @key(fields: "id") {
-  id: ID!
-  name: String!
+type User @key(fields: "id") @model {
+  name: String! @index
   posts: [Post!]! @paginate
-  tests: [String!]
 }
 
 extend type Query {

@@ -8,6 +8,7 @@ func (p *Parser) addReservedDirective() {
 		description string
 		locations   []ast.Location
 		args        []*ast.ArgumentNode
+		repeatable  bool
 	}{
 		{
 			name:        "skip",
@@ -115,17 +116,79 @@ func (p *Parser) addReservedDirective() {
 			locations:   []ast.Location{ast.LocationObject},
 		},
 		{
-			name:        "softDelete",
-			description: "The field is defined in another schema.",
+			name:        "softDeleteModel",
+			description: "The model is soft delete.",
 			locations:   []ast.Location{ast.LocationObject},
+			args: []*ast.ArgumentNode{{
+				BaseNode: ast.BaseNode{Name: "name"},
+				Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: false},
+			}},
+		},
+		{
+			name:        "model",
+			description: "The model name.",
+			locations:   []ast.Location{ast.LocationObject},
+			args: []*ast.ArgumentNode{{
+				BaseNode: ast.BaseNode{Name: "name"},
+				Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: false},
+			}},
+		},
+		{
+			name:        "tag",
+			description: "The tag of the field.",
+			locations:   []ast.Location{ast.LocationFieldDefinition},
+			repeatable:  true,
+			args: []*ast.ArgumentNode{
+				{
+					BaseNode: ast.BaseNode{Name: "name"},
+					Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: true},
+				},
+				{
+					BaseNode: ast.BaseNode{Name: "value"},
+					Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: true},
+				},
+			},
+		},
+		{
+			name:        "index",
+			description: "The field is indexed.",
+			locations:   []ast.Location{ast.LocationFieldDefinition},
+			args: []*ast.ArgumentNode{{
+				BaseNode: ast.BaseNode{Name: "name", Description: "The name of the index."},
+				Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: false},
+			}},
+		},
+		{
+			name:        "unique",
+			description: "The field is unique.",
+			locations:   []ast.Location{ast.LocationFieldDefinition},
+		},
+		{
+			name:        "defaultString",
+			description: "The default value of the field.",
+			locations:   []ast.Location{ast.LocationFieldDefinition},
+			args: []*ast.ArgumentNode{{
+				BaseNode: ast.BaseNode{Name: "value"},
+				Type:     &ast.FieldType{Name: "String", Type: p.ScalarMap["String"], IsNonNull: true},
+			}},
+		},
+		{
+			name:        "defaultInt",
+			description: "The default value of the field.",
+			locations:   []ast.Location{ast.LocationFieldDefinition},
+			args: []*ast.ArgumentNode{{
+				BaseNode: ast.BaseNode{Name: "value"},
+				Type:     &ast.FieldType{Name: "Int", Type: p.ScalarMap["Int"], IsNonNull: true},
+			}},
 		},
 	}
 
 	for _, d := range directives {
 		p.AddDirective(&ast.DirectiveDefinitionNode{
-			BaseNode:  ast.BaseNode{Name: d.name, Description: d.description},
-			Locations: d.locations,
-			Args:      d.args,
+			BaseNode:   ast.BaseNode{Name: d.name, Description: d.description},
+			Locations:  d.locations,
+			Args:       d.args,
+			Repeatable: d.repeatable,
 		})
 	}
 }

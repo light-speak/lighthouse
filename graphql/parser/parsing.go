@@ -254,7 +254,7 @@ func (p *Parser) parseSingleArgumentValue() *ast.ArgumentValue {
 
 	switch p.currToken.Type {
 	case lexer.Letter:
-		v = &ast.StringValue{Value: p.currToken.Value}
+		v = &ast.StringValue{Value: strings.Trim(p.currToken.Value, "\"")}
 		typeName = "String"
 	case lexer.IntNumber:
 		intValue, err := strconv.ParseInt(p.currToken.Value, 10, 64)

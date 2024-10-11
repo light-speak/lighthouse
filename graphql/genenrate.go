@@ -9,6 +9,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/model"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
+	"github.com/light-speak/lighthouse/template"
 )
 
 func Generate() error {
@@ -71,6 +72,17 @@ func Generate() error {
 	if err := model.GenResponse(responseNodes, currentPath); err != nil {
 		return err
 	}
+
+	schema := generateSchema(nodes)
+	options := &template.Options{
+		Path:         currentPath,
+		Template:     schema,
+		FileName:     "schema",
+		FileExt:      "graphql",
+		Editable:     false,
+		SkipIfExists: false,
+	}
+	template.Render(options)
 
 	return nil
 }

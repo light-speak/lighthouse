@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/template"
 )
 
@@ -25,7 +24,6 @@ func GenType(nodes []*ast.TypeNode, path string) error {
 		if _, ok := excludeType[node.GetName()]; ok {
 			continue
 		}
-		log.Debug().Msgf("type: %s", node.GetName())
 		filteredNodes = append(filteredNodes, node)
 	}
 	modelTemplate, err := modelFs.ReadFile("tpl/model.tpl")
@@ -53,7 +51,6 @@ func GenResponse(nodes []*ast.TypeNode, path string) error {
 		if _, ok := excludeType[node.GetName()]; ok {
 			continue
 		}
-		log.Debug().Msgf("type: %s", node.GetName())
 		filteredNodes = append(filteredNodes, node)
 	}
 	responseTemplate, err := modelFs.ReadFile("tpl/response.tpl")

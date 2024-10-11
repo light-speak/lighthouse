@@ -1,6 +1,8 @@
 package template
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func UserCodeStart(action string) string {
 	return fmt.Sprintf("// Func:%s user code start. Do not remove this comment. ", action)

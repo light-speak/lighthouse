@@ -55,6 +55,13 @@ func (p *Parser) addReservedScalar() {
 			Description: "The ID scalar type represents a unique identifier.",
 		},
 	})
+
+	p.AddScalar(&ast.ScalarNode{
+		BaseNode: ast.BaseNode{
+			Name:        "DateTime",
+			Description: "The DateTime scalar type represents a date and time.",
+		},
+	})
 }
 
 func (p *Parser) addReservedScalarType() {
@@ -63,6 +70,7 @@ func (p *Parser) addReservedScalarType() {
 	p.AddScalarType("Float", &scalar.FloatScalar{})
 	p.AddScalarType("String", &scalar.StringScalar{})
 	p.AddScalarType("ID", &scalar.IDScalar{})
+	p.AddScalarType("DateTime", &scalar.DateTimeScalar{})
 }
 
 func (p *Parser) addReservedType() {

@@ -9,7 +9,16 @@ directive @provides(fields: [String!]!) repeatable on FIELD_DEFINITION
 directive @key(fields: [String!]!) repeatable on OBJECT | INTERFACE
 directive @extends repeatable on OBJECT
 
-directive @paginate(scopes: [String!]) on FIELD_DEFINITION
 directive @skip(if: Boolean!) on FIELD_DEFINITION
 directive @include(if: Boolean!) on FIELD_DEFINITION
+
+# ORM directive
+directive @paginate(scopes: [String!]) on FIELD_DEFINITION
 directive @enum(value: Int!) on FIELD_DEFINITION
+directive @index(name: String) on FIELD_DEFINITION
+directive @tag(name: String!, value: String!) repeatable on FIELD_DEFINITION
+directive @defaultString(value: String!) on FIELD_DEFINITION
+directive @defaultInt(value: Int!) on FIELD_DEFINITION
+directive @unique on FIELD_DEFINITION
+directive @model(name: String) on OBJECT
+directive @softDeleteModel(name: String) on OBJECT

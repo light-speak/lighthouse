@@ -11,6 +11,7 @@ type Node interface {
 	GetParent() Node
 
 	GetDirectives() []*DirectiveNode
+	GetDirectivesByName(name string) []*DirectiveNode
 	GetArgs() []*ArgumentNode
 	GetFields() []*FieldNode
 
@@ -84,7 +85,7 @@ func (f *FieldType) singleGoType() string {
 	} else {
 		baseType = f.Type.GoType()
 	}
-	
+
 	if !f.IsNonNull {
 		return "*" + baseType
 	}
@@ -123,6 +124,17 @@ func (b *BaseNode) GetDirective(name string) *DirectiveNode {
 		}
 	}
 	return nil
+}
+
+// GetDirectivesByName returns all directives by name
+func (b *BaseNode) GetDirectivesByName(name string) []*DirectiveNode {
+	var directives []*DirectiveNode
+	for _, directive := range b.Directives {
+		if directive.Name == name {
+			directives = append(directives, directive)
+		}
+	}
+	return directives
 }
 
 // GetDirectives returns all directives

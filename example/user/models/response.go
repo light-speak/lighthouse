@@ -5,13 +5,11 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 
 
 type UserPaginateResponse struct {
-  Data []User 
-  PaginateInfo model.PaginateInfo 
-  
+  Data []User `json:"data" `
+  PaginateInfo model.PaginateInfo `json:"paginateInfo" `
 }
 
 type PostPaginateResponse struct {
-  Data []Post 
-  PaginateInfo model.PaginateInfo 
-  
+  Data []Post `json:"data" `
+  PaginateInfo model.PaginateInfo `json:"paginateInfo" `
 }

@@ -169,6 +169,21 @@ func validateType(node ast.Node) error {
 		implementFields = mergedFields
 	}
 
+	isModel := false
+	if modelDirective := typeNode.GetDirective("model"); modelDirective != nil {
+		addModelFields(typeNode)
+		isModel = true
+	}
+	if softDeleteDirective := typeNode.GetDirective("softDeleteModel"); softDeleteDirective != nil {
+		if isModel {
+			return &errors.ValidateError{
+				Node:    node,
+				Message: "softDeleteModel directive can only be used in Object type without model directive",
+			}
+		}
+		addSoftDeleteFields(typeNode)
+	}
+
 	for _, field := range typeNode.GetFields() {
 		err := validateFieldType(field.Type)
 		if err != nil {
@@ -398,6 +413,57 @@ func addPaginateArgument(field *ast.FieldNode) {
 				Type:      p.ScalarMap["Int"],
 				IsNonNull: true,
 			},
+		},
+	})
+}
+
+func addModelFields(typeNode *ast.TypeNode) {
+	typeNode.Fields = append(typeNode.Fields, &ast.FieldNode{
+		BaseNode: ast.BaseNode{
+			Name:        "id",
+			Description: "The id field represents the unique identifier for the record.",
+		},
+		Type: &ast.FieldType{
+			Name:      "ID",
+			Type:      p.ScalarMap["ID"],
+			IsNonNull: true,
+		},
+	})
+	typeNode.Fields = append(typeNode.Fields, &ast.FieldNode{
+		BaseNode: ast.BaseNode{
+			Name:        "createdAt",
+			Description: "The createdAt field represents the time at which the record was created.",
+		},
+		Type: &ast.FieldType{
+			Name:      "DateTime",
+			Type:      p.ScalarMap["DateTime"],
+			IsNonNull: true,
+		},
+	})
+	typeNode.Fields = append(typeNode.Fields, &ast.FieldNode{
+		BaseNode: ast.BaseNode{
+			Name:        "updatedAt",
+			Description: "The updatedAt field represents the time at which the record was last updated.",
+		},
+		Type: &ast.FieldType{
+			Name:      "DateTime",
+			Type:      p.ScalarMap["DateTime"],
+			IsNonNull: true,
+		},
+	})
+}
+
+func addSoftDeleteFields(typeNode *ast.TypeNode) {
+	addModelFields(typeNode)
+	typeNode.Fields = append(typeNode.Fields, &ast.FieldNode{
+		BaseNode: ast.BaseNode{
+			Name:        "deletedAt",
+			Description: "The deletedAt field represents the time at which the record was deleted.",
+		},
+		Type: &ast.FieldType{
+			Name:      "DateTime",
+			Type:      p.ScalarMap["DateTime"],
+			IsNonNull: false,
 		},
 	})
 }
