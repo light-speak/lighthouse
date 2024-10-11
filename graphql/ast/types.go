@@ -69,3 +69,37 @@ type EnumNode struct {
 }
 
 func (e *EnumNode) GetNodeType() NodeType { return NodeTypeEnum }
+
+type OperationType string
+
+const (
+	QueryOperation        OperationType = "query"
+	MutationOperation     OperationType = "mutation"
+	SubscriptionOperation OperationType = "subscription"
+)
+
+type OperationNode struct {
+	BaseNode
+	Type   OperationType
+	Args   []*ArgumentNode
+	Select []*SubOperationNode
+}
+
+func (t *OperationNode) GetNodeType() NodeType   { return NodeTypeOperation }
+func (t *OperationNode) GetFields() []*FieldNode { return nil }
+func (t *OperationNode) GetField(name string) *FieldNode {
+	return nil
+}
+
+type SubOperationNode struct {
+	BaseNode
+	Args      []*ArgumentNode
+	Fields    []*FieldNode
+	Fragments []*FragmentNode
+}
+
+func (s *SubOperationNode) GetNodeType() NodeType   { return NodeTypeSubOperation }
+func (s *SubOperationNode) GetFields() []*FieldNode { return s.Fields }
+func (s *SubOperationNode) GetField(name string) *FieldNode {
+	return findField(s.Fields, name)
+}

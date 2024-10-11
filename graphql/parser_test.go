@@ -56,3 +56,14 @@ func TestValidate(t *testing.T) {
 	schema := generateSchema(nodes)
 	log.Debug().Msgf("schema: \n\n%s", schema)
 }
+
+func TestParseOperation(t *testing.T) {
+	l, err := parser.ReadGraphQLFile("demo.graphql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := parser.NewParser(l)
+
+	p.ParseSchema()
+
+}

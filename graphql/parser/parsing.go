@@ -37,6 +37,78 @@ func (p *Parser) parseType(extends ...bool) {
 	p.AddType(node.GetName(), node, len(extends) > 0)
 }
 
+func (p *Parser) parseOperation() *ast.OperationNode {
+	node := &ast.OperationNode{}
+	switch p.currToken.Type {
+	case lexer.LowerQuery:
+		node.Type = ast.QueryOperation
+		node.Name = p.expectAndGetValue(lexer.LowerQuery)
+	case lexer.LowerMutation:
+		node.Type = ast.MutationOperation
+		node.Name = p.expectAndGetValue(lexer.LowerMutation)
+	case lexer.LowerSubscription:
+		node.Type = ast.SubscriptionOperation
+		node.Name = p.expectAndGetValue(lexer.LowerSubscription)
+	default:
+		panic("invalid operation type: " + p.currToken.Value)
+	}
+
+	var args []*ast.ArgumentNode
+	if p.currToken.Type == lexer.LeftParent {
+		args = p.parseArguments(node)
+		for _, arg := range args {
+			p.AddOperationArgs(arg.GetName(), arg)
+		}
+	}
+
+	node.Args = args
+
+	p.expect(lexer.LeftBrace)
+
+	for p.currToken.Type != lexer.RightBrace {
+		name := p.currToken
+
+		subOperation := &ast.SubOperationNode{
+			BaseNode: ast.BaseNode{
+				Name: name.Value,
+			},
+		}
+
+		p.nextToken()
+
+		if p.currToken.Type == lexer.LeftParent {
+			subArgs := p.parseArguments(subOperation)
+			subOperation.Args = subArgs
+		}
+
+		p.expect(lexer.LeftBrace)
+		for p.currToken.Type != lexer.RightBrace {
+			if p.currToken.Type == lexer.Dot {
+				for i := 0; i < 3; i++ {
+					p.expect(lexer.Dot)
+				}
+				subOperation.Fragments = append(subOperation.Fragments, &ast.FragmentNode{
+					BaseNode: ast.BaseNode{
+						Name: p.currToken.Value,
+					},
+				})
+			} else {
+				subOperation.Fields = append(subOperation.Fields, p.parseField(subOperation))
+			}
+		}
+
+		if p.currToken.Type != lexer.EOF {
+			p.expect(lexer.RightBrace)
+		} else {
+			break
+		}
+		node.Select = append(node.Select, subOperation)
+	}
+
+	p.AddOperation(node)
+	return node
+}
+
 // parseDescription parses a description if present
 func (p *Parser) parseDescription() string {
 	if p.PreviousToken().Type == lexer.Message {
@@ -104,6 +176,33 @@ func (p *Parser) parseDirective() *ast.DirectiveNode {
 // email: String
 // createdAt: DateTime
 func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
+
+	if p.currToken.Type == lexer.Dot {
+		for i := 0; i < 3; i++ {
+			p.expect(lexer.Dot)
+		}
+
+		field := &ast.FieldNode{
+			BaseNode: ast.BaseNode{
+				Name: p.currToken.Value,
+			},
+			Type: &ast.FieldType{
+				Name:         p.currToken.Value,
+				TypeCategory: ast.TypeFragmentType,
+			},
+			Parent: parent,
+			Fragments: []*ast.FragmentNode{
+				{
+					BaseNode: ast.BaseNode{
+						Name: p.currToken.Value,
+					},
+				},
+			},
+		}
+		p.nextToken()
+		return field
+	}
+
 	field := &ast.FieldNode{
 		BaseNode: ast.BaseNode{
 			Name:        p.currToken.Value,
@@ -154,6 +253,7 @@ func (p *Parser) parseArguments(parent ast.Node) []*ast.ArgumentNode {
 			p.expect(lexer.Comma)
 		}
 	}
+
 	p.expect(lexer.RightParent)
 	return args
 }
@@ -183,6 +283,13 @@ func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
 	if parent.GetNodeType() == ast.NodeTypeDirective {
 		// Assigned when using @directive
 		value = p.parseArgumentValue()
+	} else if parent.GetNodeType() == ast.NodeTypeSubOperation {
+		argName := p.currToken.Value
+		arg, ok := p.OperationArgsMap[argName]
+		if ok {
+			fieldType = arg.Type
+		}
+		value = p.parseSubOperationArgumentValue()
 	} else {
 		fieldType = p.parseTypeReference()   // parse type reference
 		defaultValue = p.parseDefaultValue() // parse default value
@@ -217,6 +324,20 @@ func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 		return p.parseListArgumentValue()
 	default:
 		return p.parseSingleArgumentValue()
+	}
+}
+
+func (p *Parser) parseSubOperationArgumentValue() *ast.ArgumentValue {
+	argName := p.currToken.Value
+	arg, ok := p.OperationArgsMap[argName]
+	if !ok {
+		// 识别 hard value
+		// id:123
+		// type:"User"
+		return p.parseSingleArgumentValue()
+	} else {
+		p.nextToken()
+		return arg.Value
 	}
 }
 

@@ -7,6 +7,7 @@ type FieldNode struct {
 	Args      []*ArgumentNode
 	Parent    Node
 	Children  []*FieldNode
+	Fragments []*FragmentNode
 }
 
 func (f *FieldNode) GetNodeType() NodeType { return NodeTypeField }
