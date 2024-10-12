@@ -257,9 +257,8 @@ func mergeFields(implementFields []*ast.FieldNode, newFields []*ast.FieldNode) (
 
 // removeField removes a field from a list of fields
 func removeCompatibleField(fields []*ast.FieldNode, field *ast.FieldNode) ([]*ast.FieldNode, bool) {
-
 	for i, f := range fields {
-		if areTypesCompatible(field.Type, f.Type) {
+		if areTypesCompatible(field, f) {
 			return append(fields[:i], fields[i+1:]...), true
 		}
 	}
@@ -279,12 +278,14 @@ func validateArguments(node ast.Node) error {
 }
 
 // areTypesCompatible checks if two field types are compatible
-func areTypesCompatible(typeA, typeB *ast.FieldType) bool {
+func areTypesCompatible(nodeA, nodeB *ast.FieldNode) bool {
+	typeA := nodeA.Type
+	typeB := nodeB.Type
 	for typeA.IsList && typeB.IsList {
 		typeA = typeA.ElemType
 		typeB = typeB.ElemType
 	}
-	return typeA.Name == typeB.Name
+	return typeA.Name == typeB.Name && nodeA.Name == nodeB.Name
 }
 
 // validateFieldType validates a field type

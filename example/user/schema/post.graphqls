@@ -1,5 +1,5 @@
-type Post implements HasName @key(fields: "id") @softDeleteModel {
-  name: String! @index
+type Post @key(fields: "id") @softDeleteModel {
+  title: String! @index
   content: String!
   userId: ID! @index
   user: User!
