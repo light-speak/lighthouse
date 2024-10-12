@@ -25,6 +25,7 @@ func (p *Parser) parseType(extends ...bool) {
 		},
 		Implements: p.parseImplements(),
 	}
+	
 	node.Directives = p.parseDirectives()
 	p.expect(lexer.LeftBrace)
 	var fields []*ast.FieldNode
@@ -115,7 +116,7 @@ func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
 			},
 			Type: &ast.FieldType{
 				Name:         p.currToken.Value,
-				TypeCategory: ast.TypeFragmentType,
+				TypeCategory: ast.NodeTypeFragment,
 			},
 			Parent: parent,
 		}

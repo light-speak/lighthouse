@@ -5,7 +5,6 @@ import (
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/log"
 )
 
 // validateDirectiveDefinition validates a directive definition node
@@ -167,11 +166,12 @@ func validateType(node ast.Node) error {
 			}
 		}
 		implementTypes = append(implementTypes, interfaceNode)
-		mergedFields, err := mergeFields(implementFields, interfaceNode.GetFields())
+
+		var err error
+		implementFields, err = mergeFields(implementFields, interfaceNode.GetFields())
 		if err != nil {
 			return err
 		}
-		implementFields = mergedFields
 	}
 
 	isModel := false
@@ -194,9 +194,12 @@ func validateType(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+
 		// remove the field from the implement fields
 		implemented := false
-		implementFields, implemented = removeCompatibleField(implementFields, field)
+		if len(implementFields) > 0 {
+			implementFields, implemented = removeCompatibleField(implementFields, field)
+		}
 		if !implemented && field.Type.Level == 1 {
 			paginate := field.GetDirective("paginate")
 			if paginate != nil {
@@ -214,7 +217,7 @@ func validateType(node ast.Node) error {
 	if len(implementFields) > 0 {
 		return &errors.ValidateError{
 			Node:    node,
-			Message: fmt.Sprintf("field %s not implemented in type %s", implementFields[0].Name, typeNode.GetName()),
+			Message: fmt.Sprintf("node %s field %s not implemented in type %s", node.GetName(), implementFields[0].Name, typeNode.GetName()),
 		}
 	}
 	typeNode.ImplementTypes = implementTypes
@@ -247,6 +250,7 @@ func mergeFields(implementFields []*ast.FieldNode, newFields []*ast.FieldNode) (
 
 // removeField removes a field from a list of fields
 func removeCompatibleField(fields []*ast.FieldNode, field *ast.FieldNode) ([]*ast.FieldNode, bool) {
+
 	for i, f := range fields {
 		if areTypesCompatible(field.Type, f.Type) {
 			return append(fields[:i], fields[i+1:]...), true
@@ -255,12 +259,11 @@ func removeCompatibleField(fields []*ast.FieldNode, field *ast.FieldNode) ([]*as
 	return fields, false
 }
 
-func validateField(node ast.Node) error {
-	return nil
-}
-
 func validateArguments(node ast.Node) error {
 	for _, arg := range node.GetArgs() {
+		if arg.Type == nil {
+			continue
+		}
 		if err := validateFieldType(arg.Type); err != nil {
 			return err
 		}
@@ -274,13 +277,12 @@ func areTypesCompatible(typeA, typeB *ast.FieldType) bool {
 		typeA = typeA.ElemType
 		typeB = typeB.ElemType
 	}
-	return typeA.Name == typeB.Name && typeA.TypeCategory == typeB.TypeCategory && typeA.IsList == typeB.IsList
+	return typeA.Name == typeB.Name
 }
 
 // validateFieldType validates a field type
 func validateFieldType(fieldType *ast.FieldType) error {
 	levels := 0
-
 	elemType := fieldType
 	for elemType.IsList {
 		levels++
@@ -292,6 +294,7 @@ func validateFieldType(fieldType *ast.FieldType) error {
 		return fmt.Errorf("validate field type: %s not found", typeName)
 	}
 	elemType.Type = nodeType
+	elemType.TypeCategory = nodeType.GetNodeType()
 	fieldType.Level = levels
 
 	return nil
@@ -328,10 +331,6 @@ func getDirectiveDefinition(name string) *ast.DirectiveDefinitionNode {
 }
 
 func getValueTypeNode(name string) ast.Node {
-	log.Debug().Msgf(name)
-	if name == "getUser" {
-		log.Debug().Msgf("111")
-	}
 	if node := getValueTypeType(name); node != nil {
 		return node
 	}

@@ -8,7 +8,6 @@ import (
 var p *parser.Parser
 
 func Validate(node ast.Node, parser *parser.Parser) error {
-	// log.Debug().Str("node", node.GetName()).Str("type", string(node.GetNodeType())).Msg("validate node")
 	p = parser
 	// Create a map of node types to validation functions
 	validators := map[ast.NodeType]func(node ast.Node) error{
@@ -19,12 +18,9 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 		ast.NodeTypeInterface:           validateInterface,
 		ast.NodeTypeInput:               validateInput,
 		ast.NodeTypeFragment:            validateFragment,
-		ast.NodeTypeField:               validateField,
 		ast.NodeTypeType:                validateType,
 		ast.NodeTypeOperation:           validateOperation,
 	}
-
-	// log.Info().Msgf("scalars: %v", p.ScalarMap)
 
 	// Get the validation function based on the node type
 	if validateFunc, exists := validators[node.GetNodeType()]; exists {
@@ -41,5 +37,16 @@ func Validate(node ast.Node, parser *parser.Parser) error {
 		return validateFunc(node)
 	}
 
+	return nil
+}
+
+func ValidateNodes(nodes map[string]ast.Node, parser *parser.Parser) error {
+	p = parser
+	for _, node := range nodes {
+		err := Validate(node, p)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

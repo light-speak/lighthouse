@@ -28,17 +28,20 @@ func (c *GenCmd) Args() []*command.CommandArg {
 			Usage:    "The scope of the command",
 			Required: false,
 			Default:  "app",
+			Type:     command.String,
 		},
 		{
 			Name:     "name",
 			Usage:    "The name of the command",
 			Required: true,
+			Type:     command.String,
 		},
 		{
 			Name:     "path",
 			Usage:    "The path of the command",
 			Required: false,
-			Default:  "command",
+			Default:  "cmd",
+			Type:     command.String,
 		},
 	}
 }

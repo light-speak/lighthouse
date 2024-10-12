@@ -53,6 +53,9 @@ func runREPL(cmd Command) error {
 				args[arg.Name] = &input
 				break
 			}
+			if input == "" && !arg.Required && arg.Default != nil {
+				break
+			}
 			fmt.Println("Input cannot be empty. Please try again.")
 		}
 	}

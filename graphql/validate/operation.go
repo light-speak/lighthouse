@@ -3,7 +3,6 @@ package validate
 import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -63,8 +62,8 @@ func validateOperationFieldType(field *ast.FieldNode, typeMap *ast.TypeNode) (*a
 }
 
 func validateFieldReturnType(field *ast.FieldNode, typeField *ast.FieldNode) error {
-	log.Debug().Msgf("field: %+v", field)
-	log.Debug().Msgf("typeField: %+v", typeField.Type)
+	// log.Debug().Msgf("field: %+v", field)
+	// log.Debug().Msgf("typeField: %+v", typeField.Type)
 	// log.Debug().Msgf("32131231232131231231231231312312312 %+v", getValueTypeType(typeField.Type.Name))
 	return nil
 }

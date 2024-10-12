@@ -49,14 +49,21 @@ func GetBoolArg(args map[string]interface{}, name string) (*bool, error) {
 }
 
 func GetDefaultValue(argDef *CommandArg) interface{} {
+	if argDef.Default == nil {
+		return nil
+	}
+
 	switch argDef.Type {
 	case String:
-		return argDef.Default.(string)
+		v := argDef.Default.(string)
+		return &v
 	case Int:
-		return argDef.Default.(int)
+		v := argDef.Default.(int)
+		return &v
 	case Bool:
-		return argDef.Default.(bool)
+		v := argDef.Default.(bool)
+		return &v
 	default:
-		return nil
+		return argDef.Default
 	}
 }

@@ -46,11 +46,9 @@ func TestValidate(t *testing.T) {
 	p := parser.NewParser(l)
 
 	nodes := p.ParseSchema()
-	for _, node := range nodes {
-		err := validate.Validate(node, p)
-		if err != nil {
-			t.Fatal(err)
-		}
+	err = validate.ValidateNodes(nodes, p)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	schema := generateSchema(nodes)
@@ -65,6 +63,10 @@ func TestParseOperation(t *testing.T) {
 	p := parser.NewParser(l)
 
 	serviceNodes := p.ParseSchema()
+	err = validate.ValidateNodes(serviceNodes, p)
+	if err != nil {
+		t.Fatal(err)
+	}
 	generateSchema(serviceNodes)
 
 	nl, err := parser.ReadGraphQLFile("query_example.graphql")

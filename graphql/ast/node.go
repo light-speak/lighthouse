@@ -29,7 +29,6 @@ type NodeType string
 
 const (
 	NodeTypeOperation           NodeType = "Operation"
-	NodeTypeSubOperation        NodeType = "SubOperation"
 	NodeTypeType                NodeType = "Type"
 	NodeTypeField               NodeType = "Field"
 	NodeTypeArgument            NodeType = "Argument"
@@ -43,23 +42,11 @@ const (
 	NodeTypeEnumValue           NodeType = "EnumValue"
 	NodeTypeFragment            NodeType = "Fragment"
 )
-
-type TypeCategory string
-
-const (
-	TypeCategoryScalar TypeCategory = "Scalar"
-	TypeCategoryEnum   TypeCategory = "Enum"
-	TypeCategoryInput  TypeCategory = "Input"
-	TypeCategoryUnion  TypeCategory = "Union"
-	TypeCategoryType   TypeCategory = "Type"
-	TypeFragmentType   TypeCategory = "Fragment"
-)
-
 // FieldType represents the type of a field in the GraphQL schema
 type FieldType struct {
 	Name         string       // Name of the field type
 	Type         Node         // The underlying type node
-	TypeCategory TypeCategory // Category of the type (e.g., Scalar, Enum, etc.)
+	TypeCategory NodeType // Category of the type (e.g., Scalar, Enum, etc.)
 	IsList       bool         // Indicates if the field is a list type
 	ElemType     *FieldType   // Element type if IsList is true
 	IsNonNull    bool         // Indicates if the field is non-nullable
