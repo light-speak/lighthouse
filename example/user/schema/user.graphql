@@ -1,5 +1,5 @@
 "test user"
-type User @key(fields: "id") @model {
+type User implements HasName @key(fields: "id") @model {
   name: String! @index
   posts: [Post!]! @paginate
 }

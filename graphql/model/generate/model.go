@@ -18,6 +18,26 @@ var excludeType = map[string]struct{}{
 	"Subscription": {},
 }
 
+func GenInterface(nodes map[string]*ast.InterfaceNode, path string) error {
+	interfaceTemplate, err := modelFs.ReadFile("tpl/interface.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "models"),
+		Template:     string(interfaceTemplate),
+		FileName:     "interface",
+		FileExt:      "go",
+		Package:      "models",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Nodes": nodes,
+		},
+	}
+	return template.Render(options)
+}
+
 func GenType(nodes []*ast.TypeNode, path string) error {
 	filteredNodes := []*ast.TypeNode{}
 	for _, node := range nodes {

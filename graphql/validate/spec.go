@@ -93,10 +93,17 @@ func validateEnum(node ast.Node) error {
 }
 
 func validateInterface(node ast.Node) error {
-	if _, ok := node.(*ast.InterfaceNode); !ok {
+	interfaceNode, ok := node.(*ast.InterfaceNode)
+	if !ok {
 		return &errors.ValidateError{
 			Node:    node,
 			Message: "node is not an interface",
+		}
+	}
+	for _, field := range interfaceNode.GetFields() {
+		err := validateFieldType(field.Type)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

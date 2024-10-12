@@ -57,7 +57,7 @@ func (p *Parser) parseImplements() []string {
 	for {
 		implements = append(implements, p.currToken.Value)
 		p.nextToken()
-		if p.currToken.Type == lexer.LeftBrace {
+		if p.currToken.Type != lexer.And {
 			break
 		}
 		p.expect(lexer.And)

@@ -38,6 +38,7 @@ func Generate() error {
 	if err != nil {
 		return err
 	}
+	p := GetParser()
 
 	typeNodes := []*ast.TypeNode{}
 	responseNodes := []*ast.TypeNode{}
@@ -58,6 +59,9 @@ func Generate() error {
 		return err
 	}
 	if err := generate.GenResponse(responseNodes, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenInterface(p.InterfaceMap, currentPath); err != nil {
 		return err
 	}
 
