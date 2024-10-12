@@ -65,8 +65,7 @@ func TestParseOperation(t *testing.T) {
 	p := parser.NewParser(l)
 
 	serviceNodes := p.ParseSchema()
-	schema := generateSchema(serviceNodes)
-	log.Debug().Msgf("schema: \n\n%s", schema)
+	generateSchema(serviceNodes)
 
 	nl, err := parser.ReadGraphQLFile("query_example.graphql")
 	if err != nil {

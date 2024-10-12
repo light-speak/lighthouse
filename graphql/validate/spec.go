@@ -5,6 +5,7 @@ import (
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/log"
 )
 
 // validateDirectiveDefinition validates a directive definition node
@@ -327,6 +328,10 @@ func getDirectiveDefinition(name string) *ast.DirectiveDefinitionNode {
 }
 
 func getValueTypeNode(name string) ast.Node {
+	log.Debug().Msgf(name)
+	if name == "getUser" {
+		log.Debug().Msgf("111")
+	}
 	if node := getValueTypeType(name); node != nil {
 		return node
 	}
