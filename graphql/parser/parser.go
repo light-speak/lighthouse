@@ -132,7 +132,6 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		p.AddReserved()
 		p.MergeScalarType()
 	}
-
 	return p.Nodes
 }
 

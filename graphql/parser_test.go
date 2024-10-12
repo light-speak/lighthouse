@@ -39,35 +39,20 @@ func TestParseSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	l, err := parser.ReadGraphQLFile("demo.graphql")
+	nodes, err := ParserSchema([]string{"demo.graphql"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := parser.NewParser(l)
-
-	nodes := p.ParseSchema()
-	err = validate.ValidateNodes(nodes, p)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	schema := generateSchema(nodes)
 	log.Debug().Msgf("schema: \n\n%s", schema)
 }
 
 func TestParseOperation(t *testing.T) {
-	l, err := parser.ReadGraphQLFile("demo.graphql")
+	_, err := ParserSchema([]string{"demo.graphql"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := parser.NewParser(l)
-
-	serviceNodes := p.ParseSchema()
-	err = validate.ValidateNodes(serviceNodes, p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	generateSchema(serviceNodes)
+	p := GetParser()
 
 	nl, err := parser.ReadGraphQLFile("query_example.graphql")
 	if err != nil {

@@ -7,8 +7,6 @@ import (
 	"github.com/light-speak/lighthouse/config"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model/generate"
-	"github.com/light-speak/lighthouse/graphql/parser"
-	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/template"
 )
 
@@ -36,19 +34,9 @@ func Generate() error {
 		files = append(files, matches...)
 	}
 
-	lexer, err := parser.ReadGraphQLFiles(files)
+	nodes, err := ParserSchema(files)
 	if err != nil {
 		return err
-	}
-
-	Parser = parser.NewParser(lexer)
-	nodes := Parser.ParseSchema()
-
-	for _, node := range nodes {
-		err := validate.Validate(node, Parser)
-		if err != nil {
-			return err
-		}
 	}
 
 	typeNodes := []*ast.TypeNode{}
