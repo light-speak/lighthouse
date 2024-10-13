@@ -64,6 +64,9 @@ func Generate() error {
 	if err := generate.GenInterface(p.InterfaceMap, currentPath); err != nil {
 		return err
 	}
+	if err := generate.GenInput(p.InputMap, currentPath); err != nil {
+		return err
+	}
 
 	schema := generateSchema(nodes)
 	options := &template.Options{

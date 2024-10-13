@@ -91,3 +91,23 @@ func GenResponse(nodes []*ast.TypeNode, path string) error {
 	}
 	return template.Render(options)
 }
+
+func GenInput(nodes map[string]*ast.InputNode, path string) error {
+	inputTemplate, err := modelFs.ReadFile("tpl/input.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "models"),
+		Template:     string(inputTemplate),
+		FileName:     "input",
+		FileExt:      "go",
+		Package:      "models",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Nodes": nodes,
+		},
+	}
+	return template.Render(options)
+}
