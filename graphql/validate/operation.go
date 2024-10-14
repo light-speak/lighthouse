@@ -97,7 +97,7 @@ func validateFieldArgs(field *ast.FieldNode) error {
 
 	validateListArg := func(defArg *ast.ArgumentNode, arg *ast.ArgumentNode) error {
 		// log.Debug().Msgf("defArg: %+v", defArg.Type)
-		log.Debug().Msgf("arg: %+v", arg.Type.TypeCategory)
+		log.Debug().Msgf("arg: %+v", arg)
 		if defArg.Type.IsList != arg.Type.IsList {
 			return &errors.ValidateError{
 				Node:    field,
