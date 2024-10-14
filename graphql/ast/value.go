@@ -2,57 +2,35 @@ package ast
 
 import "fmt"
 
-type Value interface {
-	IsValue() bool
-}
+type Value interface{ IsValue() bool }
 
-type IntValue struct {
-	Value int64
-}
+type IntValue struct{ Value int64 }
 
-func (v *IntValue) IsValue() bool {
-	return true
-}
+func (v *IntValue) IsValue() bool { return true }
 
-type FloatValue struct {
-	Value float64
-}
+type FloatValue struct{ Value float64 }
 
-func (v *FloatValue) IsValue() bool {
-	return true
-}
+func (v *FloatValue) IsValue() bool { return true }
 
-type StringValue struct {
-	Value string
-}
+type StringValue struct{ Value string }
 
-func (v *StringValue) IsValue() bool {
-	return true
-}
+func (v *StringValue) IsValue() bool { return true }
 
-type BooleanValue struct {
-	Value bool
-}
+type BooleanValue struct{ Value bool }
 
-func (v *BooleanValue) IsValue() bool {
-	return true
-}
+func (v *BooleanValue) IsValue() bool { return true }
 
-type ListValue struct {
-	Values []Value
-}
+type ListValue struct{ Values []Value }
 
-func (v *ListValue) IsValue() bool {
-	return true
-}
+func (v *ListValue) IsValue() bool { return true }
 
-type ObjectValue struct {
-	Values map[string]Value
-}
+type ObjectValue struct{ Values map[string]Value }
 
-func (v *ObjectValue) IsValue() bool {
-	return true
-}
+func (v *ObjectValue) IsValue() bool { return true }
+
+type NullValue struct{}
+
+func (v *NullValue) IsValue() bool { return true }
 
 func ExtractValue(v Value) (interface{}, error) {
 	switch v := v.(type) {
@@ -84,6 +62,8 @@ func ExtractValue(v Value) (interface{}, error) {
 			values[key] = extracted
 		}
 		return values, nil
+	case *NullValue:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unsupported value type: %T", v)
 	}

@@ -25,7 +25,7 @@ func (p *Parser) parseType(extends ...bool) {
 		},
 		Implements: p.parseImplements(),
 	}
-	
+
 	node.Directives = p.parseDirectives()
 	p.expect(lexer.LeftBrace)
 	var fields []*ast.FieldNode
@@ -229,16 +229,15 @@ func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
 
 	var fieldType *ast.FieldType
 	var defaultValue, value *ast.ArgumentValue
-
 	switch p.currToken.Type {
 	case lexer.Letter:
 		// Case 1: Normal parameter with type (id: ID!, name: String!)
-		// Case 2: Normal parameter with type and default value (id: ID = 123, name: String = "123", numbers: [1,2])
+		// Case 2: Normal parameter with type and default value (id: ID = 123, name: String = "123")
 		fieldType = p.parseTypeReference()
 		defaultValue = p.parseDefaultValue()
-	case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null, lexer.LeftBracket:
-		// Case 3: Normal parameter with value (id: 123, name: "123", numbers: [1,2])
-		value = p.parseArgumentValue()
+	case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null:
+		// Case 3: Normal parameter with value (id: 123, name: "123")
+		value = p.parseSingleArgument()
 	case lexer.Variable:
 		// Case 4: Normal parameter with variable (id: $id)
 		value = &ast.ArgumentValue{
@@ -247,6 +246,12 @@ func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
 			},
 		}
 		p.expect(lexer.Variable)
+	case lexer.LeftBracket:
+		// Case 5: Normal parameter with list value (id: [1,2])
+		value = p.parseListArgument()
+		if value.Type != nil {
+			fieldType = value.Type
+		}
 	default:
 		panic("Unexpected token type in argument parsing: " + p.currToken.Value)
 	}
@@ -277,18 +282,32 @@ func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
 func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
 	switch p.currToken.Type {
 	case lexer.LeftBracket:
-		return p.parseListArgumentValue()
+		return p.parseListArgument()
 	default:
-		return p.parseSingleArgumentValue()
+		return p.parseSingleArgument()
 	}
 }
 
-func (p *Parser) parseListArgumentValue() *ast.ArgumentValue {
+func (p *Parser) parseListArgument() *ast.ArgumentValue {
 	p.expect(lexer.LeftBracket)
-	values := []*ast.ArgumentValue{}
+	var values []*ast.ArgumentValue
+	var elemType *ast.FieldType
 
 	for p.currToken.Type != lexer.RightBracket {
-		values = append(values, p.parseArgumentValue())
+		if p.currToken.Type == lexer.LeftBracket {
+			// Nested list
+			values = append(values, p.parseListArgument())
+			if elemType == nil {
+				elemType = values[0].Type
+			}
+		} else if p.currToken.Type == lexer.Letter {
+			// Type reference
+			elemType = p.parseTypeReference()
+		} else {
+			// Single value
+			values = append(values, p.parseSingleArgument())
+		}
+
 		if p.currToken.Type == lexer.Comma {
 			p.expect(lexer.Comma)
 		}
@@ -298,8 +317,9 @@ func (p *Parser) parseListArgumentValue() *ast.ArgumentValue {
 	argValue := &ast.ArgumentValue{
 		Children: values,
 		Type: &ast.FieldType{
-			Name:   "List",
-			IsList: true,
+			Name:     "List",
+			IsList:   true,
+			ElemType: elemType,
 		},
 	}
 
@@ -311,12 +331,15 @@ func (p *Parser) parseListArgumentValue() *ast.ArgumentValue {
 	return argValue
 }
 
-func (p *Parser) parseSingleArgumentValue() *ast.ArgumentValue {
+func (p *Parser) parseSingleArgument() *ast.ArgumentValue {
 	var v ast.Value
 	var typeName string
 
 	switch p.currToken.Type {
-	case lexer.Letter:
+	case lexer.Null:
+		typeName = "Null"
+		v = &ast.NullValue{}
+	case lexer.Message:
 		v = &ast.StringValue{Value: strings.Trim(p.currToken.Value, "\"")}
 		typeName = "String"
 	case lexer.IntNumber:
@@ -326,6 +349,13 @@ func (p *Parser) parseSingleArgumentValue() *ast.ArgumentValue {
 		}
 		v = &ast.IntValue{Value: intValue}
 		typeName = "Int"
+	case lexer.FloatNumber:
+		floatValue, err := strconv.ParseFloat(p.currToken.Value, 64)
+		if err != nil {
+			panic("invalid float value: " + err.Error())
+		}
+		v = &ast.FloatValue{Value: floatValue}
+		typeName = "Float"
 	case lexer.Boolean:
 		boolValue := p.currToken.Value == "true"
 		v = &ast.BooleanValue{Value: boolValue}
