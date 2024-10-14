@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
+var db *gorm.DB
 
 func init() {
 	log.Info().Msg(env.LighthouseConfig.App.Name)
@@ -24,19 +24,17 @@ func init() {
 	dbName := env.LighthouseConfig.Database.Name
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Asia%%2FShanghai&timeout=10s", user, password, host, port, dbName)
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	var err error
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		Logger:                                   &DBLogger{LogLevel: logger.Info},
 	})
 	if err != nil {
 		log.Error().Err(err).Msg("failed to connect database")
 	}
-
-	DB = db
 }
 
-func GetDB() *gorm.DB { return DB }
+func GetDB() *gorm.DB { return db }
 
 type DBLogger struct {
 	LogLevel logger.LogLevel

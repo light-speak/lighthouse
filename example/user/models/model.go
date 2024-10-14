@@ -16,6 +16,7 @@ func (*User) IsModel() bool { return true }
 func (*User) IsHasName() bool { return true }
 func (this *User) GetName() string { return this.Name }
 
+
 type Post struct {
   model.ModelSoftDelete
   Title string `json:"title" gorm:"index" `
@@ -32,12 +33,4 @@ func init() {
     &User{},
     &Post{},
   )
-
-  // userLoaderConfig := &model.LoaderConfig[User]{
-  //   MaxBatch: 100,
-  //   Wait:     1 * time.Millisecond,
-  //   Fetch: func(keys []int64) ([]User, []error) {
-  //     return nil, nil
-  //   },
-  // }
 }
