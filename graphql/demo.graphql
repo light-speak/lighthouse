@@ -78,6 +78,7 @@ type Query {
   getProduct(id: ID!, name: String): Product
   listProducts: [Product!]!
   search(query: String!): [SearchResult!]!
+  testQuery(id: [[ID!]!]!): User
 }
 
 # 定义变更操作

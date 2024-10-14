@@ -1,7 +1,7 @@
-query TestQuery($id: [[ID]]!) {
-  getUser(id: $id) {
+query TestQuery($test: [[ID!]!]!) {
+  testQuery(id: $test){
     id
-    ...UserFragment
+    name
   }
 }
 
