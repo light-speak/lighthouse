@@ -2,8 +2,10 @@
 package start
 
 import (
-  "github.com/light-speak/lighthouse/log"
-  "github.com/light-speak/lighthouse/command"
+	"user/service"
+
+	"github.com/light-speak/lighthouse/command"
+	"github.com/light-speak/lighthouse/log"
 )
 
 
@@ -36,6 +38,7 @@ func (c *Start) Action() func(flagValues map[string]interface{}) error {
 			return err
 		}
 		log.Info().Msgf("args: %v", args)
+		service.StartService()
 		// Func:Action user code end. Do not remove this comment. 
 		return nil
 	}
