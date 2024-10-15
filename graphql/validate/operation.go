@@ -16,17 +16,18 @@ func validateOperation(node ast.Node) error {
 
 	operNode := node.(*ast.OperationNode)
 
-	err := validateOperationArgs(operNode.Args)
-	if err != nil {
-		return err
-	}
-
-	_, ok := p.TypeMap[utils.UcFirst(string(operNode.Type))]
+	defFields, ok := p.TypeMap[utils.UcFirst(string(operNode.Type))]
 	if !ok {
 		return &errors.ValidateError{
 			Node:    operNode,
 			Message: "node is not an operation",
 		}
+	}
+
+	err := validateOperationArgs(operNode.Args)
+
+	if err != nil {
+		return err
 	}
 
 	fields := node.GetFields()
@@ -38,7 +39,7 @@ func validateOperation(node ast.Node) error {
 		}
 	}
 
-	fields, _ = validateOperationFields(fields)
+	fields, _ = fillOperationFields(fields)
 
 	var printChildren func(children []*ast.FieldNode, depth int)
 	printChildren = func(children []*ast.FieldNode, depth int) {
@@ -53,6 +54,14 @@ func validateOperation(node ast.Node) error {
 
 	for _, field := range fields {
 		printChildren(field.Children, 0)
+	}
+
+	for _, field := range fields {
+		defField := findDefinedField(defFields.Fields, field.GetName())
+		err = validateOperationField(field, defField)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -72,81 +81,151 @@ func validateOperationArgs(args []*ast.ArgumentNode) error {
 }
 
 func validateFieldArgs(field *ast.FieldNode) error {
-	// 找到定义的接口
-	t := string(field.Parent.(*ast.OperationNode).Type)
-	defField := &ast.FieldNode{}
-	for _, f := range p.TypeMap[utils.UcFirst(t)].Fields {
-		if f.Name == field.GetName() {
-			defField = f
-			break
+	// 获取操作类型
+	operationType := string(field.Parent.(*ast.OperationNode).Type)
+
+	// 查找定义的字段
+	defField := findDefinedField(p.TypeMap[utils.UcFirst(operationType)].Fields, field.GetName())
+	if defField == nil {
+		return &errors.ValidateError{
+			Node:    field,
+			Message: fmt.Sprintf("字段 %s 未在定义中找到", field.GetName()),
 		}
 	}
 
-	// 获取后端定义的接口参数和类型
-	defArgMap := make(map[string]*ast.ArgumentNode)
-	for _, arg := range defField.Args {
-		defArgMap[arg.Name] = arg
+	// 创建参数映射
+	defArgMap := createArgMap(defField.Args)
+	argMap := make(map[string]*ast.ArgumentNode)
+	for _, arg := range field.Args {
+		argMap[arg.GetName()] = operationArgs[arg.Type.Name]
 	}
 
-	// 获取前端输入的参数和类型
-	argMap := make(map[string]*ast.ArgumentNode)
+	// 验证必需参数
+	if err := validateRequiredArgs(defArgMap, argMap, field); err != nil {
+		return err
+	}
 
-	for _, arg := range field.Args {
+	// 验证列表参数
+	if err := validateListArgs(defArgMap, argMap, field); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func findDefinedField(fields []*ast.FieldNode, name string) *ast.FieldNode {
+	for _, f := range fields {
+		if f.Name == name {
+			return f
+		}
+	}
+	return nil
+}
+
+func createArgMap(args []*ast.ArgumentNode) map[string]*ast.ArgumentNode {
+	argMap := make(map[string]*ast.ArgumentNode)
+	for _, arg := range args {
 		argMap[arg.GetName()] = arg
 	}
+	return argMap
+}
 
-	validateListArg := func(defArg *ast.ArgumentNode, arg *ast.ArgumentNode) error {
-		// log.Debug().Msgf("defArg: %+v", defArg.Type)
-		log.Debug().Msgf("arg: %+v", arg)
-		if defArg.Type.IsList != arg.Type.IsList {
-			return &errors.ValidateError{
-				Node:    field,
-				Message: fmt.Sprintf("argument %s type is invaild", arg.Name),
-			}
-		}
-		if !defArg.Type.IsList {
-			vaild := defArg.Type.Name == arg.Type.Name && defArg.Type.IsList == arg.Type.IsList && defArg.Type.IsNonNull == arg.Type.IsNonNull
-			if !vaild {
+func createFieldMap(fields []*ast.FieldNode) map[string]*ast.FieldNode {
+	fieldMap := make(map[string]*ast.FieldNode)
+	for _, field := range fields {
+		fieldMap[field.GetName()] = field
+	}
+	return fieldMap
+}
+
+func validateRequiredArgs(defArgMap, argMap map[string]*ast.ArgumentNode, field *ast.FieldNode) error {
+	for name, defArg := range defArgMap {
+		if defArg.Type.IsNonNull {
+			if arg, ok := argMap[name]; ok {
+				if defArg.Type.IsNonNull && !arg.Type.IsNonNull {
+					log.Debug().Msgf("defArg: %+v", defArg.Type)
+					log.Debug().Msgf("arg: %+v", arg.Type)
+					return &errors.ValidateError{
+						Node:    field,
+						Message: fmt.Sprintf("参数 %s 是必需的", defArg.Name),
+					}
+				}
+			} else {
 				return &errors.ValidateError{
 					Node:    field,
-					Message: fmt.Sprintf("argument %s type is invaild", arg.Name),
+					Message: fmt.Sprintf("参数 %s 未找到", name),
+				}
+			}
+
+		}
+	}
+	return nil
+}
+
+func validateListArgs(defArgMap, argMap map[string]*ast.ArgumentNode, field *ast.FieldNode) error {
+	for name, defArg := range defArgMap {
+		if defArg.Type.IsList {
+			if arg, ok := argMap[name]; ok {
+				if err := validateListArg(defArg.Type, arg.Type, field); err != nil {
+					return err
 				}
 			}
 		}
-		return nil
+	}
+	return nil
+}
+
+func validateListArg(defArg, arg *ast.FieldType, field *ast.FieldNode) error {
+	operationArg, ok := operationArgs[arg.Name]
+	if !ok {
+		return &errors.ValidateError{
+			Node:    field,
+			Message: fmt.Sprintf("参数 %s 未找到", arg.Name),
+		}
 	}
 
-	for name, defArg := range defArgMap {
-		// log.Debug().Msgf("defArg name: %+v", name)
-		// log.Debug().Msgf("defArg: %+v", defArg.Value.Children[0])
-		log.Debug().Msgf("arg: %+v", argMap[name].Type)
-		// 必传参数
-		if defArg.Type.IsNonNull {
-			if _, ok := argMap[name]; !ok {
-				return &errors.ValidateError{
-					Node:    field,
-					Message: fmt.Sprintf("argument %s is required", name),
-				}
+	artType := operationArg.Type
+
+	if defArg.IsList != artType.IsList {
+		return &errors.ValidateError{
+			Node:    field,
+			Message: fmt.Sprintf("参数 %s 类型无效", arg.Name),
+		}
+	}
+
+	for defArg.IsList {
+		if !isValidListType(defArg, artType) {
+			return &errors.ValidateError{
+				Node:    field,
+				Message: fmt.Sprintf("参数 %s 类型无效", arg.Name),
 			}
 		}
+		defArg = defArg.ElemType
+		artType = artType.ElemType
+	}
 
-		// list 参数，递归检查内层元素是否一致
-		if defArg.Type.IsList {
-			err := validateListArg(defArg, argMap[name])
-			if err != nil {
-				return err
-			}
+	if !isValidType(defArg, artType) {
+		return &errors.ValidateError{
+			Node:    field,
+			Message: fmt.Sprintf("参数 %s 类型无效", arg.Name),
 		}
 	}
 
 	return nil
 }
 
-func validateOperationFields(fields []*ast.FieldNode) ([]*ast.FieldNode, error) {
+func isValidListType(defArg, artType *ast.FieldType) bool {
+	return defArg.IsList == artType.IsList && defArg.IsNonNull == artType.IsNonNull
+}
+
+func isValidType(defArg, artType *ast.FieldType) bool {
+	return defArg.Name == artType.Name && defArg.IsList == artType.IsList && defArg.IsNonNull == artType.IsNonNull
+}
+
+func fillOperationFields(fields []*ast.FieldNode) ([]*ast.FieldNode, error) {
 	newFields := make(map[string]*ast.FieldNode)
 	var res []*ast.FieldNode
 
-	var err error
 	processField := func(f *ast.FieldNode) {
 		if _, ok := newFields[f.GetName()]; !ok {
 			res = append(res, f)
@@ -168,17 +247,97 @@ func validateOperationFields(fields []*ast.FieldNode) ([]*ast.FieldNode, error) 
 			}
 		} else {
 			processField(field)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
 	for _, field := range res {
 		if len(field.Children) > 0 {
-			field.Children, _ = validateOperationFields(field.Children)
+			field.Children, _ = fillOperationFields(field.Children)
 		}
 	}
 
 	return res, nil
+}
+
+// func isTypeInUnion(typeName string, unionNode *ast.UnionNode) (string, bool) {
+// 	for _, t := range unionNode.Types {
+// 		if t == typeName {
+// 			return t, true
+// 		}
+// 	}
+// 	return "", false
+// }
+
+// func validateUnionField(field *ast.FieldNode, defField *ast.FieldNode) error {
+// 	// 遍历前端请求的 union 字段
+// 	for _, unionField := range field.Children {
+// 		// 检查请求的类型是否存在于后端定义的 union 中
+// 		defUnion := defField.Type.Type.(*ast.UnionNode)
+// 		_, ok := isTypeInUnion(unionField.GetName(), defUnion)
+// 		if !ok {
+// 			return &errors.ValidateError{
+// 				Node:    unionField,
+// 				Message: fmt.Sprintf("类型 %s 不是 union %s 的有效成员", unionField.GetName(), defField.Type.Name),
+// 			}
+// 		}
+
+// 		// 解析 fragment 并添加字段
+// 		unionChildren, err := fillOperationFields(unionField.Children)
+// 		if err != nil {
+// 			return nil
+// 		}
+
+// 		unionField.Children = unionChildren
+
+// 	}
+// 	return nil
+// }
+
+func validateOperationField(field *ast.FieldNode, defField *ast.FieldNode) error {
+	if defField.Type == nil {
+		return &errors.ValidateError{
+			Node:    field,
+			Message: fmt.Sprintf("字段 %s 未在定义中找到", field.GetName()),
+		}
+	}
+
+	if defField.Type.TypeCategory == ast.NodeTypeUnion {
+		log.Debug().Msgf("defField: %+v", defField.Type.Name)
+		log.Debug().Msgf("field: %+v", field)
+	}
+
+	// 拿到后端定义的字段 map -> fieldMap
+	defFieldMap := createFieldMap(p.TypeMap[defField.Type.Name].Fields)
+	// 遍历前端请求的字段，然后判断是否在 fieldMap 中，如果存在，则判断名称和类型是否一致
+	for _, child := range field.Children {
+		v, ok := defFieldMap[child.GetName()]
+		if !ok {
+			return &errors.ValidateError{
+				Node:    field,
+				Message: fmt.Sprintf("字段 %s 未在定义中找到", child.GetName()),
+			}
+		}
+		// 附带参数
+		if len(child.Args) > 0 || len(v.Args) > 0 {
+			defArgMap := createArgMap(v.Args)
+			argMap := make(map[string]*ast.ArgumentNode)
+			for _, arg := range child.Args {
+				argMap[arg.GetName()] = operationArgs[arg.Type.Name]
+			}
+			// 验证必需参数
+			if err := validateRequiredArgs(defArgMap, argMap, child); err != nil {
+				return err
+			}
+			// 验证列表参数
+			if err := validateListArgs(defArgMap, argMap, child); err != nil {
+				return err
+			}
+		}
+		// 字段下还有子字段，则递归调用 validateOperationField 检查
+		if len(child.Children) > 0 {
+			return validateOperationField(child, v)
+		}
+	}
+
+	return nil
 }

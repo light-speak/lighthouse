@@ -1,32 +1,44 @@
-query TestQuery($test: [[ID!]!]!) {
-  testQuery(id: $test){
-    id
-    name
-  }
-}
-
-fragment UserFragment on User {
-  id
-  name
-  role
-  friends {
-    id
-    name
-    friends {
-      ...FriendFragment
-      friends {
-        ...FriendFragment
-        name
-        friends {
-          id
-          name
-        }
+query UserTest($id: ID!,$test:ID!) {
+  getUser(id: $id) {
+    result{
+      ... on User{
+        id
+        ...UserFragment
+      }
+      ... on Product{
+        id
+        ...ProductFragment
       }
     }
   }
 }
 
-fragment FriendFragment on User {
+fragment UserFragment on User{
+  id
+  name
+  result{
+      ... on Product{
+        id
+        ...ProductFragment
+      }
+      ... on User{
+        ...UserFragmentB
+      }
+    }
+}
+
+fragment UserFragmentB on User{
+  id
+  name
+  result{
+      ... on Product{
+        id
+        ...ProductFragment
+      }
+    }
+}
+
+fragment ProductFragment on Product{
   id
   name
 }

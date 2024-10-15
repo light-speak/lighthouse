@@ -110,16 +110,43 @@ func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
 	// return a fragment spread node
 	if p.currToken.Type == lexer.TripleDot {
 		p.expect(lexer.TripleDot)
-		field := &ast.FieldNode{
-			BaseNode: ast.BaseNode{
-				Name: p.currToken.Value,
-			},
-			Type: &ast.FieldType{
-				Name:         p.currToken.Value,
-				TypeCategory: ast.NodeTypeFragment,
-			},
-			Parent: parent,
+		field := &ast.FieldNode{}
+		// is union
+		if p.currToken.Type == lexer.On {
+			p.expect(lexer.On)
+			field = &ast.FieldNode{
+				BaseNode: ast.BaseNode{
+					Name: p.currToken.Value,
+				},
+				Type: &ast.FieldType{
+					Name:         p.currToken.Value,
+					TypeCategory: ast.NodeTypeUnion,
+				},
+				Parent: parent,
+			}
+			p.nextToken()
+			p.expect(lexer.LeftBrace)
+
+			for p.currToken.Type != lexer.RightBrace {
+				field.Children = append(field.Children, p.parseField(field))
+			}
+			p.expect(lexer.RightBrace)
+			return field
+
+		} else {
+			// is fragment
+			field = &ast.FieldNode{
+				BaseNode: ast.BaseNode{
+					Name: p.currToken.Value,
+				},
+				Type: &ast.FieldType{
+					Name:         p.currToken.Value,
+					TypeCategory: ast.NodeTypeFragment,
+				},
+				Parent: parent,
+			}
 		}
+
 		p.nextToken()
 		return field
 	}
@@ -163,6 +190,7 @@ func (p *Parser) parseChildren(parent ast.Node) []*ast.FieldNode {
 // parseArguments parse arguments
 // (id: ID!, name: String!)
 func (p *Parser) parseArguments(parent ast.Node) []*ast.ArgumentNode {
+
 	var args []*ast.ArgumentNode
 	if p.currToken.Type != lexer.LeftParent {
 		return args
