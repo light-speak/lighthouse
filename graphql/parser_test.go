@@ -58,6 +58,7 @@ func TestParseOperation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	qp := p.NewQueryParser(nl)
 	qp.Parser.ParseSchema()
 	for _, node := range qp.FragmentMap {

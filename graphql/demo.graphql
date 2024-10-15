@@ -21,6 +21,9 @@ type User implements Node & Named {
   createdAt: DateTime
   friends: [User!]! @include(if: Boolean)
   orders: [Order!] @skip(if: Boolean) @testMulti(l: [[1, 2], [3, 4]])
+  myOrders:[Order!]! @paginate
+  test(a:ID!):User
+  result:SearchResult
 }
 
 # 定义另一个实现了多接口的类型
@@ -41,7 +44,7 @@ type Order implements Node {
 }
 
 # 定义联合类型
-union SearchResult = User | Product | Order
+union SearchResult = User | Product
 
 # 定义枚举
 enum Role {

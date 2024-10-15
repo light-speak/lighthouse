@@ -32,4 +32,7 @@ func (p *Parser) parseOperation() {
 	}
 	node.Fields = fields
 	p.QueryParser.OperationNode = node
+
+	
+
 }
