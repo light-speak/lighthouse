@@ -1,13 +1,13 @@
 package ast
 
 type Argument struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Directives  []*Directive `json:"-"`
-	Type        *TypeRef     `json:"type"`
-	// Parse Value according to the type of Type
-	DefaultValue any `json:"default_value"`
-	Value        any `json:"value"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	Directives   []*Directive `json:"-"`
+	Type         *TypeRef     `json:"type"`
+	DefaultValue any          `json:"default_value"`
+	Value        any          `json:"value"`
+	IsVariable   bool         `json:"is_variable"`
 }
 
 func (a *Argument) Validate(store *NodeStore) error {
@@ -24,7 +24,11 @@ func (a *Argument) Validate(store *NodeStore) error {
 			return err
 		}
 	}
-	err := ValidateDirectives(a.Name, a.Directives, store)
+	location := LocationArgumentDefinition
+	if a.IsVariable {
+		location = LocationVariableDefinition
+	}
+	err := ValidateDirectives(a.Name, a.Directives, store, location)
 	if err != nil {
 		return err
 	}

@@ -17,5 +17,10 @@ func ValidateNodes(nodes map[string]ast.Node, parser *parser.Parser) error {
 			return err
 		}
 	}
+	for _, directive := range store.Directives {
+		if err := directive.Validate(store); err != nil {
+			return err
+		}
+	}
 	return nil
 }

@@ -73,11 +73,11 @@ func (o *ObjectNode) GetKind() Kind                { return KindObject }
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
 func (o *ObjectNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
-		if err := field.Validate(store, o.Fields, o); err != nil {
+		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition); err != nil {
 			return err
 		}
 	}
-	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store); err != nil {
+	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store, LocationObject); err != nil {
 		return err
 	}
 	if len(o.InterfaceNames) > 0 {
@@ -107,11 +107,11 @@ func (o *InterfaceNode) GetKind() Kind                { return KindInterface }
 func (o *InterfaceNode) GetFields() map[string]*Field { return o.Fields }
 func (o *InterfaceNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
-		if err := field.Validate(store, o.Fields, o); err != nil {
+		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition); err != nil {
 			return err
 		}
 	}
-	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store); err != nil {
+	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store, LocationInterface); err != nil {
 		return err
 	}
 	return nil
@@ -125,7 +125,7 @@ type UnionNode struct {
 
 func (u *UnionNode) GetKind() Kind { return KindUnion }
 func (u *UnionNode) Validate(store *NodeStore) error {
-	if err := ValidateDirectives(u.GetName(), u.GetDirectives(), store); err != nil {
+	if err := ValidateDirectives(u.GetName(), u.GetDirectives(), store, LocationUnion); err != nil {
 		return err
 	}
 	for _, typeName := range u.TypeNames {
@@ -156,7 +156,7 @@ func (e *EnumNode) Validate(store *NodeStore) error {
 			return err
 		}
 	}
-	if err := ValidateDirectives(e.GetName(), e.GetDirectives(), store); err != nil {
+	if err := ValidateDirectives(e.GetName(), e.GetDirectives(), store, LocationEnum); err != nil {
 		return err
 	}
 	return nil
@@ -170,7 +170,7 @@ type EnumValue struct {
 }
 
 func (e *EnumValue) Validate(store *NodeStore) error {
-	if err := ValidateDirectives(e.Name, e.Directives, store); err != nil {
+	if err := ValidateDirectives(e.Name, e.Directives, store, LocationEnumValue); err != nil {
 		return err
 	}
 	directives := GetDirective("enum", e.Directives)
@@ -198,6 +198,18 @@ type InputObjectNode struct {
 func (i *InputObjectNode) GetKind() Kind                { return KindInputObject }
 func (i *InputObjectNode) GetFields() map[string]*Field { return i.Fields }
 
+func (i *InputObjectNode) Validate(store *NodeStore) error {
+	for _, field := range i.Fields {
+		if err := field.Validate(store, i.Fields, i, LocationInputFieldDefinition); err != nil {
+			return err
+		}
+	}
+	if err := ValidateDirectives(i.GetName(), i.GetDirectives(), store, LocationInputObject); err != nil {
+		return err
+	}
+	return nil
+}
+
 type ScalarNode struct {
 	BaseNode
 	ScalarType ScalarType `json:"-"`
@@ -205,7 +217,7 @@ type ScalarNode struct {
 
 func (s *ScalarNode) GetKind() Kind { return KindScalar }
 func (s *ScalarNode) Validate(store *NodeStore) error {
-	if err := ValidateDirectives(s.GetName(), s.GetDirectives(), store); err != nil {
+	if err := ValidateDirectives(s.GetName(), s.GetDirectives(), store, LocationScalar); err != nil {
 		return err
 	}
 	s.ScalarType = store.ScalarTypes[s.GetName()]
@@ -239,8 +251,11 @@ type Field struct {
 	Fragment   *FragmentNode     `json:"-"`
 }
 
-func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node) error {
-	if err := ValidateDirectives(f.Name, f.Directives, store); err != nil {
+func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location) error {
+	if f.IsFragment {
+		location = LocationFragmentSpread
+	}
+	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
 	directives := GetDirective("deprecated", f.Directives)
@@ -288,7 +303,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		}
 		for _, child := range f.Children {
 			// the child is a field of the object type
-			if err := child.Validate(store, obj.(*ObjectNode).Fields, obj); err != nil {
+			if err := child.Validate(store, obj.(*ObjectNode).Fields, obj, location); err != nil {
 				return err
 			}
 		}
@@ -488,14 +503,14 @@ func (t *TypeRef) validateListValue(v interface{}) error {
 type Location string
 
 const (
-	LocationQuery                Location = `QUERY`
-	LocationMutation             Location = `MUTATION`
-	LocationSubscription         Location = `SUBSCRIPTION`
-	LocationField                Location = `FIELD`
+	LocationQuery                Location = `QUERY`        //TODO: validate
+	LocationMutation             Location = `MUTATION`     //TODO: validate
+	LocationSubscription         Location = `SUBSCRIPTION` //TODO: validate
+	LocationField                Location = `FIELD`        //TODO: validate
 	LocationFragmentDefinition   Location = `FRAGMENT_DEFINITION`
 	LocationFragmentSpread       Location = `FRAGMENT_SPREAD`
 	LocationInlineFragment       Location = `INLINE_FRAGMENT`
-	LocationSchema               Location = `SCHEMA`
+	LocationSchema               Location = `SCHEMA` //TODO: validate
 	LocationScalar               Location = `SCALAR`
 	LocationObject               Location = `OBJECT`
 	LocationFieldDefinition      Location = `FIELD_DEFINITION`
@@ -546,47 +561,29 @@ func (d *Directive) GetArg(name string) *Argument {
 	return d.Args[name]
 }
 
-func (d *Directive) Validate(store *NodeStore) error {
+func (d *Directive) Validate(store *NodeStore, location Location) error {
+	d.Definition = store.Directives[d.Name]
 	if d.Definition == nil {
-		d.Definition = store.Directives[d.Name]
-		if d.Definition == nil {
-			return &errors.ValidateError{
-				NodeName: d.Name,
-				Message:  fmt.Sprintf("directive %s not found", d.Name),
-			}
+		return &errors.ValidateError{
+			NodeName: d.Name,
+			Message:  fmt.Sprintf("directive %s not found", d.Name),
+		}
+	}
+	match := false
+	for _, loc := range d.Definition.Locations {
+		if loc == location {
+			match = true
+			break
+		}
+	}
+	if !match {
+		return &errors.ValidateError{
+			NodeName: d.Name,
+			Message:  fmt.Sprintf("directive %s is not valid for location %s", d.Name, location),
 		}
 	}
 
-	for name, arg := range d.Args {
-		defArg, ok := d.Definition.Args[name]
-		if !ok {
-			return &errors.ValidateError{
-				NodeName: d.Name,
-				Message:  fmt.Sprintf("argument %s not defined in directive %s", name, d.Name),
-			}
-		}
-
-		if defArg.Type.Kind == KindEnum {
-			arg.Value = arg.Type.Name
-		}
-		arg.Type = defArg.Type
-		if err := arg.Validate(store); err != nil {
-			return err
-		}
-	}
-
-	// 检查是否所有必需的参数都提供了
-	for name, defArg := range d.Definition.Args {
-		if defArg.Type.Kind == KindNonNull {
-			if _, ok := d.Args[name]; !ok {
-				return &errors.ValidateError{
-					NodeName: d.Name,
-					Message:  fmt.Sprintf("required argument %s not provided for directive %s", name, d.Name),
-				}
-			}
-		}
-	}
-
+	d.Definition.Directives = append(d.Definition.Directives, d)
 	return nil
 }
 
@@ -596,6 +593,8 @@ type DirectiveDefinition struct {
 	Args        map[string]*Argument `json:"args"`
 	Locations   []Location           `json:"locations"`
 	Repeatable  bool                 `json:"repeatable"`
+
+	Directives []*Directive `json:"-"`
 }
 
 func (d *DirectiveDefinition) Validate(store *NodeStore) error {
@@ -618,14 +617,20 @@ func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 			}
 		}
 	}
+	// for _, directive := range d.Directives {
+	// 	for _, arg := range directive.Args {
+
+	// 	}
+	// }
 	return nil
 }
 
 type FragmentNode struct {
-	Name   string            `json:"name"`
-	On     string            `json:"on"`
-	Object *ObjectNode       `json:"-"`
-	Fields map[string]*Field `json:"fields"`
+	Name       string            `json:"name"`
+	On         string            `json:"on"`
+	Object     *ObjectNode       `json:"-"`
+	Directives []*Directive      `json:"-"`
+	Fields     map[string]*Field `json:"fields"`
 }
 
 func (f *FragmentNode) Validate(store *NodeStore) error {
@@ -637,19 +642,22 @@ func (f *FragmentNode) Validate(store *NodeStore) error {
 		}
 	}
 	f.Object = objectNode
+	if err := ValidateDirectives(f.Name, f.Directives, store, LocationFragmentDefinition); err != nil {
+		return err
+	}
 
 	for _, field := range f.Fields {
-		if err := field.Validate(store, f.Object.Fields, f.Object); err != nil {
+		if err := field.Validate(store, f.Object.Fields, f.Object, LocationInlineFragment); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func ValidateDirectives(name string, directives []*Directive, store *NodeStore) error {
+func ValidateDirectives(name string, directives []*Directive, store *NodeStore, location Location) error {
 	directiveNames := make(map[string]int)
 	for _, directive := range directives {
-		if err := directive.Validate(store); err != nil {
+		if err := directive.Validate(store, location); err != nil {
 			return err
 		}
 		directiveNames[directive.Name]++

@@ -36,12 +36,12 @@ func TestParseSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	nodes, err := ParserSchema([]string{"demo.graphql"})
+	_, err := ParserSchema([]string{"demo.graphql"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := GetParser()
-	p.NodeDetail(nodes)
+	// p := GetParser()
+	// p.NodeDetail(nodes)
 }
 
 // func TestParseOperation(t *testing.T) {

@@ -274,6 +274,10 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 // parseArgument parse an argument node
 func (p *Parser) parseArgument() *ast.Argument {
 	description := p.parseDescription()
+	isVariable := false
+	if p.currToken.Type == lexer.Variable {
+		isVariable = true
+	}
 	name := p.currToken.Value
 
 	p.nextToken()         // skip name
@@ -308,6 +312,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 		Type:         typeRef,
 		Value:        value,
 		DefaultValue: defaultValue,
+		IsVariable:   isVariable,
 	}
 }
 
