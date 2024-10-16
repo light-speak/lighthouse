@@ -5,7 +5,6 @@ import (
 
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
-	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/log"
 )
 
@@ -33,9 +32,7 @@ func TestParseSchema(t *testing.T) {
 	}
 	p := parser.NewParser(l)
 	nodes := p.ParseSchema()
-	for _, node := range nodes {
-		log.Debug().Msgf("Type: %s", node.GetNodeType())
-	}
+	p.NodeDetail(nodes)
 }
 
 func TestValidate(t *testing.T) {
@@ -43,32 +40,32 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	schema := generateSchema(nodes)
-	log.Debug().Msgf("schema: \n\n%s", schema)
-}
-
-func TestParseOperation(t *testing.T) {
-	_, err := ParserSchema([]string{"demo.graphql"})
-	if err != nil {
-		t.Fatal(err)
-	}
 	p := GetParser()
-
-	nl, err := parser.ReadGraphQLFile("query_example.graphql")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	qp := p.NewQueryParser(nl)
-	qp.Parser.ParseSchema()
-	for _, node := range qp.FragmentMap {
-		err := validate.Validate(node, p)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	err = validate.Validate(qp.OperationNode, p)
-	if err != nil {
-		t.Fatal(err)
-	}
+	p.NodeDetail(nodes)
 }
+
+// func TestParseOperation(t *testing.T) {
+// 	_, err := ParserSchema([]string{"demo.graphql"})
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	p := GetParser()
+
+// 	nl, err := parser.ReadGraphQLFile("query_example.graphql")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	qp := p.NewQueryParser(nl)
+// 	qp.Parser.ParseSchema()
+// 	for _, node := range qp.FragmentMap {
+// 		err := validate.Validate(node, p)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 	}
+// 	err = validate.Validate(qp.OperationNode, p)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }

@@ -6,44 +6,13 @@ import (
 )
 
 var p *parser.Parser
-
-func Validate(node ast.Node, parser *parser.Parser) error {
-	p = parser
-	// Create a map of node types to validation functions
-	validators := map[ast.NodeType]func(node ast.Node) error{
-		ast.NodeTypeDirectiveDefinition: validateDirectiveDefinition,
-		ast.NodeTypeScalar:              validateScalar,
-		ast.NodeTypeUnion:               validateUnion,
-		ast.NodeTypeEnum:                validateEnum,
-		ast.NodeTypeInterface:           validateInterface,
-		ast.NodeTypeInput:               validateInput,
-		ast.NodeTypeFragment:            validateFragment,
-		ast.NodeTypeType:                validateType,
-		ast.NodeTypeOperation:           validateOperation,
-	}
-
-	// Get the validation function based on the node type
-	if validateFunc, exists := validators[node.GetNodeType()]; exists {
-		// validate arguments
-		err := validateArguments(node)
-		if err != nil {
-			return err
-		}
-		// validate directives
-		err = validateDirectives(node)
-		if err != nil {
-			return err
-		}
-		return validateFunc(node)
-	}
-
-	return nil
-}
+var store *ast.NodeStore
 
 func ValidateNodes(nodes map[string]ast.Node, parser *parser.Parser) error {
 	p = parser
+	store = parser.NodeStore
 	for _, node := range nodes {
-		err := Validate(node, p)
+		err := node.Validate(store)
 		if err != nil {
 			return err
 		}

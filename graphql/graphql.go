@@ -8,10 +8,10 @@ import (
 
 var Parser *parser.Parser
 
-// GetSchema Get service schema
-func GetSchema() string {
-	return generateSchema(Parser.Nodes)
-}
+// // GetSchema Get service schema
+// func GetSchema() string {
+// 	return generateSchema(Parser.Nodes)
+// }
 
 func GetParser() *parser.Parser {
 	if Parser == nil {
@@ -35,3 +35,4 @@ func ParserSchema(files []string) (map[string]ast.Node, error) {
 
 	return nodes, nil
 }
+

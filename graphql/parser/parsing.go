@@ -1,14 +1,16 @@
 package parser
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
+	"github.com/light-speak/lighthouse/utils"
 )
 
-// parseType parse a type node
+// parseObject parse a object node
 //
 //	type User {
 //	  id: ID!
@@ -17,25 +19,31 @@ import (
 //	  email: String
 //	  createdAt: DateTime
 //	}
-func (p *Parser) parseType(extends ...bool) {
-	node := &ast.TypeNode{
+func (p *Parser) parseObject() {
+	extend := false
+	if p.PreviousToken().Type == lexer.Extend {
+		extend = true
+	}
+	object := &ast.ObjectNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Type),
 		},
-		Implements: p.parseImplements(),
+		InterfaceNames: p.parseImplements(),
 	}
 
-	node.Directives = p.parseDirectives()
+	object.Directives = p.parseDirectives()
 	p.expect(lexer.LeftBrace)
-	var fields []*ast.FieldNode
-	for p.currToken.Type != lexer.RightBrace {
-		field := p.parseField(node)
-		fields = append(fields, field)
+	fields := make(map[string]*ast.Field)
+	for p.currToken.Type == lexer.Letter {
+		field := p.parseField()
+		if _, ok := fields[field.Name]; ok {
+			panic("duplicate field: " + field.Name)
+		}
+		fields[field.Name] = field
 	}
-	node.Fields = fields
-
-	p.AddType(node.GetName(), node, len(extends) > 0)
+	object.Fields = fields
+	p.AddObject(object, extend)
 }
 
 // parseDescription parses a description if present
@@ -55,7 +63,11 @@ func (p *Parser) parseImplements() []string {
 	}
 	p.expect(lexer.Implements)
 	for {
-		implements = append(implements, p.currToken.Value)
+		implementName := p.currToken.Value
+		if utils.Contains(implements, implementName) {
+			panic("duplicate implement: " + implementName)
+		}
+		implements = append(implements, implementName)
 		p.nextToken()
 		if p.currToken.Type != lexer.And {
 			break
@@ -66,8 +78,8 @@ func (p *Parser) parseImplements() []string {
 }
 
 // parseDirectives parses directives if present
-func (p *Parser) parseDirectives() []*ast.DirectiveNode {
-	var directives []*ast.DirectiveNode
+func (p *Parser) parseDirectives() []*ast.Directive {
+	var directives []*ast.Directive
 	if p.currToken.Type != lexer.At {
 		return directives
 	}
@@ -82,16 +94,14 @@ func (p *Parser) parseDirectives() []*ast.DirectiveNode {
 }
 
 // parseDirective parses a directive if present
-func (p *Parser) parseDirective() *ast.DirectiveNode {
-	directive := &ast.DirectiveNode{
-		BaseNode: ast.BaseNode{
-			Name: p.expectAndGetValue(lexer.At),
-		},
+func (p *Parser) parseDirective() *ast.Directive {
+	directive := &ast.Directive{
+		Name: p.expectAndGetValue(lexer.At),
 	}
 
-	var args []*ast.ArgumentNode
+	var args map[string]*ast.Argument
 	if p.currToken.Type == lexer.LeftParent {
-		args = p.parseArguments(directive)
+		args = p.parseArguments()
 	}
 	directive.Args = args
 	return directive
@@ -104,46 +114,39 @@ func (p *Parser) parseDirective() *ast.DirectiveNode {
 // age: Int
 // email: String
 // createdAt: DateTime
-func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
+func (p *Parser) parseField() *ast.Field {
 	// if the field is a fragment spread
 	// for example: ...FragmentName
 	// return a fragment spread node
 	if p.currToken.Type == lexer.TripleDot {
 		p.expect(lexer.TripleDot)
-		field := &ast.FieldNode{}
+		field := &ast.Field{}
 		// is union
 		if p.currToken.Type == lexer.On {
 			p.expect(lexer.On)
-			field = &ast.FieldNode{
-				BaseNode: ast.BaseNode{
+			field = &ast.Field{
+				Name: p.currToken.Value,
+				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
 				},
-				Type: &ast.FieldType{
-					Name:         p.currToken.Value,
-					TypeCategory: ast.NodeTypeUnion,
-				},
-				Parent: parent,
 			}
 			p.nextToken()
 			p.expect(lexer.LeftBrace)
 
 			for p.currToken.Type != lexer.RightBrace {
-				field.Children = append(field.Children, p.parseField(field))
+				cField := p.parseField()
+				field.Children[cField.Name] = cField
 			}
 			p.expect(lexer.RightBrace)
 			return field
 
 		} else {
 			// is fragment
-			field = &ast.FieldNode{
-				BaseNode: ast.BaseNode{
+			field = &ast.Field{
+				Name: p.currToken.Value,
+				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
 				},
-				Type: &ast.FieldType{
-					Name:         p.currToken.Value,
-					TypeCategory: ast.NodeTypeFragment,
-				},
-				Parent: parent,
 			}
 		}
 
@@ -151,37 +154,34 @@ func (p *Parser) parseField(parent ast.Node) *ast.FieldNode {
 		return field
 	}
 
-	field := &ast.FieldNode{
-		BaseNode: ast.BaseNode{
-			Name:        p.currToken.Value,
-			Description: p.parseDescription(),
-		},
-		Parent: parent,
+	field := &ast.Field{
+		Name:        p.currToken.Value,
+		Description: p.parseDescription(),
 	}
 	p.nextToken()
 
 	if p.currToken.Type == lexer.LeftParent {
-		field.Args = p.parseArguments(field)
+		field.Args = p.parseArguments()
 	}
 
 	switch p.currToken.Type {
 	case lexer.Colon:
 		p.expect(lexer.Colon)
-		field.Type = p.parseTypeReference()
+		field.Type, _ = p.parseTypeReferenceAndValue()
 		field.Directives = p.parseDirectives()
 	case lexer.LeftBrace:
-		field.Children = p.parseChildren(field)
+		field.Children = p.parseChildren()
 	}
 
 	return field
 }
 
 // parseChildren parse children
-func (p *Parser) parseChildren(parent ast.Node) []*ast.FieldNode {
-	var children []*ast.FieldNode
+func (p *Parser) parseChildren() map[string]*ast.Field {
+	children := make(map[string]*ast.Field)
 	p.expect(lexer.LeftBrace)
 	for p.currToken.Type != lexer.RightBrace {
-		children = append(children, p.parseField(parent))
+		children[p.currToken.Value] = p.parseField()
 	}
 	p.expect(lexer.RightBrace)
 	return children
@@ -189,15 +189,15 @@ func (p *Parser) parseChildren(parent ast.Node) []*ast.FieldNode {
 
 // parseArguments parse arguments
 // (id: ID!, name: String!)
-func (p *Parser) parseArguments(parent ast.Node) []*ast.ArgumentNode {
-
-	var args []*ast.ArgumentNode
+func (p *Parser) parseArguments() map[string]*ast.Argument {
+	args := make(map[string]*ast.Argument)
 	if p.currToken.Type != lexer.LeftParent {
 		return args
 	}
 	p.expect(lexer.LeftParent)
 	for p.currToken.Type != lexer.RightParent {
-		args = append(args, p.parseArgument(parent))
+		arg := p.parseArgument()
+		args[arg.Name] = arg
 		if p.currToken.Type != lexer.RightParent {
 			p.expect(lexer.Comma)
 		}
@@ -207,206 +207,159 @@ func (p *Parser) parseArguments(parent ast.Node) []*ast.ArgumentNode {
 	return args
 }
 
-// parseDefaultValue parse a default value
-// = 123, = "123", = true, = false, = null
-// = [123, 456] , = ["123", "456"]
-func (p *Parser) parseDefaultValue() *ast.ArgumentValue {
+func (p *Parser) parseDefaultValue() any {
 	if p.currToken.Type == lexer.Equal {
 		p.expect(lexer.Equal) // skip =
-		return p.parseArgumentValue()
+		return p.parseValue()
 	}
 	return nil
 }
 
 // parseTypeReference parses a type reference
-// Examples: ID, String, [Int], [[Int]], [User], [[User]], [User!]
-func (p *Parser) parseTypeReference() *ast.FieldType {
-	var fieldType *ast.FieldType
+// Examples: ID, String, [Int], [[Int]], [User], [[User]], [User!], [1,2,3], [[1,2,3],[4,6]]
+func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
+	var fieldType *ast.TypeRef
+	var value any
 
 	if p.currToken.Type == lexer.LeftBracket {
 		p.expect(lexer.LeftBracket)
-		elemType := p.parseTypeReference()
+		innerType, innerValue := p.parseTypeReferenceAndValue()
+
+		// 处理多重数组
+		if p.currToken.Type == lexer.Comma {
+			value = []any{innerValue}
+			for p.currToken.Type == lexer.Comma {
+				p.expect(lexer.Comma)
+				_, nextValue := p.parseTypeReferenceAndValue()
+				value = append(value.([]any), nextValue)
+			}
+		} else if innerValue != nil {
+			// 单层数组值
+			value = []any{innerValue}
+		} else {
+			// 处理数组类型
+			fieldType = &ast.TypeRef{
+				Kind:   ast.KindList,
+				OfType: innerType,
+			}
+		}
+
 		p.expect(lexer.RightBracket)
-		fieldType = &ast.FieldType{
-			Name:     "List",
-			IsList:   true,
-			ElemType: elemType,
-		}
 	} else {
-		fieldType = &ast.FieldType{
-			Name: p.currToken.Value,
+		switch p.currToken.Type {
+		case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null:
+			value = p.parseValue()
+		case lexer.Letter:
+			fieldType = &ast.TypeRef{
+				Kind: "",
+				Name: p.currToken.Value,
+			}
+			p.expect(lexer.Letter)
+		default:
+			panic(fmt.Sprintf("Unexpected token type in type reference parsing: %v", p.currToken.Type))
 		}
-		p.expect(lexer.Letter)
 	}
 
-	if p.currToken.Type == lexer.Exclamation {
-		fieldType.IsNonNull = true
+	if fieldType != nil && p.currToken.Type == lexer.Exclamation {
 		p.expect(lexer.Exclamation)
+		fieldType = &ast.TypeRef{
+			Kind:   ast.KindNonNull,
+			OfType: fieldType,
+		}
 	}
 
-	return fieldType
+	return fieldType, value
 }
 
 // parseArgument parse an argument node
-func (p *Parser) parseArgument(parent ast.Node) *ast.ArgumentNode {
+func (p *Parser) parseArgument() *ast.Argument {
 	description := p.parseDescription()
 	name := p.currToken.Value
 
 	p.nextToken()         // skip name
 	p.expect(lexer.Colon) // skip :
 
-	var fieldType *ast.FieldType
-	var defaultValue, value *ast.ArgumentValue
+	var typeRef *ast.TypeRef
+	var defaultValue, value any
+
 	switch p.currToken.Type {
-	case lexer.Letter:
+	case lexer.Letter, lexer.LeftBracket:
 		// Case 1: Normal parameter with type (id: ID!, name: String!)
 		// Case 2: Normal parameter with type and default value (id: ID = 123, name: String = "123")
-		fieldType = p.parseTypeReference()
+		typeRef, value = p.parseTypeReferenceAndValue()
 		defaultValue = p.parseDefaultValue()
 	case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null:
 		// Case 3: Normal parameter with value (id: 123, name: "123")
-		value = p.parseSingleArgument()
+		value = p.parseValue()
 	case lexer.Variable:
 		// Case 4: Normal parameter with variable (id: $id)
-		value = &ast.ArgumentValue{
-			Type: &ast.FieldType{
-				Name: p.currToken.Value,
-			},
-		}
+		value = p.currToken.Value
 		p.expect(lexer.Variable)
-	case lexer.LeftBracket:
-		// Case 5: Normal parameter with list value (id: [1,2])
-		value = p.parseListArgument()
-		if value.Type != nil {
-			fieldType = value.Type
-		}
 	default:
 		panic("Unexpected token type in argument parsing: " + p.currToken.Value)
 	}
 
 	directives := p.parseDirectives()
 
-	return &ast.ArgumentNode{
-		BaseNode: ast.BaseNode{
-			Name:        name,
-			Description: description,
-			Directives:  directives,
-		},
-		Type:         fieldType,
+	return &ast.Argument{
+		Name:         name,
+		Description:  description,
+		Directives:   directives,
+		Type:         typeRef,
 		Value:        value,
 		DefaultValue: defaultValue,
-		Parent:       parent,
 	}
 }
 
-// parseArgumentValue parse a directive argument value
-// @directive(arg: "123")
-// @directive(arg: 123)
-// @directive(arg: [123, 456])
-// @directive(arg: ["123", "456"])
-// @directive(arg: true, arg2: false)
-// @directive(arg: Boolean, arg2: String, arg3: Int, arg4: [[User]!]!, arg5: ID)
-// The colon has been parsed in the previous step, so only the value needs to be parsed here
-func (p *Parser) parseArgumentValue() *ast.ArgumentValue {
-	switch p.currToken.Type {
-	case lexer.LeftBracket:
-		return p.parseListArgument()
-	default:
-		return p.parseSingleArgument()
+func (p *Parser) parseValue() any {
+	if p.currToken.Type == lexer.Null {
+		p.expect(lexer.Null)
+		return nil
 	}
-}
-
-func (p *Parser) parseListArgument() *ast.ArgumentValue {
-	p.expect(lexer.LeftBracket)
-	var values []*ast.ArgumentValue
-	var elemType *ast.FieldType
-
-	for p.currToken.Type != lexer.RightBracket {
-		if p.currToken.Type == lexer.LeftBracket {
-			// Nested list
-			values = append(values, p.parseListArgument())
-			if elemType == nil {
-				elemType = values[0].Type
-			}
-		} else if p.currToken.Type == lexer.Letter {
-			// Type reference
-			elemType = p.parseTypeReference()
-		} else {
-			// Single value
-			values = append(values, p.parseSingleArgument())
-		}
-
-		if p.currToken.Type == lexer.Comma {
-			p.expect(lexer.Comma)
-		}
+	if p.currToken.Type == lexer.Message {
+		value := strings.Trim(p.currToken.Value, "\"")
+		p.expect(lexer.Message)
+		return value
 	}
-	p.expect(lexer.RightBracket)
-
-	argValue := &ast.ArgumentValue{
-		Children: values,
-		Type: &ast.FieldType{
-			Name:     "List",
-			IsList:   true,
-			ElemType: elemType,
-		},
-	}
-
-	if p.currToken.Type == lexer.Exclamation {
-		argValue.Type.IsNonNull = true
-		p.expect(lexer.Exclamation)
-	}
-
-	return argValue
-}
-
-func (p *Parser) parseSingleArgument() *ast.ArgumentValue {
-	var v ast.Value
-	var typeName string
-
-	switch p.currToken.Type {
-	case lexer.Null:
-		typeName = "Null"
-		v = &ast.NullValue{}
-	case lexer.Message:
-		v = &ast.StringValue{Value: strings.Trim(p.currToken.Value, "\"")}
-		typeName = "String"
-	case lexer.IntNumber:
-		intValue, err := strconv.ParseInt(p.currToken.Value, 10, 64)
+	if p.currToken.Type == lexer.IntNumber {
+		v, err := strconv.ParseInt(p.currToken.Value, 10, 64)
+		p.expect(lexer.IntNumber)
 		if err != nil {
 			panic("invalid integer value: " + err.Error())
 		}
-		v = &ast.IntValue{Value: intValue}
-		typeName = "Int"
-	case lexer.FloatNumber:
-		floatValue, err := strconv.ParseFloat(p.currToken.Value, 64)
+		return v
+	}
+	if p.currToken.Type == lexer.FloatNumber {
+		v, err := strconv.ParseFloat(p.currToken.Value, 64)
 		if err != nil {
 			panic("invalid float value: " + err.Error())
 		}
-		v = &ast.FloatValue{Value: floatValue}
-		typeName = "Float"
-	case lexer.Boolean:
-		boolValue := p.currToken.Value == "true"
-		v = &ast.BooleanValue{Value: boolValue}
-		typeName = "Boolean"
-	default:
-		panic("unsupported token type: " + p.currToken.Type)
+		p.expect(lexer.FloatNumber)
+		return v
 	}
-
-	argValue := &ast.ArgumentValue{
-		Value: v,
-		Type: &ast.FieldType{
-			Name: typeName,
-		},
+	if p.currToken.Type == lexer.Boolean {
+		value := p.currToken.Value == "true"
+		p.expect(lexer.Boolean)
+		return value
 	}
-
-	p.nextToken()
-
-	if p.currToken.Type == lexer.Exclamation {
-		argValue.Type.IsNonNull = true
-		p.expect(lexer.Exclamation)
+	if p.currToken.Type == lexer.Letter {
+		value := p.currToken.Value
+		p.expect(lexer.Letter)
+		return value
 	}
-
-	return argValue
+	if p.currToken.Type == lexer.LeftBracket {
+		p.expect(lexer.LeftBracket)
+		var values []any
+		for p.currToken.Type != lexer.RightBracket {
+			values = append(values, p.parseValue())
+			if p.currToken.Type == lexer.Comma {
+				p.expect(lexer.Comma)
+			}
+		}
+		p.expect(lexer.RightBracket)
+		return values
+	}
+	return nil
 }
 
 // parseDirectiveDefinition parses a directive definition node
@@ -414,15 +367,13 @@ func (p *Parser) parseSingleArgument() *ast.ArgumentValue {
 func (p *Parser) parseDirectiveDefinition() {
 	description := p.parseDescription()
 	p.expect(lexer.Directive)
-	node := &ast.DirectiveDefinitionNode{
-		BaseNode: ast.BaseNode{
-			Name:        p.expectAndGetValue(lexer.At),
-			Description: description,
-		},
+	node := &ast.DirectiveDefinition{
+		Name:        p.expectAndGetValue(lexer.At),
+		Description: description,
 	}
 
 	if p.currToken.Type == lexer.LeftParent {
-		node.Args = p.parseArguments(node)
+		node.Args = p.parseArguments()
 	}
 	if p.currToken.Type == lexer.Repeatable {
 		node.Repeatable = true
@@ -467,10 +418,16 @@ func (p *Parser) parseEnum() {
 		},
 	}
 
+	node.EnumValues = make(map[string]*ast.EnumValue)
+
 	p.expect(lexer.LeftBrace)
 
 	for p.currToken.Type != lexer.RightBrace {
-		node.Values = append(node.Values, p.parseEnumValue(node))
+		enumValue := p.parseEnumValue()
+		if _, ok := node.EnumValues[enumValue.Name]; ok {
+			panic("duplicate enum value: " + enumValue.Name)
+		}
+		node.EnumValues[enumValue.Name] = enumValue
 	}
 
 	p.expect(lexer.RightBrace)
@@ -478,19 +435,16 @@ func (p *Parser) parseEnum() {
 	p.AddEnum(node)
 }
 
-func (p *Parser) parseEnumValue(parent ast.Node) *ast.EnumValueNode {
+func (p *Parser) parseEnumValue() *ast.EnumValue {
 	description := p.parseDescription()
 	name := p.currToken.Value
 	p.nextToken()
 	directives := p.parseDirectives()
 
-	return &ast.EnumValueNode{
-		BaseNode: ast.BaseNode{
-			Name:        name,
-			Description: description,
-			Directives:  directives,
-		},
-		Parent: parent,
+	return &ast.EnumValue{
+		Name:        name,
+		Description: description,
+		Directives:  directives,
 	}
 }
 
@@ -500,31 +454,11 @@ func (p *Parser) parseEnumValue(parent ast.Node) *ast.EnumValueNode {
 //	  role: Role!
 //	}
 func (p *Parser) parseExtend() {
-	p.parseDescription() // Skip extend description
-
-	p.nextToken()               // Skip 'extend'
-	p.expect(lexer.Type, false) // Ensure the next token is 'type', but not move to next token, continue parsing
+	p.parseDescription()   // Skip extend description
+	p.expect(lexer.Extend) // Skip 'extend'
 
 	// Parse the extended type using parseType
-	p.parseType(true)
-}
-
-func (p *Parser) parseFragment() {
-	node := &ast.FragmentNode{
-		BaseNode: ast.BaseNode{
-			Description: p.parseDescription(),
-			Name:        p.expectAndGetValue(lexer.Fragment),
-			Directives:  p.parseDirectives(),
-		},
-		On: p.expectAndGetValue(lexer.On),
-	}
-
-	p.expect(lexer.LeftBrace)
-	for p.currToken.Type != lexer.RightBrace {
-		node.Fields = append(node.Fields, p.parseField(node))
-	}
-
-	p.AddFragment(node)
+	p.parseObject()
 }
 
 // parseInput 解析输入节点
@@ -537,7 +471,7 @@ func (p *Parser) parseFragment() {
 //	  createdAt: DateTime
 //	}
 func (p *Parser) parseInput() {
-	node := &ast.InputNode{
+	node := &ast.InputObjectNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Input),
@@ -546,9 +480,14 @@ func (p *Parser) parseInput() {
 	}
 
 	p.expect(lexer.LeftBrace)
+	node.Fields = make(map[string]*ast.Field)
 
 	for p.currToken.Type != lexer.RightBrace {
-		node.Fields = append(node.Fields, p.parseField(node))
+		field := p.parseField()
+		if _, ok := node.Fields[field.Name]; ok {
+			panic("duplicate field: " + field.Name)
+		}
+		node.Fields[field.Name] = field
 	}
 
 	p.AddInput(node)
@@ -569,9 +508,13 @@ func (p *Parser) parseInterface() {
 
 	p.expect(lexer.LeftBrace)
 
-	var fields []*ast.FieldNode
+	fields := make(map[string]*ast.Field)
 	for p.currToken.Type != lexer.RightBrace {
-		fields = append(fields, p.parseField(node))
+		field := p.parseField()
+		if _, ok := fields[field.Name]; ok {
+			panic("duplicate field: " + field.Name)
+		}
+		fields[field.Name] = field
 	}
 
 	node.Fields = fields
@@ -605,15 +548,15 @@ func (p *Parser) parseUnion() {
 	}
 
 	p.expect(lexer.Equal)
-	node.Types = p.parseUnionTypes()
+	node.TypeNames = p.parseUnionTypes()
 	p.AddUnion(node)
 }
 
 // parseUnionTypes parses the types in a union definition
-func (p *Parser) parseUnionTypes() []string {
-	var types []string
+func (p *Parser) parseUnionTypes() map[string]string {
+	types := make(map[string]string)
 	for {
-		types = append(types, p.currToken.Value)
+		types[p.currToken.Value] = p.currToken.Value
 		p.nextToken()
 		if p.currToken.Type != lexer.Pipe {
 			break

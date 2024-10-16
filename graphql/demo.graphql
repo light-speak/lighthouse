@@ -1,5 +1,5 @@
 # 自定义标量类型
-scalar TestScalar
+# scalar TestScalar
 
 # 定义接口
 interface Node {
@@ -16,14 +16,13 @@ type User implements Node & Named {
   id: ID!
   name: String!
   age: Int
-  email: String
   role: Role!
   createdAt: DateTime
   friends: [User!]! @include(if: Boolean)
   orders: [Order!] @skip(if: Boolean) @testMulti(l: [[1, 2], [3, 4]])
-  myOrders:[Order!]! @paginate
-  test(a:ID!):User
-  result:SearchResult
+  myOrders: [Order!]! @paginate
+  test(a: ID!): User
+  result: SearchResult @testRole(role: ADMIN)
 }
 
 # 定义另一个实现了多接口的类型
@@ -107,31 +106,8 @@ extend type User {
   address: String
 }
 
-# 定义片段
-fragment UserFields on User {
-  id
-  name
-  email
-  age
-  role
-  orders {
-    id
-    total
-    product {
-      id
-      name
-      price
-    }
-  }
-}
-
-fragment ProductFields on Product {
-  id
-  name
-  price
-  createdAt
-}
-
 # 定义指令
+"这是一个测试"
 directive @test(name: String!) on FIELD_DEFINITION
 directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+directive @testRole(role: Role!) on FIELD_DEFINITION

@@ -13,9 +13,9 @@ func (p *Parser) AddReserved() {
 }
 
 func (p *Parser) MergeScalarType() {
-	for name, scalar := range p.ScalarMap {
-		if _, ok := p.ScalarTypeMap[name]; ok {
-			scalar.Scalar = p.ScalarTypeMap[name]
+	for name, scalar := range p.NodeStore.Scalars {
+		if _, ok := p.NodeStore.ScalarTypes[name]; ok {
+			scalar.ScalarType = p.NodeStore.ScalarTypes[name]
 		}
 	}
 }
@@ -74,50 +74,54 @@ func (p *Parser) addReservedScalarType() {
 }
 
 func (p *Parser) addReservedType() {
-	p.AddType("PaginateInfo", &ast.TypeNode{
+	p.AddObject(&ast.ObjectNode{
 		BaseNode: ast.BaseNode{
 			Name:        "PaginateInfo",
 			Description: "The PaginateInfo type represents information about a paginated list.",
 		},
-		Go: "model.PaginateInfo",
-		Fields: []*ast.FieldNode{
-			{
-				BaseNode: ast.BaseNode{
-					Name: "currentPage",
-				},
-				Type: &ast.FieldType{
-					Name:      "Int",
-					Type:      p.ScalarMap["Int"],
-					IsNonNull: true,
-				},
-			},
-			{
-				BaseNode: ast.BaseNode{
-					Name: "totalPage",
-				},
-				Type: &ast.FieldType{
-					Name:      "Int",
-					Type:      p.ScalarMap["Int"],
-					IsNonNull: true,
+		Fields: map[string]*ast.Field{
+			"currentPage": {
+				Name: "currentPage",
+				Type: &ast.TypeRef{
+					Kind: ast.KindNonNull,
+					OfType: &ast.TypeRef{
+						Kind:     ast.KindScalar,
+						Name:     "Int",
+						TypeNode: p.NodeStore.Scalars["Int"],
+					},
 				},
 			},
-			{
-				BaseNode: ast.BaseNode{
-					Name: "hasNextPage",
-				},
-				Type: &ast.FieldType{
-					Name:      "Boolean",
-					Type:      p.ScalarMap["Boolean"],
-					IsNonNull: true,
+			"totalPage": {
+				Name: "totalPage",
+				Type: &ast.TypeRef{
+					Kind: ast.KindNonNull,
+					OfType: &ast.TypeRef{
+						Kind:     ast.KindScalar,
+						Name:     "Int",
+						TypeNode: p.NodeStore.Scalars["Int"],
+					},
 				},
 			},
-			{
-				BaseNode: ast.BaseNode{
-					Name: "totalCount",
+			"hasNextPage": {
+				Name: "hasNextPage",
+				Type: &ast.TypeRef{
+					Kind: ast.KindNonNull,
+					OfType: &ast.TypeRef{
+						Kind:     ast.KindScalar,
+						Name:     "Boolean",
+						TypeNode: p.NodeStore.Scalars["Boolean"],
+					},
 				},
-				Type: &ast.FieldType{
-					Name: "Int",
-					Type: p.ScalarMap["Int"],
+			},
+			"totalCount": {
+				Name: "totalCount",
+				Type: &ast.TypeRef{
+					Kind: ast.KindNonNull,
+					OfType: &ast.TypeRef{
+						Kind:     ast.KindScalar,
+						Name:     "Int",
+						TypeNode: p.NodeStore.Scalars["Int"],
+					},
 				},
 			},
 		},

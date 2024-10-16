@@ -20,35 +20,22 @@ type Parser struct {
 	// currToken is the current token being processed, which helps the parser determine its state.
 	currToken *lexer.Token
 
-	// Nodes is a map of all parsed nodes
-	Nodes map[string]ast.Node
-
-	// TypeMap, enumMap, scalarMap, unionMap, inputMap, interfaceMap, and directiveMap are all maps
-	// that store parsed AST nodes. The keys are the names of the respective types, enums, scalars, unions,
-	// input types, interfaces, and directives, while the values are pointers to their corresponding AST node structures.
-	TypeMap       map[string]*ast.TypeNode
-	EnumMap       map[string]*ast.EnumNode
-	ScalarMap     map[string]*ast.ScalarNode
-	UnionMap      map[string]*ast.UnionNode
-	InputMap      map[string]*ast.InputNode
-	InterfaceMap  map[string]*ast.InterfaceNode
-	DirectiveMap  map[string]*ast.DirectiveDefinitionNode
-	FragmentMap   map[string]*ast.FragmentNode
-	ScalarTypeMap map[string]ast.ScalarType
+	// NodeStore is a store of all parsed nodes
+	NodeStore *ast.NodeStore
 }
 
 type QueryParser struct {
-	Parser        *Parser
-	QueryId       string
-	OperationNode *ast.OperationNode
-	FragmentMap   map[string]*ast.FragmentNode
+	Parser  *Parser
+	QueryId string
+	// OperationNode *ast.OperationNode
+	Fragments map[string]*ast.FragmentNode
 }
 
 func (p *QueryParser) AddFragment(node *ast.FragmentNode) {
-	if p.FragmentMap == nil {
-		p.FragmentMap = make(map[string]*ast.FragmentNode)
+	if p.Fragments == nil {
+		p.Fragments = make(map[string]*ast.FragmentNode)
 	}
-	p.FragmentMap[node.Name] = node
+	p.Fragments[node.Name] = node
 }
 
 // ReadGraphQLFile read graphql file and return a lexer
@@ -99,24 +86,25 @@ func (p *Parser) nextToken() error {
 	return nil
 }
 
+
 // ParseSchema parse schema
 // return a list of ast nodes
 // the nodes is a list of type, enum, interface, input, scalar, union, directive, extend
 func (p *Parser) ParseSchema() map[string]ast.Node {
-	p.Nodes = make(map[string]ast.Node)
+	p.NodeStore = &ast.NodeStore{}
+	p.NodeStore.InitStore()
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
-		lexer.LowerQuery:        func() { p.parseOperation() },
-		lexer.LowerMutation:     func() { p.parseOperation() },
-		lexer.LowerSubscription: func() { p.parseOperation() },
-		lexer.Type:              func() { p.parseType() },
-		lexer.Extend:            func() { p.parseExtend() },
-		lexer.Enum:              func() { p.parseEnum() },
-		lexer.Interface:         func() { p.parseInterface() },
-		lexer.Input:             func() { p.parseInput() },
-		lexer.Scalar:            func() { p.parseScalar() },
-		lexer.Union:             func() { p.parseUnion() },
-		lexer.Directive:         func() { p.parseDirectiveDefinition() },
-		lexer.Fragment:          func() { p.parseFragment() },
+		// lexer.LowerQuery:        func() { p.parseOperation() },
+		// lexer.LowerMutation:     func() { p.parseOperation() },
+		// lexer.LowerSubscription: func() { p.parseOperation() },
+		lexer.Type:      func() { p.parseObject() },
+		lexer.Extend:    func() { p.parseExtend() },
+		lexer.Enum:      func() { p.parseEnum() },
+		lexer.Interface: func() { p.parseInterface() },
+		lexer.Input:     func() { p.parseInput() },
+		lexer.Scalar:    func() { p.parseScalar() },
+		lexer.Union:     func() { p.parseUnion() },
+		lexer.Directive: func() { p.parseDirectiveDefinition() },
 	}
 
 	for p.currToken.Type != lexer.EOF {
@@ -132,7 +120,7 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		p.AddReserved()
 		p.MergeScalarType()
 	}
-	return p.Nodes
+	return p.NodeStore.Nodes
 }
 
 // PreviousToken return Previous Token
@@ -144,7 +132,7 @@ func (p *Parser) PreviousToken() *lexer.Token {
 // if not, panic
 func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 	if p.currToken.Type != t {
-		panic(fmt.Sprintf("expect: %s, but got: %s at line %d position %d", t, p.currToken.Value, p.currToken.Line, p.currToken.LinePosition))
+		panic(fmt.Sprintf("expect: %s but got: %s at line %d position %d", t, p.currToken.Value, p.currToken.Line, p.currToken.LinePosition))
 	}
 
 	if len(options) == 0 || options[0] {
@@ -153,139 +141,77 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 }
 
 func (p *Parser) AddScalar(node *ast.ScalarNode) {
-	if p.ScalarMap == nil {
-		p.ScalarMap = make(map[string]*ast.ScalarNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Scalar '%s' already defined", node.Name))
-	}
-	p.ScalarMap[node.Name] = node
-	p.Nodes[node.Name] = node
+	p.isNameConflict(node.Name)
+	p.NodeStore.Scalars[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
 }
 
-func (p *Parser) AddInput(node *ast.InputNode) {
-	if p.InputMap == nil {
-		p.InputMap = make(map[string]*ast.InputNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Input '%s' already defined", node.Name))
-	}
-	p.InputMap[node.Name] = node
-	p.Nodes[node.Name] = node
+func (p *Parser) AddInput(node *ast.InputObjectNode) {
+	p.isNameConflict(node.Name)
+	p.NodeStore.Inputs[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
 }
 
 func (p *Parser) AddInterface(node *ast.InterfaceNode) {
-	if p.InterfaceMap == nil {
-		p.InterfaceMap = make(map[string]*ast.InterfaceNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Interface '%s' already defined", node.Name))
-	}
-	p.InterfaceMap[node.Name] = node
-	p.Nodes[node.Name] = node
+	p.isNameConflict(node.Name)
+	p.NodeStore.Interfaces[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
 }
 
-func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinitionNode) {
-	if p.DirectiveMap == nil {
-		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Directive '%s' already defined", node.Name))
-	}
-	p.DirectiveMap[node.Name] = node
-	p.Nodes[node.Name] = node
+func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinition) {
+	p.isNameConflict(node.Name)
+	p.NodeStore.Directives[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
 }
 
 func (p *Parser) AddEnum(node *ast.EnumNode) {
-	if p.EnumMap == nil {
-		p.EnumMap = make(map[string]*ast.EnumNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Enum '%s' already defined", node.Name))
-	}
-	p.EnumMap[node.Name] = node
-	p.Nodes[node.Name] = node
+	p.isNameConflict(node.Name)
+	p.NodeStore.Enums[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
 }
 
 func (p *Parser) AddUnion(node *ast.UnionNode) {
-	if p.UnionMap == nil {
-		p.UnionMap = make(map[string]*ast.UnionNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Union '%s' already defined", node.Name))
-	}
-	p.UnionMap[node.Name] = node
-	p.Nodes[node.Name] = node
+	p.isNameConflict(node.Name)
+	p.NodeStore.Unions[node.Name] = node
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
 }
 
-func (p *Parser) AddType(name string, node *ast.TypeNode, extends bool) ast.Node {
-	if p.TypeMap == nil {
-		p.TypeMap = make(map[string]*ast.TypeNode)
-	}
-	if existingTypeNode, ok := p.TypeMap[name]; ok {
-		if extends {
-			for _, field := range node.Fields {
-				if existingField := existingTypeNode.GetField(field.Name); existingField != nil {
-					panic(fmt.Sprintf("Duplicate field: '%s' in type: '%s'", field.Name, name))
-				}
-			}
-			existingTypeNode.Fields = append(existingTypeNode.Fields, node.Fields...)
+func (p *Parser) AddObject(node *ast.ObjectNode, extend bool) ast.Node {
+	if extend {
+		if _, ok := p.NodeStore.Objects[node.Name]; !ok {
+			p.NodeStore.Objects[node.Name] = node
 		} else {
-			panic(fmt.Sprintf("Duplicate type definition: '%s'", name))
+			for _, field := range node.Fields {
+				if _, ok := p.NodeStore.Objects[node.Name].Fields[field.Name]; ok {
+					panic(fmt.Sprintf("Name conflict: Field '%s' already defined", field.Name))
+				}
+				p.NodeStore.Objects[node.Name].Fields[field.Name] = field
+			}
 		}
 	} else {
-		if p.isNameConflict(name) {
-			panic(fmt.Sprintf("Name conflict: Type '%s' already defined", name))
-		}
-		p.TypeMap[name] = node
+		p.isNameConflict(node.Name)
+		p.NodeStore.Objects[node.Name] = node
 	}
-	p.Nodes[name] = p.TypeMap[name]
-	return p.TypeMap[name]
+	p.NodeStore.Nodes[node.Name] = p.NodeStore.Objects[node.Name]
+	p.NodeStore.Names[node.Name] = node
+	return node
 }
 
+func (p *Parser) isNameConflict(name string) {
+	if p.NodeStore.Names[name] != nil {
+		panic(fmt.Sprintf("Name conflict: '%s' already defined", name))
+	}
+}
+
+// AddScalarType add a scalar type
 func (p *Parser) AddScalarType(name string, scalarType ast.ScalarType) {
-	if p.ScalarTypeMap == nil {
-		p.ScalarTypeMap = make(map[string]ast.ScalarType)
+	if p.NodeStore.ScalarTypes == nil {
+		p.NodeStore.ScalarTypes = make(map[string]ast.ScalarType)
 	}
-	if p.isNameConflict(name) {
-		panic(fmt.Sprintf("Name conflict: Scalar type '%s' already defined", name))
-	}
-	p.ScalarTypeMap[name] = scalarType
-}
-
-func (p *Parser) AddDirective(node *ast.DirectiveDefinitionNode) {
-	if p.DirectiveMap == nil {
-		p.DirectiveMap = make(map[string]*ast.DirectiveDefinitionNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Directive '%s' already defined", node.Name))
-	}
-	p.DirectiveMap[node.Name] = node
-	p.Nodes[node.Name] = node
-}
-
-func (p *Parser) isNameConflict(name string) bool {
-	return (p.ScalarMap != nil && p.ScalarMap[name] != nil) ||
-		(p.TypeMap != nil && p.TypeMap[name] != nil) ||
-		(p.InputMap != nil && p.InputMap[name] != nil) ||
-		(p.InterfaceMap != nil && p.InterfaceMap[name] != nil) ||
-		(p.EnumMap != nil && p.EnumMap[name] != nil) ||
-		(p.UnionMap != nil && p.UnionMap[name] != nil) ||
-		(p.DirectiveMap != nil && p.DirectiveMap[name] != nil) ||
-		(p.FragmentMap != nil && p.FragmentMap[name] != nil)
-}
-
-func (p *Parser) AddFragment(node *ast.FragmentNode) {
-	if p.QueryParser != nil {
-		p.QueryParser.AddFragment(node)
-		return
-	}
-	if p.FragmentMap == nil {
-		p.FragmentMap = make(map[string]*ast.FragmentNode)
-	}
-	if p.isNameConflict(node.Name) {
-		panic(fmt.Sprintf("Name conflict: Fragment '%s' already defined", node.Name))
-	}
-	p.FragmentMap[node.Name] = node
-	p.Nodes[node.Name] = node
+	p.NodeStore.ScalarTypes[name] = scalarType
 }
