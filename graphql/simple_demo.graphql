@@ -10,28 +10,23 @@ interface Named {
   name: String!
 }
 
-# 定义实现了多个接口的类型
-"用户啊"
+# 定义用户类型
 type User implements Node & Named {
   id: ID!
   name: String!
   age: Int
   role: Role!
-  createdAt: DateTime
   friends: [User!]!
-  orders: [Order!]
   myOrders: [Order!]! @paginate
   test(a: ID!): User
   result: SearchResult @testRole(role: ADMIN)
 }
 
-# 定义另一个实现了多接口的类型
-"商品啊"
+# 定义商品类型
 type Product implements Node & Named {
   id: ID!
   name: String!
   price: Float!
-  createdAt: DateTime
 }
 
 # 定义订单类型
@@ -39,7 +34,6 @@ type Order implements Node {
   id: ID!
   total: Float!
   product: Product!
-  orderedAt: DateTime!
 }
 
 # 定义联合类型
@@ -47,40 +41,25 @@ union SearchResult = User | Product
 
 # 定义枚举
 enum Role {
-  ADMIN @enum(value: 1)
-  USER @enum(value: 2)
-  GUEST @enum(value: 3)
-}
-
-# 定义枚举
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
+  ADMIN
+  USER
+  GUEST
 }
 
 # 定义输入类型
 input UserInput {
   name: String!
   age: Int
-  email: String
-  location: UserLocation
   role: Role
-}
-
-type UserLocation {
-  lat: String!
-  lng: String!
 }
 
 # 定义查询操作
 type Query {
   getUser(id: ID!): User
-  listUsers: [User!]! @paginate
-  getProduct(id: ID!, name: String): Product
+  listUsers: [User!]!
+  getProduct(id: ID!): Product
   listProducts: [Product!]!
   search(query: String!): [SearchResult!]!
-  testQuery(id: [[ID!]!]!): User
 }
 
 # 定义变更操作
@@ -89,25 +68,14 @@ type Mutation {
   deleteUser(id: ID!): Boolean
   createProduct(name: String!, price: Float!): Product
   deleteProduct(id: ID!): Boolean
-  updateUser(id: ID!, input: UserInput!): User
-  createOrder(userId: ID!, productId: ID!): Order
-  updateUserLocation(id: ID!, location: UserLocation!): User
 }
 
 # 定义订阅操作
 type Subscription {
   userCreated: User
   productCreated: Product
-  orderCreated(userId: ID!): Order
-}
-
-# 定义扩展类型
-extend type User {
-  address: String
 }
 
 # 定义指令
-"这是一个测试"
 directive @test(name: String!) on FIELD_DEFINITION
-directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION | ARGUMENT_DEFINITION
 directive @testRole(role: Role!) on FIELD_DEFINITION

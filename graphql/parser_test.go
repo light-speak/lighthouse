@@ -36,7 +36,7 @@ func TestParseSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := ParserSchema([]string{"demo.graphql"})
+	_, err := ParserSchema([]string{"simple_demo.graphql"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -44,7 +44,7 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return lexer.NewLexer([]*lexer.Content{{Path: &path, Content: string(content)}}), nil
+	return lexer.NewLexer([]*lexer.Content{{Path: &path, Content: string(content) + "\n"}}), nil
 }
 
 func ReadGraphQLFiles(paths []string) (*lexer.Lexer, error) {
@@ -54,7 +54,7 @@ func ReadGraphQLFiles(paths []string) (*lexer.Lexer, error) {
 		if err != nil {
 			return nil, err
 		}
-		contents = append(contents, &lexer.Content{Path: &path, Content: string(content)})
+		contents = append(contents, &lexer.Content{Path: &path, Content: string(content) + "\n"})
 	}
 	return lexer.NewLexer(contents), nil
 }
@@ -85,7 +85,6 @@ func (p *Parser) nextToken() error {
 	}
 	return nil
 }
-
 
 // ParseSchema parse schema
 // return a list of ast nodes

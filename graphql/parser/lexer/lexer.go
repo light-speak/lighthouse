@@ -147,7 +147,7 @@ func NewLexer(contents []*Content) *Lexer {
 // switchToNextContent switches to the next content file
 func (l *Lexer) switchToNextContent() bool {
 	if l.contentIndex < len(l.contents) {
-		l.currentContent = l.contents[l.contentIndex]
+		l.currentContent = l.contents[l.contentIndex] 
 		l.contentIndex++
 		l.position = 0
 		l.readPosition = 0

@@ -617,11 +617,29 @@ func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 			}
 		}
 	}
-	// for _, directive := range d.Directives {
-	// 	for _, arg := range directive.Args {
-
-	// 	}
-	// }
+	for _, directive := range d.Directives {
+		for _, arg := range directive.Args {
+			defArg := d.Args[arg.Name]
+			if defArg == nil {
+				return &errors.ValidateError{
+					NodeName: d.Name,
+					Message:  fmt.Sprintf("required argument %s is missing", arg.Name),
+				}
+			}
+			kind := defArg.Type.Kind
+			for {
+				if kind == KindNonNull || kind == KindList {
+					kind = defArg.Type.OfType.Kind
+				} else {
+					break
+				}
+			}
+			if kind == KindEnum {
+				arg.Value = arg.Type.Name
+			}
+			arg.Type = defArg.Type
+		}
+	}
 	return nil
 }
 
