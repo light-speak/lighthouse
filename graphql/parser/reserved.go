@@ -9,7 +9,7 @@ func (p *Parser) AddReserved() {
 	p.addReservedScalarType()
 	p.addReservedScalar()
 	p.addReservedDirective()
-	p.addReservedType()
+	p.addReservedObject()
 }
 
 func (p *Parser) MergeScalarType() {
@@ -73,8 +73,9 @@ func (p *Parser) addReservedScalarType() {
 	p.AddScalarType("DateTime", &scalar.DateTimeScalar{})
 }
 
-func (p *Parser) addReservedType() {
+func (p *Parser) addReservedObject() {
 	p.AddObject(&ast.ObjectNode{
+		IsReserved: true,
 		BaseNode: ast.BaseNode{
 			Name:        "PaginateInfo",
 			Description: "The PaginateInfo type represents information about a paginated list.",

@@ -67,6 +67,7 @@ type ObjectNode struct {
 	Fields         map[string]*Field         `json:"fields"`
 	InterfaceNames []string                  `json:"-"`
 	Interface      map[string]*InterfaceNode `json:"-"`
+	IsReserved     bool                      `json:"-"`
 }
 
 func (o *ObjectNode) GetKind() Kind                { return KindObject }
@@ -258,20 +259,9 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
-	directives := GetDirective("deprecated", f.Directives)
-	if len(directives) == 1 {
-		directive := directives[0]
-		deprecationReason := directive.GetArg("reason")
-		if deprecationReason != nil {
-			f.IsDeprecated = true
-			if deprecationReason.Value != nil {
-				f.DeprecationReason = deprecationReason.Value.(string)
-			} else if deprecationReason.DefaultValue != nil {
-				f.DeprecationReason = deprecationReason.DefaultValue.(string)
-			} else {
-				f.DeprecationReason = "field is deprecated"
-			}
-		}
+	err := f.ParseDirectives(store)
+	if err != nil {
+		return err
 	}
 	for _, arg := range f.Args {
 		if err := arg.Validate(store); err != nil {
@@ -386,7 +376,7 @@ func (t *TypeRef) validateScalarValue(v interface{}) error {
 	switch t.Name {
 	case "Int":
 		if _, ok := v.(int64); !ok {
-			return fmt.Errorf("expected Int, got %T", v)
+			return fmt.Errorf("expected Int64, got %T", v)
 		}
 	case "Float":
 		if _, ok := v.(float64); !ok {
@@ -694,6 +684,41 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 				Message:  fmt.Sprintf("directive %s is not repeatable but used %d times", directiveName, count),
 			}
 		}
+	}
+	return nil
+}
+
+type Argument struct {
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	Directives   []*Directive `json:"-"`
+	Type         *TypeRef     `json:"type"`
+	DefaultValue any          `json:"default_value"`
+	Value        any          `json:"value"`
+	IsVariable   bool         `json:"is_variable"`
+}
+
+func (a *Argument) Validate(store *NodeStore) error {
+	if err := a.Type.Validate(store); err != nil {
+		return err
+	}
+	if a.Value != nil {
+		if err := a.Type.ValidateValue(a.Value); err != nil {
+			return err
+		}
+	}
+	if a.DefaultValue != nil {
+		if err := a.Type.ValidateValue(a.DefaultValue); err != nil {
+			return err
+		}
+	}
+	location := LocationArgumentDefinition
+	if a.IsVariable {
+		location = LocationVariableDefinition
+	}
+	err := ValidateDirectives(a.Name, a.Directives, store, location)
+	if err != nil {
+		return err
 	}
 	return nil
 }

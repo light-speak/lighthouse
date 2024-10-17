@@ -43,3 +43,45 @@ func (s *NodeStore) InitStore() {
 	s.Directives = make(map[string]*DirectiveDefinition)
 	s.Nodes = make(map[string]Node)
 }
+
+func (s *NodeStore) AddObject(name string, node *ObjectNode) {
+	s.Objects[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddScalar(name string, node *ScalarNode) {
+	s.Scalars[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddInterface(name string, node *InterfaceNode) {
+	s.Interfaces[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddUnion(name string, node *UnionNode) {
+	s.Unions[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddEnum(name string, node *EnumNode) {
+	s.Enums[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddInput(name string, node *InputObjectNode) {
+	s.Inputs[name] = node
+	s.Nodes[name] = node
+	s.Names[name] = node
+}
+
+func (s *NodeStore) AddDirective(name string, node *DirectiveDefinition) {
+	s.Directives[name] = node
+	s.Names[name] = node
+}
+
