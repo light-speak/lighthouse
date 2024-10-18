@@ -44,28 +44,26 @@ func TestValidate(t *testing.T) {
 	p.NodeDetail(nodes)
 }
 
-// func TestParseOperation(t *testing.T) {
-// 	_, err := ParserSchema([]string{"demo.graphql"})
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	p := GetParser()
+func TestParseOperation(t *testing.T) {
+	_, err := ParserSchema([]string{"demo.graphql"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := GetParser()
 
-// 	nl, err := parser.ReadGraphQLFile("query_example.graphql")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	nl, err := parser.ReadGraphQLFile("query_example.graphql")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	qp := p.NewQueryParser(nl)
-// 	qp.Parser.ParseSchema()
-// 	for _, node := range qp.FragmentMap {
-// 		err := validate.Validate(node, p)
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 	}
-// 	err = validate.Validate(qp.OperationNode, p)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+	qp := p.NewQueryParser(nl)
+
+	for _, node := range qp.Fragments {
+		log.Info().Msgf("fragment: %+v", node.Fields["result"])
+		// err = node.Validate(p.NodeStore)
+		// if err != nil {
+		// t.Fatal(err)
+		// }
+	}
+
+}

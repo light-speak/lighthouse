@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/log"
 )
 
 // Node represents a GraphQL AST node.
@@ -249,6 +250,7 @@ type Field struct {
 	Children   map[string]*Field `json:"-"`
 	Directives []*Directive      `json:"-"`
 	IsFragment bool              `json:"-"`
+	IsUnion    bool              `json:"-"`
 	Fragment   *FragmentNode     `json:"-"`
 }
 
@@ -475,7 +477,6 @@ func (t *TypeRef) validateInputObjectValue(v interface{}) error {
 	return nil
 }
 
-
 func (t *TypeRef) validateListValue(v interface{}) error {
 	list, ok := v.([]interface{})
 	if !ok {
@@ -643,6 +644,7 @@ type FragmentNode struct {
 }
 
 func (f *FragmentNode) Validate(store *NodeStore) error {
+	log.Info().Msgf("asdfasdf: %+v", store.Objects)
 	objectNode, ok := store.Objects[f.On]
 	if !ok {
 		return &errors.ValidateError{

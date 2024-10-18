@@ -40,6 +40,37 @@ import (
 
 // }
 
+type QueryParser struct {
+	Parser  *Parser
+	QueryId string
+	// OperationNode *ast.OperationNode
+	Fragments map[string]*ast.FragmentNode
+}
+
+func (p *QueryParser) ParseSchema() *QueryParser {
+	tokenTypeToParseFunc := map[lexer.TokenType]func(){
+		// lexer.LowerQuery:        func() { p.parseOperation() },
+		// lexer.LowerMutation:     func() { p.parseOperation() },
+		// lexer.LowerSubscription: func() { p.parseOperation() },
+		lexer.Fragment: func() { p.parseFragment() },
+	}
+
+	for p.Parser.currToken.Type != lexer.EOF {
+		if parseFunc, ok := tokenTypeToParseFunc[p.Parser.currToken.Type]; ok {
+			parseFunc()
+		}
+		p.Parser.nextToken()
+	}
+
+	return p
+}
+
+func (p *QueryParser) AddFragment(node *ast.FragmentNode) {
+	if p.Fragments == nil {
+		p.Fragments = make(map[string]*ast.FragmentNode)
+	}
+	p.Fragments[node.Name] = node
+}
 
 func (p *QueryParser) parseFragment() {
 	node := &ast.FragmentNode{
@@ -47,9 +78,11 @@ func (p *QueryParser) parseFragment() {
 		On:   p.Parser.expectAndGetValue(lexer.On),
 	}
 
+	node.Directives = p.Parser.parseDirectives()
+
 	p.Parser.expect(lexer.LeftBrace)
 	node.Fields = make(map[string]*ast.Field)
-	for p.Parser.currToken.Type != lexer.RightBrace {
+	for p.Parser.currToken.Type == lexer.Letter || p.Parser.currToken.Type == lexer.TripleDot {
 		field := p.Parser.parseField()
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)

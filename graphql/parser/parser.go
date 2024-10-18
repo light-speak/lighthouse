@@ -24,20 +24,6 @@ type Parser struct {
 	NodeStore *ast.NodeStore
 }
 
-type QueryParser struct {
-	Parser  *Parser
-	QueryId string
-	// OperationNode *ast.OperationNode
-	Fragments map[string]*ast.FragmentNode
-}
-
-func (p *QueryParser) AddFragment(node *ast.FragmentNode) {
-	if p.Fragments == nil {
-		p.Fragments = make(map[string]*ast.FragmentNode)
-	}
-	p.Fragments[node.Name] = node
-}
-
 // ReadGraphQLFile read graphql file and return a lexer
 func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 	content, err := os.ReadFile(path)
@@ -73,7 +59,7 @@ func (p *Parser) NewQueryParser(queryLexer *lexer.Lexer) *QueryParser {
 	p.lexer = queryLexer
 	p.QueryParser = &QueryParser{Parser: p}
 	p.nextToken()
-	return p.QueryParser
+	return p.QueryParser.ParseSchema()
 }
 
 // nextToken move to next token
@@ -93,9 +79,6 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 	p.NodeStore = &ast.NodeStore{}
 	p.NodeStore.InitStore()
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
-		// lexer.LowerQuery:        func() { p.parseOperation() },
-		// lexer.LowerMutation:     func() { p.parseOperation() },
-		// lexer.LowerSubscription: func() { p.parseOperation() },
 		lexer.Type:      func() { p.parseObject() },
 		lexer.Extend:    func() { p.parseExtend() },
 		lexer.Enum:      func() { p.parseEnum() },

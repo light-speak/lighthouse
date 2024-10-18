@@ -35,7 +35,7 @@ func (p *Parser) parseObject() {
 	object.Directives = p.parseDirectives()
 	p.expect(lexer.LeftBrace)
 	fields := make(map[string]*ast.Field)
-	for p.currToken.Type == lexer.Letter {
+	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
 		field := p.parseField()
 		if _, ok := fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
@@ -125,25 +125,27 @@ func (p *Parser) parseField() *ast.Field {
 		if p.currToken.Type == lexer.On {
 			p.expect(lexer.On)
 			field = &ast.Field{
-				Name: p.currToken.Value,
+				Name:    p.currToken.Value,
+				IsUnion: true,
 				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
 				},
 			}
 			p.nextToken()
 			p.expect(lexer.LeftBrace)
-
-			for p.currToken.Type != lexer.RightBrace {
+			for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
+				if field.Children == nil {
+					field.Children = make(map[string]*ast.Field)
+				}
 				cField := p.parseField()
 				field.Children[cField.Name] = cField
 			}
-			p.expect(lexer.RightBrace)
 			return field
-
 		} else {
 			// is fragment
 			field = &ast.Field{
-				Name: p.currToken.Value,
+				Name:       p.currToken.Value,
+				IsFragment: true,
 				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
 				},
@@ -180,8 +182,12 @@ func (p *Parser) parseField() *ast.Field {
 func (p *Parser) parseChildren() map[string]*ast.Field {
 	children := make(map[string]*ast.Field)
 	p.expect(lexer.LeftBrace)
-	for p.currToken.Type != lexer.RightBrace {
-		children[p.currToken.Value] = p.parseField()
+	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
+		field := p.parseField()
+		children[field.Name] = field
+		if p.currToken.Type == lexer.RightBrace {
+			p.expect(lexer.RightBrace)
+		}
 	}
 	p.expect(lexer.RightBrace)
 	return children
@@ -502,7 +508,7 @@ func (p *Parser) parseInput() {
 	p.expect(lexer.LeftBrace)
 	node.Fields = make(map[string]*ast.Field)
 
-	for p.currToken.Type != lexer.RightBrace {
+	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
 		field := p.parseField()
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
@@ -529,7 +535,7 @@ func (p *Parser) parseInterface() {
 	p.expect(lexer.LeftBrace)
 
 	fields := make(map[string]*ast.Field)
-	for p.currToken.Type != lexer.RightBrace {
+	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
 		field := p.parseField()
 		if _, ok := fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
