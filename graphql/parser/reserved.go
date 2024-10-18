@@ -9,6 +9,7 @@ func (p *Parser) AddReserved() {
 	p.addReservedScalarType()
 	p.addReservedScalar()
 	p.addReservedDirective()
+	p.addReservedEnum()
 	p.addReservedObject()
 }
 
@@ -75,8 +76,8 @@ func (p *Parser) addReservedScalarType() {
 
 func (p *Parser) addReservedObject() {
 	p.AddObject(&ast.ObjectNode{
-		IsReserved: true,
 		BaseNode: ast.BaseNode{
+			IsReserved:  true,
 			Name:        "PaginateInfo",
 			Description: "The PaginateInfo type represents information about a paginated list.",
 		},
@@ -127,4 +128,26 @@ func (p *Parser) addReservedObject() {
 			},
 		},
 	}, false)
+}
+
+func (p *Parser) addReservedEnum() {
+	p.AddEnum(&ast.EnumNode{
+		BaseNode: ast.BaseNode{
+			IsReserved:  true,
+			Name:        "SortOrder",
+			Description: "The SortOrder enum type represents the order of a list.",
+		},
+		EnumValues: map[string]*ast.EnumValue{
+			"ASC": {
+				Name:        "ASC",
+				Description: "The ASC enum value represents ascending order.",
+				Value:       int8(1),
+			},
+			"DESC": {
+				Name:        "DESC",
+				Description: "The DESC enum value represents descending order.",
+				Value:       int8(-1),
+			},
+		},
+	})
 }

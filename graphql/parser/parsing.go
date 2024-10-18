@@ -292,7 +292,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 		// Case 2: Normal parameter with type and default value (id: ID = 123, name: String = "123")
 		typeRef, value = p.parseTypeReferenceAndValue()
 		defaultValue = p.parseDefaultValue()
-	case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null:
+	case lexer.IntNumber, lexer.FloatNumber, lexer.Message, lexer.Boolean, lexer.Null, lexer.LeftBrace:
 		// Case 3: Normal parameter with value (id: 123, name: "123")
 		value = p.parseValue()
 	case lexer.Variable:
@@ -362,6 +362,21 @@ func (p *Parser) parseValue() any {
 			}
 		}
 		p.expect(lexer.RightBracket)
+		return values
+	}
+	if p.currToken.Type == lexer.LeftBrace {
+		p.expect(lexer.LeftBrace)
+		values := make(map[string]any)
+		for p.currToken.Type != lexer.RightBrace {
+			key := p.currToken.Value
+			p.expect(lexer.Letter)
+			p.expect(lexer.Colon)
+			values[key] = p.parseValue()
+			if p.currToken.Type == lexer.Comma {
+				p.expect(lexer.Comma)
+			}
+		}
+		p.expect(lexer.RightBrace)
 		return values
 	}
 	return nil

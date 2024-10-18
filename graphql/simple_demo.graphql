@@ -55,7 +55,7 @@ input UserInput {
 
 # 定义查询操作
 type Query {
-  getUser(id: ID!): User
+  getUser(id: ID!): User @testInput(input: {name: "test", role: ADMIN, numbers: [1, 2, 3]})
   listUsers: [User!]!
   getProduct(id: ID!): Product
   listProducts: [Product!]!
@@ -76,6 +76,13 @@ type Subscription {
   productCreated: Product
 }
 
+input TestInput {
+  name: String!
+  role: Role!
+  numbers: [Int!]!
+}
+
 # 定义指令
 directive @test(name: String!) on FIELD_DEFINITION
 directive @testRole(role: Role!) on FIELD_DEFINITION
+directive @testInput(input: TestInput!) on FIELD_DEFINITION

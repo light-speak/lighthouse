@@ -18,8 +18,11 @@ func (f *Field) ParseDirectives(store *NodeStore) error {
 			}
 		}
 	}
-	f.addPaginationResponseType(store)
-	f.addPaginationArguments(store)
+	directives = GetDirective("paginate", f.Directives)
+	if len(directives) > 0 {
+		f.addPaginationResponseType(store)
+		f.addPaginationArguments(store)
+	}
 	return nil
 }
 
@@ -84,5 +87,14 @@ func (f *Field) addPaginationArguments(store *NodeStore) {
 			TypeNode: store.Scalars["Int"],
 		},
 		DefaultValue: int64(10),
+	}
+	f.Args["sort"] = &Argument{
+		Name: "sort",
+		Type: &TypeRef{
+			Kind:     KindScalar,
+			Name:     "SortOrder",
+			TypeNode: store.Enums["SortOrder"],
+		},
+		DefaultValue: "ASC",
 	}
 }

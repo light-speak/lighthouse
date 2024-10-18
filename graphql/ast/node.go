@@ -50,6 +50,7 @@ type BaseNode struct {
 	Description string       `json:"description"`
 	Kind        Kind         `json:"kind"`
 	Directives  []*Directive `json:"-"`
+	IsReserved  bool         `json:"-"`
 }
 
 func (n *BaseNode) GetName() string        { return n.Name }
@@ -67,7 +68,6 @@ type ObjectNode struct {
 	Fields         map[string]*Field         `json:"fields"`
 	InterfaceNames []string                  `json:"-"`
 	Interface      map[string]*InterfaceNode `json:"-"`
-	IsReserved     bool                      `json:"-"`
 }
 
 func (o *ObjectNode) GetKind() Kind                { return KindObject }
@@ -474,6 +474,7 @@ func (t *TypeRef) validateInputObjectValue(v interface{}) error {
 
 	return nil
 }
+
 
 func (t *TypeRef) validateListValue(v interface{}) error {
 	list, ok := v.([]interface{})
