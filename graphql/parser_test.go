@@ -57,13 +57,10 @@ func TestParseOperation(t *testing.T) {
 	}
 
 	qp := p.NewQueryParser(nl)
-
-	for _, node := range qp.Fragments {
-		log.Info().Msgf("fragment: %+v", node.Fields["result"])
-		// err = node.Validate(p.NodeStore)
-		// if err != nil {
-		// t.Fatal(err)
-		// }
+	err = qp.Validate(p.NodeStore)
+	if err != nil {
+		t.Fatal(err)
 	}
-
+	// log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children["name"])
+	// log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children["result"].Children["User"])
 }

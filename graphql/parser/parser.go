@@ -13,7 +13,6 @@ import (
 // The various maps are used to store different types of AST nodes for quick lookup and management during parsing.
 type Parser struct {
 	QueryParser *QueryParser
-
 	// lexer is the Lexer instance used for lexical analysis, converting the input GraphQL text into a stream of tokens.
 	lexer *lexer.Lexer
 

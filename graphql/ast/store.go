@@ -84,4 +84,3 @@ func (s *NodeStore) AddDirective(name string, node *DirectiveDefinition) {
 	s.Directives[name] = node
 	s.Names[name] = node
 }
-

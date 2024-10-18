@@ -137,6 +137,7 @@ func NewLexer(contents []*Content) *Lexer {
 			'{': {}, '}': {}, '(': {}, ')': {}, '[': {}, ']': {},
 			':': {}, ',': {}, ';': {}, '.': {}, '@': {}, '#': {},
 			'|': {}, '"': {}, '\'': {}, '!': {}, '=': {}, '&': {},
+			'-': {}, '$': {},
 		},
 	}
 	l.switchToNextContent()
@@ -147,7 +148,7 @@ func NewLexer(contents []*Content) *Lexer {
 // switchToNextContent switches to the next content file
 func (l *Lexer) switchToNextContent() bool {
 	if l.contentIndex < len(l.contents) {
-		l.currentContent = l.contents[l.contentIndex] 
+		l.currentContent = l.contents[l.contentIndex]
 		l.contentIndex++
 		l.position = 0
 		l.readPosition = 0
@@ -197,7 +198,6 @@ func (l *Lexer) isSpecialChar(ch byte) bool {
 // NextToken get next token
 func (l *Lexer) NextToken() (token *Token, err error) {
 	l.skipWhitespace()
-
 	switch {
 	case l.isSpecialChar(l.ch):
 		token = l.handleSpecialChar()
@@ -385,7 +385,7 @@ func (l *Lexer) handleUnrecognized() (*Token, error) {
 
 // isLetter check if the character is a letter
 func isLetter(ch byte) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '$'
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_'
 }
 
 // isDigit check if the character is a digit

@@ -1,13 +1,15 @@
 query UserTest($id: ID!, $test: ID!) {
   getUser(id: $id) {
+    id
+    fuck: name 
     result {
-      ... on User {
+      wtf: ... on User {
         id
         ...UserFragment
       }
       ... on Product {
         id
-        # ...ProductFragment
+        ...ProductFragment
       }
     }
   }
@@ -27,18 +29,18 @@ fragment UserFragment on User {
   }
 }
 
-# fragment UserFragmentB on User {
-#   id
-#   name
-#   result {
-#     ... on Product {
-#       id
-#       ...ProductFragment
-#     }
-#   }
-# }
+fragment UserFragmentB on User {
+  id
+  name
+  result {
+    ... on Product {
+      id
+      ...ProductFragment
+    }
+  }
+}
 
-# fragment ProductFragment on Product {
-#   id
-#   name
-# }
+fragment ProductFragment on Product {
+  id
+  name
+}

@@ -1,58 +1,63 @@
 package parser
 
 import (
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
+	"github.com/light-speak/lighthouse/utils"
 )
-
-// import (
-// 	"github.com/light-speak/lighthouse/graphql/ast"
-// 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
-// )
-
-// func (p *Parser) parseOperation() {
-// 	node := &ast.OperationNode{}
-// 	operationTypes := map[lexer.TokenType]ast.OperationType{
-// 		lexer.LowerQuery:        ast.QueryOperation,
-// 		lexer.LowerMutation:     ast.MutationOperation,
-// 		lexer.LowerSubscription: ast.SubscriptionOperation,
-// 	}
-
-// 	if opType, ok := operationTypes[p.currToken.Type]; ok {
-// 		node.Type = opType
-// 		node.Name = p.expectAndGetValue(p.currToken.Type)
-// 	} else {
-// 		panic("invalid operation type: " + p.currToken.Value)
-// 	}
-
-// 	if p.currToken.Type == lexer.LeftParent {
-// 		node.Args = p.parseArguments(node)
-// 	}
-
-// 	p.expect(lexer.LeftBrace)
-// 	var fields []*ast.FieldNode
-// 	for p.currToken.Type != lexer.RightBrace {
-// 		field := p.parseField(node)
-// 		fields = append(fields, field)
-// 	}
-// 	node.Fields = fields
-// 	p.QueryParser.OperationNode = node
-
-// }
 
 type QueryParser struct {
 	Parser  *Parser
 	QueryId string
-	// OperationNode *ast.OperationNode
-	Fragments map[string]*ast.FragmentNode
+
+	Name          string
+	Fragments     map[string]*ast.Fragment
+	Variables     map[string]any
+	Args          map[string]*ast.Argument
+	Fields        map[string]*ast.Field
+	Directives    []*ast.Directive
+	Location      ast.Location
+	OperationType string
+}
+
+func (p *QueryParser) Validate(store *ast.NodeStore) error {
+	p.Variables = make(map[string]any)
+	p.Variables["$id"] = "123"
+	p.Variables["$test"] = "test"
+
+	for _, arg := range p.Args {
+		if p.Variables[arg.Name] == nil {
+			return &errors.ValidateError{
+				NodeName: arg.Name,
+				Message:  "variable argument not found",
+			}
+		}
+		arg.Value = p.Variables[arg.Name]
+		if err := arg.Validate(store, nil); err != nil {
+			return err
+		}
+	}
+	for _, field := range p.Fields {
+		obj := p.Parser.NodeStore.Objects[p.OperationType]
+		if obj == nil {
+			return &errors.ParserError{
+				Message: "Operation " + p.OperationType + " not found",
+			}
+		}
+		if err := field.Validate(store, obj.Fields, obj, ast.LocationField, p.Fragments, p.Args); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *QueryParser) ParseSchema() *QueryParser {
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
-		// lexer.LowerQuery:        func() { p.parseOperation() },
-		// lexer.LowerMutation:     func() { p.parseOperation() },
-		// lexer.LowerSubscription: func() { p.parseOperation() },
-		lexer.Fragment: func() { p.parseFragment() },
+		lexer.LowerQuery:        func() { p.parseOperation() },
+		lexer.LowerMutation:     func() { p.parseOperation() },
+		lexer.LowerSubscription: func() { p.parseOperation() },
+		lexer.Fragment:          func() { p.parseFragment() },
 	}
 
 	for p.Parser.currToken.Type != lexer.EOF {
@@ -65,15 +70,15 @@ func (p *QueryParser) ParseSchema() *QueryParser {
 	return p
 }
 
-func (p *QueryParser) AddFragment(node *ast.FragmentNode) {
+func (p *QueryParser) AddFragment(node *ast.Fragment) {
 	if p.Fragments == nil {
-		p.Fragments = make(map[string]*ast.FragmentNode)
+		p.Fragments = make(map[string]*ast.Fragment)
 	}
 	p.Fragments[node.Name] = node
 }
 
 func (p *QueryParser) parseFragment() {
-	node := &ast.FragmentNode{
+	node := &ast.Fragment{
 		Name: p.Parser.expectAndGetValue(lexer.Fragment),
 		On:   p.Parser.expectAndGetValue(lexer.On),
 	}
@@ -83,7 +88,7 @@ func (p *QueryParser) parseFragment() {
 	p.Parser.expect(lexer.LeftBrace)
 	node.Fields = make(map[string]*ast.Field)
 	for p.Parser.currToken.Type == lexer.Letter || p.Parser.currToken.Type == lexer.TripleDot {
-		field := p.Parser.parseField()
+		field := p.Parser.parseField(false, "")
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
@@ -91,4 +96,40 @@ func (p *QueryParser) parseFragment() {
 	}
 
 	p.AddFragment(node)
+}
+
+func (p *QueryParser) parseOperation() error {
+	operationType := utils.UcFirst(string(p.Parser.currToken.Type))
+	location := ast.LocationQuery
+	if operationType == "Query" {
+		location = ast.LocationQuery
+	} else if operationType == "Mutation" {
+		location = ast.LocationMutation
+	} else if operationType == "Subscription" {
+		location = ast.LocationSubscription
+	}
+	p.Location = location
+	p.OperationType = operationType
+
+	p.Parser.nextToken()
+	if p.Parser.currToken.Type == lexer.Letter {
+		p.Name = p.Parser.currToken.Value
+		p.Parser.nextToken()
+	}
+
+	if p.Parser.currToken.Type == lexer.LeftParent {
+		p.Args = p.Parser.parseArguments()
+	}
+
+	p.Directives = p.Parser.parseDirectives()
+
+	p.Parser.expect(lexer.LeftBrace)
+	fields := make(map[string]*ast.Field)
+	for p.Parser.currToken.Type != lexer.RightBrace {
+		field := p.Parser.parseField(true, "")
+		fields[field.Name] = field
+	}
+	p.Fields = fields
+
+	return nil
 }

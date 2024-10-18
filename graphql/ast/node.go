@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
-	"github.com/light-speak/lighthouse/log"
 )
 
 // Node represents a GraphQL AST node.
@@ -75,7 +74,7 @@ func (o *ObjectNode) GetKind() Kind                { return KindObject }
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
 func (o *ObjectNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
-		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition); err != nil {
+		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -109,7 +108,7 @@ func (o *InterfaceNode) GetKind() Kind                { return KindInterface }
 func (o *InterfaceNode) GetFields() map[string]*Field { return o.Fields }
 func (o *InterfaceNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
-		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition); err != nil {
+		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -202,7 +201,7 @@ func (i *InputObjectNode) GetFields() map[string]*Field { return i.Fields }
 
 func (i *InputObjectNode) Validate(store *NodeStore) error {
 	for _, field := range i.Fields {
-		if err := field.Validate(store, i.Fields, i, LocationInputFieldDefinition); err != nil {
+		if err := field.Validate(store, i.Fields, i, LocationInputFieldDefinition, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -240,6 +239,7 @@ type ScalarType interface {
 }
 
 type Field struct {
+	Alias             string               `json:"alias"`
 	Name              string               `json:"name"`
 	Description       string               `json:"description"`
 	Args              map[string]*Argument `json:"args"`
@@ -251,13 +251,34 @@ type Field struct {
 	Directives []*Directive      `json:"-"`
 	IsFragment bool              `json:"-"`
 	IsUnion    bool              `json:"-"`
-	Fragment   *FragmentNode     `json:"-"`
+	Fragment   *Fragment         `json:"-"`
 }
 
-func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location) error {
+func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) error {
 	if f.IsFragment {
+		if fragments == nil {
+			return &errors.ValidateError{
+				NodeName: f.Name,
+				Message:  "fragments not found",
+			}
+		}
+		if fragments[f.Type.Name] == nil {
+			return &errors.ValidateError{
+				NodeName: f.Name,
+				Message:  fmt.Sprintf("fragment %s not found", f.Type.Name),
+			}
+		}
+		frag := fragments[f.Type.Name]
+		if frag.Object == nil {
+			if err := frag.Validate(store, fragments); err != nil {
+				return err
+			}
+		}
+		f.Type.TypeNode = frag.Object
+		f.Children = frag.Fields
 		location = LocationFragmentSpread
 	}
+
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
@@ -266,18 +287,57 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		return err
 	}
 	for _, arg := range f.Args {
-		if err := arg.Validate(store); err != nil {
+		if err := arg.Validate(store, args); err != nil {
 			return err
 		}
 	}
+
 	if f.Type != nil {
-		if err := f.Type.Validate(store); err != nil {
-			return err
+		if !f.IsFragment {
+			if err := f.Type.Validate(store); err != nil {
+				return err
+			}
+		}
+	} else {
+		if objectNode == nil {
+			return &errors.ValidateError{
+				NodeName: f.Name,
+				Message:  "field type must be object type",
+			}
+		} else {
+			if objectNode.GetFields()[f.Name] != nil {
+				f.Type = objectNode.GetFields()[f.Name].Type
+			} else {
+				return &errors.ValidateError{
+					NodeName: f.Name,
+					Message:  "field type must be object type",
+				}
+			}
 		}
 	}
-	if f.IsFragment {
-		//TODO: validate fragment
+
+	if f.IsUnion {
+		if f.Type.TypeNode.GetKind() != KindObject {
+			return &errors.ValidateError{
+				NodeName: f.Name,
+				Message:  "field type must be object type",
+			}
+		}
+		obj := objectNode.(*UnionNode).PossibleTypes[f.Type.Name]
+		if obj == nil {
+			return &errors.ValidateError{
+				NodeName: f.Name,
+				Message:  "field type must be a possible type of the union",
+			}
+		}
+		for _, child := range f.Children {
+			if err := child.Validate(store, obj.GetFields(), obj, location, fragments, nil); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
+
 	if f.Children != nil {
 		// the field is a fragment field or query field, so we need to validate the children
 		// the children are the fields of the object type
@@ -287,15 +347,10 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		} else {
 			obj = f.Type.TypeNode
 		}
-		if obj.GetKind() != KindObject {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  fmt.Sprintf("field %s must be of object type to have children", f.Name),
-			}
-		}
+
 		for _, child := range f.Children {
 			// the child is a field of the object type
-			if err := child.Validate(store, obj.(*ObjectNode).Fields, obj, location); err != nil {
+			if err := child.Validate(store, obj.GetFields(), obj, location, fragments, nil); err != nil {
 				return err
 			}
 		}
@@ -591,7 +646,7 @@ type DirectiveDefinition struct {
 
 func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 	for _, arg := range d.Args {
-		if err := arg.Validate(store); err != nil {
+		if err := arg.Validate(store, nil); err != nil {
 			return err
 		}
 	}
@@ -635,7 +690,7 @@ func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 	return nil
 }
 
-type FragmentNode struct {
+type Fragment struct {
 	Name       string            `json:"name"`
 	On         string            `json:"on"`
 	Object     *ObjectNode       `json:"-"`
@@ -643,8 +698,7 @@ type FragmentNode struct {
 	Fields     map[string]*Field `json:"fields"`
 }
 
-func (f *FragmentNode) Validate(store *NodeStore) error {
-	log.Info().Msgf("asdfasdf: %+v", store.Objects)
+func (f *Fragment) Validate(store *NodeStore, fragments map[string]*Fragment) error {
 	objectNode, ok := store.Objects[f.On]
 	if !ok {
 		return &errors.ValidateError{
@@ -658,7 +712,7 @@ func (f *FragmentNode) Validate(store *NodeStore) error {
 	}
 
 	for _, field := range f.Fields {
-		if err := field.Validate(store, f.Object.Fields, f.Object, LocationInlineFragment); err != nil {
+		if err := field.Validate(store, f.Object.Fields, f.Object, LocationInlineFragment, fragments, nil); err != nil {
 			return err
 		}
 	}
@@ -697,11 +751,41 @@ type Argument struct {
 	Directives   []*Directive `json:"-"`
 	Type         *TypeRef     `json:"type"`
 	DefaultValue any          `json:"default_value"`
-	Value        any          `json:"value"`
-	IsVariable   bool         `json:"is_variable"`
+	Value        any          `json:"-"`
+	IsVariable   bool         `json:"-"`
+	IsReference  bool         `json:"-"`
 }
 
-func (a *Argument) Validate(store *NodeStore) error {
+func (a *Argument) Validate(store *NodeStore, args map[string]*Argument) error {
+	location := LocationArgumentDefinition
+	if a.IsVariable {
+		location = LocationVariableDefinition
+	}
+	if a.IsReference {
+		if args == nil {
+			return &errors.ValidateError{
+				NodeName: a.Name,
+				Message:  "variable arguments not found",
+			}
+		}
+
+		name, ok := a.Value.(string)
+
+		if !ok {
+			return &errors.ValidateError{
+				NodeName: a.Name,
+				Message:  "variable argument must be string",
+			}
+		}
+		if args[name] == nil {
+			return &errors.ValidateError{
+				NodeName: a.Name,
+				Message:  "variable argument not found",
+			}
+		}
+		a.Value = args[name].Value
+		a.Type = args[name].Type
+	}
 	if err := a.Type.Validate(store); err != nil {
 		return err
 	}
@@ -715,10 +799,7 @@ func (a *Argument) Validate(store *NodeStore) error {
 			return err
 		}
 	}
-	location := LocationArgumentDefinition
-	if a.IsVariable {
-		location = LocationVariableDefinition
-	}
+
 	err := ValidateDirectives(a.Name, a.Directives, store, location)
 	if err != nil {
 		return err

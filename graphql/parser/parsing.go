@@ -36,7 +36,7 @@ func (p *Parser) parseObject() {
 	p.expect(lexer.LeftBrace)
 	fields := make(map[string]*ast.Field)
 	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
-		field := p.parseField()
+		field := p.parseField(false, "")
 		if _, ok := fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
@@ -114,7 +114,7 @@ func (p *Parser) parseDirective() *ast.Directive {
 // age: Int
 // email: String
 // createdAt: DateTime
-func (p *Parser) parseField() *ast.Field {
+func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 	// if the field is a fragment spread
 	// for example: ...FragmentName
 	// return a fragment spread node
@@ -126,6 +126,7 @@ func (p *Parser) parseField() *ast.Field {
 			p.expect(lexer.On)
 			field = &ast.Field{
 				Name:    p.currToken.Value,
+				Alias:   alias,
 				IsUnion: true,
 				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
@@ -137,7 +138,7 @@ func (p *Parser) parseField() *ast.Field {
 				if field.Children == nil {
 					field.Children = make(map[string]*ast.Field)
 				}
-				cField := p.parseField()
+				cField := p.parseField(isOperation, "")
 				field.Children[cField.Name] = cField
 			}
 			return field
@@ -158,9 +159,18 @@ func (p *Parser) parseField() *ast.Field {
 
 	field := &ast.Field{
 		Name:        p.currToken.Value,
+		Alias:       alias,
 		Description: p.parseDescription(),
 	}
 	p.nextToken()
+
+	if isOperation {
+		if p.currToken.Type == lexer.Colon {
+			alias = field.Name
+			p.expect(lexer.Colon)
+			return p.parseField(isOperation, alias)
+		}
+	}
 
 	if p.currToken.Type == lexer.LeftParent {
 		field.Args = p.parseArguments()
@@ -172,25 +182,19 @@ func (p *Parser) parseField() *ast.Field {
 		field.Type, _ = p.parseTypeReferenceAndValue()
 		field.Directives = p.parseDirectives()
 	case lexer.LeftBrace:
-		field.Children = p.parseChildren()
+		children := make(map[string]*ast.Field)
+		p.expect(lexer.LeftBrace)
+		for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
+			field := p.parseField(isOperation, "")
+			children[field.Name] = field
+			if p.currToken.Type == lexer.RightBrace {
+				p.expect(lexer.RightBrace)
+			}
+		}
+		field.Children = children
 	}
 
 	return field
-}
-
-// parseChildren parse children
-func (p *Parser) parseChildren() map[string]*ast.Field {
-	children := make(map[string]*ast.Field)
-	p.expect(lexer.LeftBrace)
-	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
-		field := p.parseField()
-		children[field.Name] = field
-		if p.currToken.Type == lexer.RightBrace {
-			p.expect(lexer.RightBrace)
-		}
-	}
-	p.expect(lexer.RightBrace)
-	return children
 }
 
 // parseArguments parse arguments
@@ -281,6 +285,7 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 func (p *Parser) parseArgument() *ast.Argument {
 	description := p.parseDescription()
 	isVariable := false
+	isReference := false
 	if p.currToken.Type == lexer.Variable {
 		isVariable = true
 	}
@@ -304,6 +309,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 	case lexer.Variable:
 		// Case 4: Normal parameter with variable (id: $id)
 		value = p.currToken.Value
+		isReference = true
 		p.expect(lexer.Variable)
 	default:
 		panic("Unexpected token type in argument parsing: " + p.currToken.Value)
@@ -318,7 +324,8 @@ func (p *Parser) parseArgument() *ast.Argument {
 		Type:         typeRef,
 		Value:        value,
 		DefaultValue: defaultValue,
-		IsVariable:   isVariable,
+		IsVariable:   !isReference && isVariable,
+		IsReference:  isReference,
 	}
 }
 
@@ -509,7 +516,7 @@ func (p *Parser) parseInput() {
 	node.Fields = make(map[string]*ast.Field)
 
 	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
-		field := p.parseField()
+		field := p.parseField(false, "")
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
@@ -536,7 +543,7 @@ func (p *Parser) parseInterface() {
 
 	fields := make(map[string]*ast.Field)
 	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
-		field := p.parseField()
+		field := p.parseField(false, "")
 		if _, ok := fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
