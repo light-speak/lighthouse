@@ -46,16 +46,27 @@ const (
 func (k Kind) String() string { return string(k) }
 
 type BaseNode struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Kind        Kind         `json:"kind"`
-	Directives  []*Directive `json:"-"`
-	IsReserved  bool         `json:"-"`
+	Name          string                    `json:"name"`
+	Description   *string                   `json:"description"`
+	Fields        map[string]*Field         `json:"fields"`
+	InputFields   map[string]*Field         `json:"inputFields"`
+	Interfaces    map[string]*InterfaceNode `json:"interfaces"`
+	EnumValues    map[string]*EnumValue     `json:"enumValues"`
+	PossibleTypes map[string]*ObjectNode    `json:"possibleTypes"`
+
+	Kind       Kind         `json:"kind"`
+	Directives []*Directive `json:"-"`
+	IsReserved bool         `json:"-"`
 }
 
-func (n *BaseNode) GetName() string        { return n.Name }
-func (n *BaseNode) GetKind() Kind          { return n.Kind }
-func (n *BaseNode) GetDescription() string { return n.Description }
+func (n *BaseNode) GetName() string { return n.Name }
+func (n *BaseNode) GetKind() Kind   { return n.Kind }
+func (n *BaseNode) GetDescription() string {
+	if n.Description == nil {
+		return ""
+	}
+	return *n.Description
+}
 func (n *BaseNode) GetDirectivesByName(name string) []*Directive {
 	return GetDirective(name, n.Directives)
 }
@@ -65,12 +76,11 @@ func (n *BaseNode) Validate(store *NodeStore) error { return nil }
 
 type ObjectNode struct {
 	BaseNode
-	Fields         map[string]*Field         `json:"fields"`
-	InterfaceNames []string                  `json:"-"`
-	Interface      map[string]*InterfaceNode `json:"-"`
+	Fields         map[string]*Field `json:"fields"`
+	Interface      []*InterfaceNode  `json:"interfaces"`
+	InterfaceNames []string          `json:"-"`
 }
 
-func (o *ObjectNode) GetKind() Kind                { return KindObject }
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
 func (o *ObjectNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
@@ -90,10 +100,11 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 					Message:  fmt.Sprintf("interface %s not found", interfaceName),
 				}
 			}
-			if o.Interface == nil {
-				o.Interface = make(map[string]*InterfaceNode)
+			o.Interface = append(o.Interface, interfaceNode)
+			if interfaceNode.PossibleTypes == nil {
+				interfaceNode.PossibleTypes = make(map[string]*ObjectNode)
 			}
-			o.Interface[interfaceName] = interfaceNode
+			interfaceNode.PossibleTypes[o.GetName()] = o
 		}
 	}
 	return nil
@@ -101,10 +112,9 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 
 type InterfaceNode struct {
 	BaseNode
-	Fields map[string]*Field
+	Fields map[string]*Field `json:"fields"`
 }
 
-func (o *InterfaceNode) GetKind() Kind                { return KindInterface }
 func (o *InterfaceNode) GetFields() map[string]*Field { return o.Fields }
 func (o *InterfaceNode) Validate(store *NodeStore) error {
 	for _, field := range o.Fields {
@@ -120,11 +130,9 @@ func (o *InterfaceNode) Validate(store *NodeStore) error {
 
 type UnionNode struct {
 	BaseNode
-	TypeNames     map[string]string      `json:"-"`
-	PossibleTypes map[string]*ObjectNode `json:"possibleTypes"`
+	TypeNames map[string]string `json:"-"`
 }
 
-func (u *UnionNode) GetKind() Kind { return KindUnion }
 func (u *UnionNode) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(u.GetName(), u.GetDirectives(), store, LocationUnion); err != nil {
 		return err
@@ -150,7 +158,6 @@ type EnumNode struct {
 	EnumValues map[string]*EnumValue `json:"enumValues"`
 }
 
-func (e *EnumNode) GetKind() Kind { return KindEnum }
 func (e *EnumNode) Validate(store *NodeStore) error {
 	for _, enumValue := range e.EnumValues {
 		if err := enumValue.Validate(store); err != nil {
@@ -164,10 +171,12 @@ func (e *EnumNode) Validate(store *NodeStore) error {
 }
 
 type EnumValue struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Directives  []*Directive `json:"-"`
-	Value       int8         `json:"value"`
+	Name              string       `json:"name"`
+	Description       *string      `json:"description"`
+	Directives        []*Directive `json:"-"`
+	Value             int8         `json:"-"`
+	IsDeprecated      bool         `json:"isDeprecated"`
+	DeprecationReason *string      `json:"deprecationReason"`
 }
 
 func (e *EnumValue) Validate(store *NodeStore) error {
@@ -193,10 +202,9 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 
 type InputObjectNode struct {
 	BaseNode
-	Fields map[string]*Field
+	Fields map[string]*Field `json:"inputFields"`
 }
 
-func (i *InputObjectNode) GetKind() Kind                { return KindInputObject }
 func (i *InputObjectNode) GetFields() map[string]*Field { return i.Fields }
 
 func (i *InputObjectNode) Validate(store *NodeStore) error {
@@ -216,7 +224,6 @@ type ScalarNode struct {
 	ScalarType ScalarType `json:"-"`
 }
 
-func (s *ScalarNode) GetKind() Kind { return KindScalar }
 func (s *ScalarNode) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(s.GetName(), s.GetDirectives(), store, LocationScalar); err != nil {
 		return err
@@ -239,13 +246,13 @@ type ScalarType interface {
 }
 
 type Field struct {
-	Alias             string               `json:"alias"`
+	Alias             string               `json:"-"`
 	Name              string               `json:"name"`
-	Description       string               `json:"description"`
+	Description       *string              `json:"description"`
 	Args              map[string]*Argument `json:"args"`
 	Type              *TypeRef             `json:"type"`
 	IsDeprecated      bool                 `json:"isDeprecated"`
-	DeprecationReason string               `json:"deprecationReason"`
+	DeprecationReason *string              `json:"deprecationReason"`
 
 	Children   map[string]*Field `json:"-"`
 	Directives []*Directive      `json:"-"`
@@ -286,11 +293,6 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err != nil {
 		return err
 	}
-	for _, arg := range f.Args {
-		if err := arg.Validate(store, args); err != nil {
-			return err
-		}
-	}
 
 	if f.Type != nil {
 		if !f.IsFragment {
@@ -315,7 +317,6 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 			}
 		}
 	}
-
 	if f.IsUnion {
 		if f.Type.TypeNode.GetKind() != KindObject {
 			return &errors.ValidateError{
@@ -341,18 +342,24 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if f.Children != nil {
 		// the field is a fragment field or query field, so we need to validate the children
 		// the children are the fields of the object type
+
 		var obj Node
-		if f.Type.Kind == KindList || f.Type.Kind == KindNonNull {
-			obj = f.Type.OfType.TypeNode
-		} else {
-			obj = f.Type.TypeNode
+		t := f.Type
+		for t.Kind == KindList || t.Kind == KindNonNull {
+			t = t.OfType
 		}
+		obj = t.TypeNode
 
 		for _, child := range f.Children {
 			// the child is a field of the object type
 			if err := child.Validate(store, obj.GetFields(), obj, location, fragments, nil); err != nil {
 				return err
 			}
+		}
+	}
+	for _, arg := range f.Args {
+		if err := arg.Validate(store, args, objectNode.GetFields()[f.Name]); err != nil {
+			return err
 		}
 	}
 
@@ -550,14 +557,14 @@ func (t *TypeRef) validateListValue(v interface{}) error {
 type Location string
 
 const (
-	LocationQuery                Location = `QUERY`        //TODO: validate
-	LocationMutation             Location = `MUTATION`     //TODO: validate
-	LocationSubscription         Location = `SUBSCRIPTION` //TODO: validate
-	LocationField                Location = `FIELD`        //TODO: validate
+	LocationQuery                Location = `QUERY`
+	LocationMutation             Location = `MUTATION`
+	LocationSubscription         Location = `SUBSCRIPTION`
+	LocationField                Location = `FIELD`
 	LocationFragmentDefinition   Location = `FRAGMENT_DEFINITION`
 	LocationFragmentSpread       Location = `FRAGMENT_SPREAD`
 	LocationInlineFragment       Location = `INLINE_FRAGMENT`
-	LocationSchema               Location = `SCHEMA` //TODO: validate
+	LocationSchema               Location = `SCHEMA` // deprecated
 	LocationScalar               Location = `SCALAR`
 	LocationObject               Location = `OBJECT`
 	LocationFieldDefinition      Location = `FIELD_DEFINITION`
@@ -636,7 +643,7 @@ func (d *Directive) Validate(store *NodeStore, location Location) error {
 
 type DirectiveDefinition struct {
 	Name        string               `json:"name"`
-	Description string               `json:"description"`
+	Description *string              `json:"description"`
 	Args        map[string]*Argument `json:"args"`
 	Locations   []Location           `json:"locations"`
 	Repeatable  bool                 `json:"repeatable"`
@@ -644,9 +651,16 @@ type DirectiveDefinition struct {
 	Directives []*Directive `json:"-"`
 }
 
+func (d *DirectiveDefinition) GetDescription() string {
+	if d.Description == nil {
+		return ""
+	}
+	return *d.Description
+}
+
 func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 	for _, arg := range d.Args {
-		if err := arg.Validate(store, nil); err != nil {
+		if err := arg.Validate(store, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -747,7 +761,7 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 
 type Argument struct {
 	Name         string       `json:"name"`
-	Description  string       `json:"description"`
+	Description  *string      `json:"description"`
 	Directives   []*Directive `json:"-"`
 	Type         *TypeRef     `json:"type"`
 	DefaultValue any          `json:"default_value"`
@@ -756,7 +770,15 @@ type Argument struct {
 	IsReference  bool         `json:"-"`
 }
 
-func (a *Argument) Validate(store *NodeStore, args map[string]*Argument) error {
+func (a *Argument) GetDefaultValue() *string {
+	if a.DefaultValue == nil {
+		return nil
+	}
+	str := fmt.Sprintf("%v", a.DefaultValue)
+	return &str
+}
+
+func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *Field) error {
 	location := LocationArgumentDefinition
 	if a.IsVariable {
 		location = LocationVariableDefinition
@@ -785,6 +807,15 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument) error {
 		}
 		a.Value = args[name].Value
 		a.Type = args[name].Type
+	}
+	if a.Type == nil {
+		if field == nil {
+			return &errors.ValidateError{
+				NodeName: a.Name,
+				Message:  "argument type not found, the field is not a query field",
+			}
+		}
+		a.Type = field.Args[a.Name].Type
 	}
 	if err := a.Type.Validate(store); err != nil {
 		return err

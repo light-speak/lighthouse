@@ -1,0 +1,122 @@
+"""The DateTime scalar type represents a date and time."""
+scalar DateTime
+
+type Mutation {
+  updateUserLocation(id: ID!, location: UserLocation!): User
+  createUser(input: UserInput!): User
+  deleteUser(id: ID!): Boolean
+  createProduct(name: String!, price: Float!): Product
+  deleteProduct(id: ID!): Boolean
+  updateUser(id: ID!, input: UserInput!): User
+  createOrder(userId: ID!, productId: ID!): Order
+}
+
+interface Named {
+  name: String!
+}
+
+interface Node {
+  id: ID!
+}
+
+type Order {
+  product: Product!
+  orderedAt: DateTime!
+  id: ID!
+  total: Float!
+}
+
+"""The OrderPaginateResponse type represents a paginated list of Order."""
+type OrderPaginateResponse {
+  paginateInfo: PaginateInfo!
+  data: [Order!]!
+}
+
+"""The PaginateInfo type represents information about a paginated list."""
+type PaginateInfo {
+  totalPage: Int!
+  hasNextPage: Boolean!
+  totalCount: Int!
+  currentPage: Int!
+}
+
+"""商品啊"""
+type Product {
+  id: ID!
+  name: String!
+  price: Float!
+  createdAt: DateTime
+}
+
+type Query {
+  listProducts: [Product!]!
+  search(query: String!): [SearchResult!]!
+  testQuery(id: [[ID!]!]!): User
+  getUser(id: ID!): User
+  listUsers(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [User!]!
+  getProduct(id: ID!, name: String): Product
+}
+
+enum Role {
+  ADMIN
+  USER
+  GUEST
+}
+
+union SearchResult = Product | User
+
+"""The SortOrder enum type represents the order of a list."""
+enum SortOrder {
+  """The ASC enum value represents ascending order."""
+  ASC
+
+  """The DESC enum value represents descending order."""
+  DESC
+}
+
+type Subscription {
+  userCreated: User
+  productCreated: Product
+  orderCreated(userId: ID!): Order
+}
+
+"""用户啊"""
+type User {
+  age: Int
+  orders: [Order!]
+  myOrders(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [Order!]!
+  result: SearchResult
+  address: String
+  id: ID!
+  name: String!
+  role: Role!
+  createdAt: DateTime
+  friends: [User!]!
+  test(a: ID!): User
+}
+
+input UserInput {
+  location: UserLocation
+  role: Role
+  name: String!
+  age: Int
+  email: String
+}
+
+input UserLocation {
+  lat: String!
+  lng: String!
+}
+
+"""The UserPaginateResponse type represents a paginated list of User."""
+type UserPaginateResponse {
+  data: [User!]!
+  paginateInfo: PaginateInfo!
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+

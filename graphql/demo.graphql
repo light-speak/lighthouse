@@ -68,13 +68,13 @@ input UserInput {
   role: Role
 }
 
-type UserLocation {
+input UserLocation {
   lat: String!
   lng: String!
 }
 
 # 定义查询操作
-type Query {
+extend type Query {
   getUser(id: ID!): User
   listUsers: [User!]! @paginate
   getProduct(id: ID!, name: String): Product

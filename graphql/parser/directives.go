@@ -1,10 +1,31 @@
 package parser
 
-import "github.com/light-speak/lighthouse/graphql/ast"
+import (
+	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/utils"
+)
 
 func (p *Parser) addReservedDirective() {
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "skip", Description: "skip current field or fragment, when the parameter is true.",
+		Name: "deprecated", Description: utils.StrPtr("The field is deprecated."),
+		Locations: []ast.Location{
+			ast.LocationFieldDefinition,
+			ast.LocationField,
+			ast.LocationEnumValue,
+			ast.LocationInputFieldDefinition,
+		},
+		Args: map[string]*ast.Argument{
+			"reason": {
+				Name: "reason",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "skip", Description: utils.StrPtr("skip current field or fragment, when the parameter is true."),
 		Locations: []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
 		Args: map[string]*ast.Argument{
 			"if": {
@@ -17,7 +38,7 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "include", Description: "include current field or fragment, when the parameter is true.",
+		Name: "include", Description: utils.StrPtr("include current field or fragment, when the parameter is true."),
 		Locations: []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
 		Args: map[string]*ast.Argument{
 			"if": {
@@ -30,7 +51,7 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "enum", Description: "Change the value of the enum.",
+		Name: "enum", Description: utils.StrPtr("Change the value of the enum."),
 		Locations: []ast.Location{ast.LocationEnumValue},
 		Args: map[string]*ast.Argument{
 			"value": {
@@ -50,7 +71,7 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "paginate", Description: "The response will return paginate information and a list. The field must be in the form of a list.",
+		Name: "paginate", Description: utils.StrPtr("The response will return paginate information and a list. The field must be in the form of a list."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 		Args: map[string]*ast.Argument{
 			"scopes": {
@@ -70,35 +91,35 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "external", Description: "The field is defined in another schema.",
+		Name:      "external",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "requires", Description: "The field is defined in another schema.",
+		Name:      "requires",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "provides", Description: "The field is defined in another schema.",
+		Name:      "provides",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "key", Description: "The field is defined in another schema.",
+		Name:      "key",
 		Locations: []ast.Location{ast.LocationObject, ast.LocationInterface},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "extends", Description: "The field is defined in another schema.",
+		Name:      "extends",
 		Locations: []ast.Location{ast.LocationObject},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "softDeleteModel", Description: "The model is soft delete.",
+		Name: "softDeleteModel", Description: utils.StrPtr("The model is soft delete."),
 		Locations: []ast.Location{ast.LocationObject},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "model", Description: "The model name.",
+		Name: "model", Description: utils.StrPtr("The model."),
 		Locations: []ast.Location{ast.LocationObject},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "tag", Description: "The tag of the field.",
+		Name: "tag", Description: utils.StrPtr("The tag of the field."),
 		Locations:  []ast.Location{ast.LocationFieldDefinition},
 		Repeatable: true,
 		Args: map[string]*ast.Argument{
@@ -119,7 +140,7 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "index", Description: "The field is indexed.",
+		Name: "index", Description: utils.StrPtr("The field is indexed."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 		Args: map[string]*ast.Argument{
 			"name": {
@@ -132,11 +153,11 @@ func (p *Parser) addReservedDirective() {
 		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "unique", Description: "The field is unique.",
+		Name: "unique", Description: utils.StrPtr("The field is unique."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "default", Description: "The default value of the field.",
+		Name: "default", Description: utils.StrPtr("The default value of the field."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 		Args: map[string]*ast.Argument{
 			"value": {

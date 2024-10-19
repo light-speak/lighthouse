@@ -123,6 +123,7 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 
 func (p *Parser) AddScalar(node *ast.ScalarNode) {
 	p.isNameConflict(node.Name)
+	node.Kind = ast.KindScalar
 	p.NodeStore.Scalars[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
@@ -130,6 +131,7 @@ func (p *Parser) AddScalar(node *ast.ScalarNode) {
 
 func (p *Parser) AddInput(node *ast.InputObjectNode) {
 	p.isNameConflict(node.Name)
+	node.Kind = ast.KindInputObject
 	p.NodeStore.Inputs[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
@@ -137,6 +139,7 @@ func (p *Parser) AddInput(node *ast.InputObjectNode) {
 
 func (p *Parser) AddInterface(node *ast.InterfaceNode) {
 	p.isNameConflict(node.Name)
+	node.Kind = ast.KindInterface
 	p.NodeStore.Interfaces[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
@@ -150,6 +153,7 @@ func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinition) {
 
 func (p *Parser) AddEnum(node *ast.EnumNode) {
 	p.isNameConflict(node.Name)
+	node.Kind = ast.KindEnum
 	p.NodeStore.Enums[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
@@ -157,6 +161,7 @@ func (p *Parser) AddEnum(node *ast.EnumNode) {
 
 func (p *Parser) AddUnion(node *ast.UnionNode) {
 	p.isNameConflict(node.Name)
+	node.Kind = ast.KindUnion
 	p.NodeStore.Unions[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
@@ -178,6 +183,7 @@ func (p *Parser) AddObject(node *ast.ObjectNode, extend bool) ast.Node {
 		p.isNameConflict(node.Name)
 		p.NodeStore.Objects[node.Name] = node
 	}
+	node.Kind = ast.KindObject
 	p.NodeStore.Nodes[node.Name] = p.NodeStore.Objects[node.Name]
 	p.NodeStore.Names[node.Name] = node
 	return node

@@ -34,7 +34,7 @@ func (p *QueryParser) Validate(store *ast.NodeStore) error {
 			}
 		}
 		arg.Value = p.Variables[arg.Name]
-		if err := arg.Validate(store, nil); err != nil {
+		if err := arg.Validate(store, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -87,12 +87,15 @@ func (p *QueryParser) parseFragment() {
 
 	p.Parser.expect(lexer.LeftBrace)
 	node.Fields = make(map[string]*ast.Field)
-	for p.Parser.currToken.Type == lexer.Letter || p.Parser.currToken.Type == lexer.TripleDot {
+	for {
 		field := p.Parser.parseField(false, "")
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
 		node.Fields[field.Name] = field
+		if p.Parser.currToken.Type == lexer.RightBrace {
+			break
+		}
 	}
 
 	p.AddFragment(node)
@@ -127,6 +130,9 @@ func (p *QueryParser) parseOperation() error {
 	fields := make(map[string]*ast.Field)
 	for p.Parser.currToken.Type != lexer.RightBrace {
 		field := p.Parser.parseField(true, "")
+		if field == nil {
+			continue
+		}
 		fields[field.Name] = field
 	}
 	p.Fields = fields

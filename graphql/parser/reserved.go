@@ -3,6 +3,7 @@ package parser
 import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/scalar"
+	"github.com/light-speak/lighthouse/utils"
 )
 
 func (p *Parser) AddReserved() {
@@ -25,42 +26,42 @@ func (p *Parser) addReservedScalar() {
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "Boolean",
-			Description: "The Boolean scalar type represents a boolean value. It can be either true or false.",
+			Description: utils.StrPtr("The Boolean scalar type represents a boolean value. It can be either true or false."),
 		},
 	})
 
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "Int",
-			Description: "The Int scalar type represents a signed 32-bit integer.",
+			Description: utils.StrPtr("The Int scalar type represents a signed 32-bit integer."),
 		},
 	})
 
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "Float",
-			Description: "The Float scalar type represents a signed double-precision floating-point number.",
+			Description: utils.StrPtr("The Float scalar type represents a signed double-precision floating-point number."),
 		},
 	})
 
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "String",
-			Description: "The String scalar type represents a string value.",
+			Description: utils.StrPtr("The String scalar type represents a string value."),
 		},
 	})
 
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "ID",
-			Description: "The ID scalar type represents a unique identifier.",
+			Description: utils.StrPtr("The ID scalar type represents a unique identifier."),
 		},
 	})
 
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
 			Name:        "DateTime",
-			Description: "The DateTime scalar type represents a date and time.",
+			Description: utils.StrPtr("The DateTime scalar type represents a date and time."),
 		},
 	})
 }
@@ -79,7 +80,7 @@ func (p *Parser) addReservedObject() {
 		BaseNode: ast.BaseNode{
 			IsReserved:  true,
 			Name:        "PaginateInfo",
-			Description: "The PaginateInfo type represents information about a paginated list.",
+			Description: utils.StrPtr("The PaginateInfo type represents information about a paginated list."),
 		},
 		Fields: map[string]*ast.Field{
 			"currentPage": {
@@ -135,17 +136,17 @@ func (p *Parser) addReservedEnum() {
 		BaseNode: ast.BaseNode{
 			IsReserved:  true,
 			Name:        "SortOrder",
-			Description: "The SortOrder enum type represents the order of a list.",
+			Description: utils.StrPtr("The SortOrder enum type represents the order of a list."),
 		},
 		EnumValues: map[string]*ast.EnumValue{
 			"ASC": {
 				Name:        "ASC",
-				Description: "The ASC enum value represents ascending order.",
+				Description: utils.StrPtr("The ASC enum value represents ascending order."),
 				Value:       int8(1),
 			},
 			"DESC": {
 				Name:        "DESC",
-				Description: "The DESC enum value represents descending order.",
+				Description: utils.StrPtr("The DESC enum value represents descending order."),
 				Value:       int8(-1),
 			},
 		},

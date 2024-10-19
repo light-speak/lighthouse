@@ -9,13 +9,13 @@ func (f *Field) ParseDirectives(store *NodeStore) error {
 		deprecationReason := directive.GetArg("reason")
 		if deprecationReason != nil {
 			f.IsDeprecated = true
+			reason := "field is deprecated"
 			if deprecationReason.Value != nil {
-				f.DeprecationReason = deprecationReason.Value.(string)
+				reason = deprecationReason.Value.(string)
 			} else if deprecationReason.DefaultValue != nil {
-				f.DeprecationReason = deprecationReason.DefaultValue.(string)
-			} else {
-				f.DeprecationReason = "field is deprecated"
+				reason = deprecationReason.DefaultValue.(string)
 			}
+			f.DeprecationReason = &reason
 		}
 	}
 	directives = GetDirective("paginate", f.Directives)
@@ -37,18 +37,17 @@ func (f *Field) addPaginationResponseType(store *NodeStore) {
 	if _, ok := store.Objects[responseName]; ok {
 		return
 	}
+	description := fmt.Sprintf("The %sPaginateResponse type represents a paginated list of %s.", typeName, typeName)
 	store.AddObject(responseName, &ObjectNode{
 		BaseNode: BaseNode{
 			Name:        responseName,
-			Description: fmt.Sprintf("The %sPaginateResponse type represents a paginated list of %s.", typeName, typeName),
+			Kind:        KindObject,
+			Description: &description,
 		},
 		Fields: map[string]*Field{
 			"data": {
 				Name: "data",
-				Type: &TypeRef{
-					Kind:   KindNonNull,
-					OfType: f.Type,
-				},
+				Type: f.Type,
 			},
 			"paginateInfo": {
 				Name: "paginateInfo",
@@ -57,7 +56,7 @@ func (f *Field) addPaginationResponseType(store *NodeStore) {
 					OfType: &TypeRef{
 						Kind:     KindObject,
 						Name:     "PaginateInfo",
-						TypeNode: store.Nodes["PaginateInfo"],
+						TypeNode: store.Objects["PaginateInfo"],
 					},
 				},
 			},

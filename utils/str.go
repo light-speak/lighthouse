@@ -43,3 +43,7 @@ func CamelCase(str string) string {
 	}
 	return strings.Join(parts, "")
 }
+
+func StrPtr(str string) *string {
+	return &str
+}

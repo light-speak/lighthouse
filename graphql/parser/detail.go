@@ -7,8 +7,6 @@ import (
 	"github.com/light-speak/lighthouse/log"
 )
 
-
-
 func (p *Parser) NodeDetail(nodes map[string]ast.Node) {
 	for _, node := range nodes {
 		log.Info().Str("Description", node.GetDescription()).Str("Kind", node.GetKind().String()).Msg(node.GetName())
@@ -94,6 +92,6 @@ func (p *Parser) NodeDetail(nodes map[string]ast.Node) {
 		if err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
-		log.Info().Str("Description", directive.Description).Str("Name", directive.Name).RawJSON("Args", argJson).Msg("")
+		log.Info().Str("Name", directive.Name).RawJSON("Args", argJson).Msg("")
 	}
 }

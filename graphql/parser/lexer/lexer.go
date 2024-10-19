@@ -18,7 +18,7 @@ const (
 	Null        TokenType = "Null"        // null
 
 	Schema            TokenType = "Schema"
-	Type              TokenType = "Object"
+	Type              TokenType = "Type"
 	Interface         TokenType = "Interface"
 	Enum              TokenType = "Enum"
 	Input             TokenType = "Input"
