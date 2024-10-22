@@ -40,6 +40,9 @@ func (c *Version) Action() func(flagValues map[string]interface{}) error {
 	}
 }
 
+func (c *Version) OnExit() func() {
+	return func() {}
+}
 
 // Section: user code section start. Do not remove this comment.
 

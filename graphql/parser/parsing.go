@@ -36,7 +36,13 @@ func (p *Parser) parseObject() {
 
 	object.Directives = p.parseDirectives()
 
+	if p.currToken.Type != lexer.LeftBrace {
+		object.Fields = make(map[string]*ast.Field)
+		p.AddObject(object, extend)
+		return
+	}
 	p.expect(lexer.LeftBrace)
+
 	fields := make(map[string]*ast.Field)
 	for {
 		field := p.parseField(false, "")
@@ -116,7 +122,8 @@ func (p *Parser) parseDirective() *ast.Directive {
 	return directive
 }
 
-// parseField parse a field node
+// parseField parses a field node
+// Examples:
 // "It is ID"
 // id: ID!
 // name: String!
@@ -124,20 +131,20 @@ func (p *Parser) parseDirective() *ast.Directive {
 // email: String
 // createdAt: DateTime
 func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
-	// if the field is a fragment spread
-	// for example: ...FragmentName
-	// return a fragment spread node
+	// Handle comments
 	if p.currToken.Type == lexer.Comment {
 		p.nextToken()
 		return nil
 	}
+
+	// Handle fragment spreads
 	if p.currToken.Type == lexer.TripleDot {
 		p.expect(lexer.TripleDot)
-		field := &ast.Field{}
-		// is union
+
+		// Handle union types
 		if p.currToken.Type == lexer.On {
 			p.expect(lexer.On)
-			field = &ast.Field{
+			field := &ast.Field{
 				Name:    p.currToken.Value,
 				Alias:   alias,
 				IsUnion: true,
@@ -147,30 +154,27 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 			}
 			p.nextToken()
 			p.expect(lexer.LeftBrace)
-			for {
-				if field.Children == nil {
-					field.Children = make(map[string]*ast.Field)
-				}
+			field.Children = make(map[string]*ast.Field)
+			for p.currToken.Type != lexer.RightBrace {
 				cField := p.parseField(isOperation, "")
-				field.Children[cField.Name] = cField
-				if p.currToken.Type == lexer.RightBrace {
-					break
+				if cField != nil {
+					field.Children[cField.Name] = cField
 				}
 			}
+			p.expect(lexer.RightBrace)
 			return field
-		} else {
-			// is fragment
-			field = &ast.Field{
-				Name:       p.currToken.Value,
-				IsFragment: true,
-				Type: &ast.TypeRef{
-					Name: p.currToken.Value,
-				},
-			}
 		}
 
+		// Handle fragments
+		fragmentField := &ast.Field{
+			Name:       p.currToken.Value,
+			IsFragment: true,
+			Type: &ast.TypeRef{
+				Name: p.currToken.Value,
+			},
+		}
 		p.nextToken()
-		return field
+		return fragmentField
 	}
 
 	field := &ast.Field{
@@ -180,12 +184,10 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 	}
 	p.nextToken()
 
-	if isOperation {
-		if p.currToken.Type == lexer.Colon {
-			alias = field.Name
-			p.expect(lexer.Colon)
-			return p.parseField(isOperation, alias)
-		}
+	if isOperation && p.currToken.Type == lexer.Colon {
+		alias = field.Name
+		p.expect(lexer.Colon)
+		return p.parseField(isOperation, alias)
 	}
 
 	if p.currToken.Type == lexer.LeftParent {
@@ -198,26 +200,18 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 		field.Type, _ = p.parseTypeReferenceAndValue()
 		field.Directives = p.parseDirectives()
 	case lexer.LeftBrace:
-		children := make(map[string]*ast.Field)
+		field.Children = make(map[string]*ast.Field)
 		p.expect(lexer.LeftBrace)
-		for {
-			field := p.parseField(isOperation, "")
-			if field == nil {
-				continue
-			}
-			children[field.Name] = field
-			if p.currToken.Type == lexer.RightBrace {
-				break
+		for p.currToken.Type != lexer.RightBrace {
+			childField := p.parseField(isOperation, "")
+			if childField != nil {
+				field.Children[childField.Name] = childField
 			}
 		}
-		for p.currToken.Type == lexer.Comment {
-			p.nextToken()
-		}
-		if p.currToken.Type == lexer.RightBrace {
-			p.expect(lexer.RightBrace)
-		}
-		field.Children = children
+		p.expect(lexer.RightBrace)
 	}
+
+	// Skip any trailing comments
 	for p.currToken.Type == lexer.Comment {
 		p.nextToken()
 	}

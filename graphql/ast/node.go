@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/log"
 )
 
 // Node represents a GraphQL AST node.
@@ -28,6 +29,7 @@ type Node interface {
 	// GetDirectives returns the directives of the node.
 	GetDirectives() []*Directive
 	GetFields() map[string]*Field
+	GetPossibleTypes() map[string]*ObjectNode
 }
 
 type Kind string
@@ -70,14 +72,14 @@ func (n *BaseNode) GetDescription() string {
 func (n *BaseNode) GetDirectivesByName(name string) []*Directive {
 	return GetDirective(name, n.Directives)
 }
-func (n *BaseNode) GetDirectives() []*Directive     { return n.Directives }
-func (n *BaseNode) GetFields() map[string]*Field    { return nil }
-func (n *BaseNode) Validate(store *NodeStore) error { return nil }
+func (n *BaseNode) GetDirectives() []*Directive              { return n.Directives }
+func (n *BaseNode) GetFields() map[string]*Field             { return nil }
+func (n *BaseNode) Validate(store *NodeStore) error          { return nil }
+func (n *BaseNode) GetPossibleTypes() map[string]*ObjectNode { return n.PossibleTypes }
 
 type ObjectNode struct {
 	BaseNode
 	Fields         map[string]*Field `json:"fields"`
-	Interface      []*InterfaceNode  `json:"interfaces"`
 	InterfaceNames []string          `json:"-"`
 }
 
@@ -100,7 +102,10 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 					Message:  fmt.Sprintf("interface %s not found", interfaceName),
 				}
 			}
-			o.Interface = append(o.Interface, interfaceNode)
+			if o.Interfaces == nil {
+				o.Interfaces = make(map[string]*InterfaceNode)
+			}
+			o.Interfaces[interfaceName] = interfaceNode
 			if interfaceNode.PossibleTypes == nil {
 				interfaceNode.PossibleTypes = make(map[string]*ObjectNode)
 			}
@@ -310,9 +315,21 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
 			} else {
-				return &errors.ValidateError{
-					NodeName: f.Name,
-					Message:  "field type must be object type",
+				// if the field is not found, it means the field is a fragment field
+				// we need to validate the fragment field
+				log.Error().Msgf("f.Name: %+v", f.Name)
+				log.Error().Msgf("f.Name: %+v", f)
+				if f.IsFragment {
+					for _, child := range f.Children {
+						if err := child.Validate(store, objectFields, objectNode, location, fragments, args); err != nil {
+							return err
+						}
+					}
+				} else {
+					return &errors.ValidateError{
+						NodeName: f.Name,
+						Message:  "field type must be object type",
+					}
 				}
 			}
 		}
@@ -324,7 +341,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				Message:  "field type must be object type",
 			}
 		}
-		obj := objectNode.(*UnionNode).PossibleTypes[f.Type.Name]
+		obj := objectNode.GetPossibleTypes()[f.Type.Name]
 		if obj == nil {
 			return &errors.ValidateError{
 				NodeName: f.Name,

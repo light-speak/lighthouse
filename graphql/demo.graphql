@@ -84,7 +84,7 @@ extend type Query {
 }
 
 # 定义变更操作
-type Mutation {
+extend type Mutation {
   createUser(input: UserInput!): User
   deleteUser(id: ID!): Boolean
   createProduct(name: String!, price: Float!): Product
@@ -95,7 +95,7 @@ type Mutation {
 }
 
 # 定义订阅操作
-type Subscription {
+extend type Subscription {
   userCreated: User
   productCreated: Product
   orderCreated(userId: ID!): Order

@@ -1,12 +1,16 @@
 package parser
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
+
+//go:embed base.graphql
+var baseSchema string
 
 // Parser is responsible for parsing the GraphQL schema.
 // It contains a lexer for tokenizing the input and the current token being processed.
@@ -34,6 +38,7 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 
 func ReadGraphQLFiles(paths []string) (*lexer.Lexer, error) {
 	contents := make([]*lexer.Content, 0)
+	contents = append(contents, &lexer.Content{Path: nil, Content: baseSchema + "\n"})
 	for _, path := range paths {
 		content, err := os.ReadFile(path)
 		if err != nil {
@@ -92,7 +97,13 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		if parseFunc, ok := tokenTypeToParseFunc[p.currToken.Type]; ok {
 			parseFunc()
 		}
-		if p.currToken.Type != lexer.Directive && p.currToken.Type != lexer.Union {
+		if p.currToken.Type != lexer.Directive &&
+			p.currToken.Type != lexer.Union &&
+			p.currToken.Type != lexer.Type &&
+			p.currToken.Type != lexer.Extend &&
+			p.currToken.Type != lexer.Input &&
+			p.currToken.Type != lexer.Enum &&
+			p.currToken.Type != lexer.Interface {
 			p.nextToken()
 		}
 	}

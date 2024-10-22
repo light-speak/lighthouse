@@ -61,6 +61,7 @@ type Config struct {
 		Mode        AppMode
 	}
 	Server struct {
+		Throttle int
 		Port string
 	}
 	Api struct {
@@ -118,9 +119,11 @@ func init() {
 			Mode:        AppMode(GetEnv("APP_MODE", "single")),
 		},
 		Server: struct {
-			Port string
+			Throttle int
+			Port     string
 		}{
-			Port: GetEnv("SERVER_PORT", "8080"),
+			Throttle: GetEnvInt("SERVER_THROTTLE", 100),
+			Port:     GetEnv("SERVER_PORT", "8080"),
 		},
 		Api: struct {
 			Restful bool

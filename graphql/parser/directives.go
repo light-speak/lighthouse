@@ -105,6 +105,18 @@ func (p *Parser) addReservedDirective() {
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "key",
 		Locations: []ast.Location{ast.LocationObject, ast.LocationInterface},
+		Args: map[string]*ast.Argument{
+			"fields": {
+				Name: "fields",
+				Type: &ast.TypeRef{
+					Kind: ast.KindList,
+					OfType: &ast.TypeRef{
+						Kind: ast.KindScalar,
+						Name: "String",
+					},
+				},
+			},
+		},
 	})
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "extends",
