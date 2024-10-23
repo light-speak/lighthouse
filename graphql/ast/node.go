@@ -368,7 +368,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		if obj == nil {
 			return &errors.ValidateError{
 				NodeName: f.Name,
-				Message:  "field type must be a possible type of the union",
+				Message:  "field type must be a possible type of the union or interface",
 			}
 		}
 		for _, child := range f.Children {
