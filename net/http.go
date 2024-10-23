@@ -8,6 +8,7 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/light-speak/lighthouse/env"
 	"github.com/light-speak/lighthouse/net/middleware"
+	"github.com/light-speak/lighthouse/net/studio"
 )
 
 func New() *chi.Mux {
@@ -42,4 +43,5 @@ func setRoutes(r *chi.Mux) {
 	r.Options("/query", optionsHandler)
 	r.Post("/query", graphQLHandler)
 	r.Get("/query", graphQLHandler)
+	r.Get("/studio", studio.Handler)
 }

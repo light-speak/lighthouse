@@ -86,11 +86,7 @@ enum __DirectiveLocation {
   INPUT_FIELD_DEFINITION
 }
 
-extend type Query {
+type Query {
   __schema: __Schema!
   __type(name: String!): __Type
 }
-
-type Mutation 
-
-type Subscription

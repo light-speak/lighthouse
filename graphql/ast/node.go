@@ -5,6 +5,7 @@ import (
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/log"
+	"github.com/light-speak/lighthouse/utils"
 )
 
 // Node represents a GraphQL AST node.
@@ -85,6 +86,16 @@ type ObjectNode struct {
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
 func (o *ObjectNode) Validate(store *NodeStore) error {
+	o.Fields["__typename"] = &Field{
+		Name: "__typename",
+		Type: &TypeRef{
+			Kind: KindNonNull,
+			OfType: &TypeRef{
+				Kind: KindScalar,
+				Name: "String",
+			},
+		},
+	}
 	for _, field := range o.Fields {
 		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
@@ -188,9 +199,9 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(e.Name, e.Directives, store, LocationEnumValue); err != nil {
 		return err
 	}
-	directives := GetDirective("enum", e.Directives)
-	if len(directives) == 1 {
-		directive := directives[0]
+	enum := GetDirective("enum", e.Directives)
+	if len(enum) == 1 {
+		directive := enum[0]
 		value := directive.GetArg("value")
 		if value != nil {
 			if value.Value == nil {
@@ -200,6 +211,18 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 				}
 			}
 			e.Value = int8(value.Value.(int64))
+		}
+	}
+	deprecated := GetDirective("deprecated", e.Directives)
+	if len(deprecated) == 1 {
+		e.IsDeprecated = true
+		reason := deprecated[0].GetArg("reason")
+		if reason != nil {
+			if reason.Value != nil {
+				e.DeprecationReason = utils.StrPtr(reason.Value.(string))
+			} else {
+				e.DeprecationReason = utils.StrPtr(reason.DefaultValue.(string))
+			}
 		}
 	}
 	return nil

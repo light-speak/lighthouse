@@ -23,7 +23,6 @@ func isInternalType(name string) bool {
 	return len(name) >= 2 && name[:2] == "__"
 }
 
-
 // resolveSchemaFields resolves the fields of the __schema query.
 func ResolveSchemaFields(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
 	res := make(map[string]interface{})
@@ -46,21 +45,11 @@ func ResolveSchemaFields(qp *parser.QueryParser, field *ast.Field) (interface{},
 	return res, nil
 }
 
-// resolveSchemaField resolves each specific field in the __schema query.
+// resolveSchemaField resolve the specific field in the __schema query
 func resolveSchemaField(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
 	switch field.Name {
-	case "queryType":
-		return map[string]interface{}{
-			"name": "Query",
-		}, nil
-	case "mutationType":
-		return map[string]interface{}{
-			"name": "Mutation",
-		}, nil
-	case "subscriptionType":
-		return map[string]interface{}{
-			"name": "Subscription",
-		}, nil
+	case "queryType", "mutationType", "subscriptionType":
+		return resolveOperationType(qp, field.Name)
 	case "types":
 		return resolveAllTypes(qp, field), nil
 	case "directives":
@@ -68,6 +57,16 @@ func resolveSchemaField(qp *parser.QueryParser, field *ast.Field) (interface{}, 
 	default:
 		return nil, nil
 	}
+}
+
+// resolveOperationType parse the operation type
+func resolveOperationType(qp *parser.QueryParser, typeName string) (interface{}, error) {
+	opType := utils.UcFirst(typeName[:len(typeName)-4])
+	obj := qp.Parser.NodeStore.Objects[opType]
+	if obj == nil || len(obj.Fields) == 0 {
+		return nil, nil
+	}
+	return map[string]interface{}{"name": opType}, nil
 }
 
 // resolveTypeByName resolves the __type query by type name.
@@ -81,7 +80,7 @@ func ResolveTypeByName(qp *parser.QueryParser, field *ast.Field) (interface{}, e
 	if node == nil {
 		return nil, nil
 	}
-	return resolveTypeFields( field, node)
+	return resolveTypeFields(field, node)
 }
 
 // resolveAllTypes resolves the "types" field by returning all types except internal ones.

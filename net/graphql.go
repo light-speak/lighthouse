@@ -15,7 +15,7 @@ type GraphQLRequest struct {
 
 type GraphQLResponse struct {
 	Data   interface{}     `json:"data"`
-	Errors []*GraphQLError `json:"errors"`
+	Errors []*GraphQLError `json:"errors,omitempty"`
 }
 
 type GraphQLError struct {

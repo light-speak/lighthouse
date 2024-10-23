@@ -131,29 +131,141 @@ func (p *Parser) expect(t lexer.TokenType, options ...bool) {
 		p.nextToken()
 	}
 }
-
-func (p *Parser) AddScalar(node *ast.ScalarNode) {
-	p.isNameConflict(node.Name)
-	node.Kind = ast.KindScalar
-	p.NodeStore.Scalars[node.Name] = node
-	p.NodeStore.Names[node.Name] = node
-	p.NodeStore.Nodes[node.Name] = node
-}
-
-func (p *Parser) AddInput(node *ast.InputObjectNode) {
-	p.isNameConflict(node.Name)
+func (p *Parser) AddInput(node *ast.InputObjectNode, extend bool) {
+	if extend {
+		if existingNode, ok := p.NodeStore.Inputs[node.Name]; ok {
+			if existingNode.Fields == nil {
+				existingNode.Fields = make(map[string]*ast.Field)
+			}
+			for name, field := range node.Fields {
+				if _, ok := existingNode.Fields[name]; ok {
+					panic(fmt.Sprintf("Name conflict: Field '%s' already defined in Input '%s'", name, node.Name))
+				}
+				existingNode.Fields[name] = field
+			}
+			existingNode.Directives = append(existingNode.Directives, node.Directives...)
+			node = existingNode
+		} else {
+			p.isNameConflict(node.Name)
+			p.NodeStore.Inputs[node.Name] = node
+		}
+	} else {
+		p.isNameConflict(node.Name)
+		p.NodeStore.Inputs[node.Name] = node
+	}
 	node.Kind = ast.KindInputObject
-	p.NodeStore.Inputs[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
 }
 
-func (p *Parser) AddInterface(node *ast.InterfaceNode) {
-	p.isNameConflict(node.Name)
+func (p *Parser) AddInterface(node *ast.InterfaceNode, extend bool) {
+	if extend {
+		if existingNode, ok := p.NodeStore.Interfaces[node.Name]; ok {
+			if existingNode.Fields == nil {
+				existingNode.Fields = make(map[string]*ast.Field)
+			}
+			for name, field := range node.Fields {
+				if _, ok := existingNode.Fields[name]; ok {
+					panic(fmt.Sprintf("Name conflict: Field '%s' already defined in Interface '%s'", name, node.Name))
+				}
+				existingNode.Fields[name] = field
+			}
+			existingNode.Directives = append(existingNode.Directives, node.Directives...)
+			node = existingNode
+		} else {
+			p.isNameConflict(node.Name)
+			p.NodeStore.Interfaces[node.Name] = node
+		}
+	} else {
+		p.isNameConflict(node.Name)
+		p.NodeStore.Interfaces[node.Name] = node
+	}
 	node.Kind = ast.KindInterface
-	p.NodeStore.Interfaces[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
+}
+
+func (p *Parser) AddEnum(node *ast.EnumNode, extend bool) {
+	if extend {
+		if existingNode, ok := p.NodeStore.Enums[node.Name]; ok {
+			if existingNode.EnumValues == nil {
+				existingNode.EnumValues = make(map[string]*ast.EnumValue)
+			}
+			for name, value := range node.EnumValues {
+				if _, ok := existingNode.EnumValues[name]; ok {
+					panic(fmt.Sprintf("Name conflict: EnumValue '%s' already defined in Enum '%s'", name, node.Name))
+				}
+				existingNode.EnumValues[name] = value
+			}
+			existingNode.Directives = append(existingNode.Directives, node.Directives...)
+			node = existingNode
+		} else {
+			p.isNameConflict(node.Name)
+			p.NodeStore.Enums[node.Name] = node
+		}
+	} else {
+		p.isNameConflict(node.Name)
+		p.NodeStore.Enums[node.Name] = node
+	}
+	node.Kind = ast.KindEnum
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
+}
+
+func (p *Parser) AddUnion(node *ast.UnionNode, extend bool) {
+	if extend {
+		if existingNode, ok := p.NodeStore.Unions[node.Name]; ok {
+			if existingNode.TypeNames == nil {
+				existingNode.TypeNames = make(map[string]string)
+			}
+			for name, typeName := range node.TypeNames {
+				if _, ok := existingNode.TypeNames[name]; ok {
+					panic(fmt.Sprintf("Name conflict: TypeName '%s' already defined in Union '%s'", name, node.Name))
+				}
+				existingNode.TypeNames[name] = typeName
+			}
+			existingNode.Directives = append(existingNode.Directives, node.Directives...)
+			node = existingNode
+		} else {
+			p.isNameConflict(node.Name)
+			p.NodeStore.Unions[node.Name] = node
+		}
+	} else {
+		p.isNameConflict(node.Name)
+		p.NodeStore.Unions[node.Name] = node
+	}
+	node.Kind = ast.KindUnion
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
+}
+
+func (p *Parser) AddObject(node *ast.ObjectNode, extend bool) ast.Node {
+	if extend {
+		if existingNode, ok := p.NodeStore.Objects[node.Name]; ok {
+			if existingNode.Fields == nil {
+				existingNode.Fields = make(map[string]*ast.Field)
+			}
+			for name, field := range node.Fields {
+				if _, ok := existingNode.Fields[name]; ok {
+					panic(fmt.Sprintf("Name conflict: Field '%s' already defined in Object '%s'", name, node.Name))
+				}
+				existingNode.Fields[name] = field
+			}
+			existingNode.Directives = append(existingNode.Directives, node.Directives...)
+			existingNode.InterfaceNames = append(existingNode.InterfaceNames, node.InterfaceNames...)
+			node = existingNode
+		} else {
+			p.isNameConflict(node.Name)
+			p.NodeStore.Objects[node.Name] = node
+		}
+	} else {
+		p.isNameConflict(node.Name)
+		p.NodeStore.Objects[node.Name] = node
+	}
+	node.Kind = ast.KindObject
+	p.NodeStore.Names[node.Name] = node
+	p.NodeStore.Nodes[node.Name] = node
+	return node
 }
 
 func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinition) {
@@ -162,42 +274,12 @@ func (p *Parser) AddDirectiveDefinition(node *ast.DirectiveDefinition) {
 	p.NodeStore.Names[node.Name] = node
 }
 
-func (p *Parser) AddEnum(node *ast.EnumNode) {
+func (p *Parser) AddScalar(node *ast.ScalarNode) {
 	p.isNameConflict(node.Name)
-	node.Kind = ast.KindEnum
-	p.NodeStore.Enums[node.Name] = node
+	node.Kind = ast.KindScalar
+	p.NodeStore.Scalars[node.Name] = node
 	p.NodeStore.Names[node.Name] = node
 	p.NodeStore.Nodes[node.Name] = node
-}
-
-func (p *Parser) AddUnion(node *ast.UnionNode) {
-	p.isNameConflict(node.Name)
-	node.Kind = ast.KindUnion
-	p.NodeStore.Unions[node.Name] = node
-	p.NodeStore.Names[node.Name] = node
-	p.NodeStore.Nodes[node.Name] = node
-}
-
-func (p *Parser) AddObject(node *ast.ObjectNode, extend bool) ast.Node {
-	if extend {
-		if _, ok := p.NodeStore.Objects[node.Name]; !ok {
-			p.NodeStore.Objects[node.Name] = node
-		} else {
-			for _, field := range node.Fields {
-				if _, ok := p.NodeStore.Objects[node.Name].Fields[field.Name]; ok {
-					panic(fmt.Sprintf("Name conflict: Field '%s' already defined", field.Name))
-				}
-				p.NodeStore.Objects[node.Name].Fields[field.Name] = field
-			}
-		}
-	} else {
-		p.isNameConflict(node.Name)
-		p.NodeStore.Objects[node.Name] = node
-	}
-	node.Kind = ast.KindObject
-	p.NodeStore.Nodes[node.Name] = p.NodeStore.Objects[node.Name]
-	p.NodeStore.Names[node.Name] = node
-	return node
 }
 
 func (p *Parser) isNameConflict(name string) {

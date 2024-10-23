@@ -150,5 +150,5 @@ func (p *Parser) addReservedEnum() {
 				Value:       int8(-1),
 			},
 		},
-	})
+	}, false)
 }

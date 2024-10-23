@@ -465,6 +465,11 @@ func (p *Parser) parseLocations() []ast.Location {
 //	  GUEST
 //	}
 func (p *Parser) parseEnum() {
+	extend := false
+	if p.PreviousToken().Type == lexer.Extend {
+		extend = true
+	}
+
 	node := &ast.EnumNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -473,10 +478,13 @@ func (p *Parser) parseEnum() {
 		},
 	}
 
-	node.EnumValues = make(map[string]*ast.EnumValue)
+	if p.currToken.Type != lexer.LeftBrace {
+		p.AddEnum(node, extend)
+		return
+	}
 
 	p.expect(lexer.LeftBrace)
-
+	node.EnumValues = make(map[string]*ast.EnumValue)
 	for p.currToken.Type != lexer.RightBrace {
 		enumValue := p.parseEnumValue()
 		if _, ok := node.EnumValues[enumValue.Name]; ok {
@@ -485,7 +493,7 @@ func (p *Parser) parseEnum() {
 		node.EnumValues[enumValue.Name] = enumValue
 	}
 
-	p.AddEnum(node)
+	p.AddEnum(node, extend)
 }
 
 func (p *Parser) parseEnumValue() *ast.EnumValue {
@@ -509,9 +517,6 @@ func (p *Parser) parseEnumValue() *ast.EnumValue {
 func (p *Parser) parseExtend() {
 	p.parseDescription()   // Skip extend description
 	p.expect(lexer.Extend) // Skip 'extend'
-
-	// Parse the extended type using parseType
-	p.parseObject()
 }
 
 // parseInput 解析输入节点
@@ -524,12 +529,22 @@ func (p *Parser) parseExtend() {
 //	  createdAt: DateTime
 //	}
 func (p *Parser) parseInput() {
+	extend := false
+	if p.PreviousToken().Type == lexer.Extend {
+		extend = true
+	}
+
 	node := &ast.InputObjectNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Input),
 			Directives:  p.parseDirectives(),
 		},
+	}
+
+	if p.currToken.Type != lexer.LeftBrace {
+		p.AddInput(node, extend)
+		return
 	}
 
 	p.expect(lexer.LeftBrace)
@@ -546,7 +561,7 @@ func (p *Parser) parseInput() {
 		}
 	}
 
-	p.AddInput(node)
+	p.AddInput(node, extend)
 }
 
 // parseInterface parse an interface node
@@ -555,6 +570,11 @@ func (p *Parser) parseInput() {
 //	  id: ID!
 //	}
 func (p *Parser) parseInterface() {
+	extend := false
+	if p.PreviousToken().Type == lexer.Extend {
+		extend = true
+	}
+
 	node := &ast.InterfaceNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -562,8 +582,12 @@ func (p *Parser) parseInterface() {
 		},
 	}
 
+	node.Directives = p.parseDirectives()
+	if p.currToken.Type != lexer.LeftBrace {
+		p.AddInterface(node, extend)
+		return
+	}
 	p.expect(lexer.LeftBrace)
-
 	fields := make(map[string]*ast.Field)
 	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
 		field := p.parseField(false, "")
@@ -575,7 +599,7 @@ func (p *Parser) parseInterface() {
 
 	node.Fields = fields
 
-	p.AddInterface(node)
+	p.AddInterface(node, extend)
 }
 
 // parseScalar parses a scalar node
@@ -595,6 +619,11 @@ func (p *Parser) parseScalar() {
 // parseUnion parses a union node
 // Example: union User = Product | Order
 func (p *Parser) parseUnion() {
+	extend := false
+	if p.PreviousToken().Type == lexer.Extend {
+		extend = true
+	}
+
 	node := &ast.UnionNode{
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
@@ -603,9 +632,14 @@ func (p *Parser) parseUnion() {
 		},
 	}
 
+	if p.currToken.Type != lexer.Equal {
+		p.AddUnion(node, extend)
+		return
+	}
+
 	p.expect(lexer.Equal)
 	node.TypeNames = p.parseUnionTypes()
-	p.AddUnion(node)
+	p.AddUnion(node, extend)
 }
 
 // parseUnionTypes parses the types in a union definition
