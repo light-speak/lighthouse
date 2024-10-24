@@ -1,11 +1,13 @@
 package ast
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func (f *Field) ParseDirectives(store *NodeStore) error {
-	directives := GetDirective("deprecated", f.Directives)
-	if len(directives) > 1 {
-		directive := directives[0]
+func (f *Field) ParseFieldDirectives(store *NodeStore) error {
+	deprecated := GetDirective("deprecated", f.Directives)
+	if len(deprecated) > 0 {
+		directive := deprecated[0]
 		deprecationReason := directive.GetArg("reason")
 		if deprecationReason != nil {
 			f.IsDeprecated = true
@@ -18,11 +20,21 @@ func (f *Field) ParseDirectives(store *NodeStore) error {
 			f.DeprecationReason = &reason
 		}
 	}
-	directives = GetDirective("paginate", f.Directives)
-	if len(directives) > 0 {
+	deprecated = GetDirective("paginate", f.Directives)
+	if len(deprecated) > 0 {
 		f.addPaginationResponseType(store)
 		f.addPaginationArguments(store)
 	}
+	return nil
+}
+
+func (o *ObjectNode) ParseObjectDirectives(store *NodeStore) error {
+	model := GetDirective("model", o.Directives)
+	modelSoftDelete := GetDirective("softDelete", o.Directives)
+	if len(model) > 0 || len(modelSoftDelete) > 0 {
+		o.IsModel = true
+	}
+
 	return nil
 }
 

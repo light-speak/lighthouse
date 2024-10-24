@@ -9,7 +9,7 @@ import (
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index" `
-  Posts PostPaginateResponse `json:"posts" `
+  Posts []*Post `json:"posts" gorm:"-"`
 }
 
 func (*User) IsModel() bool { return true }
@@ -18,7 +18,7 @@ func (this *User) GetName() string { return this.Name }
 
 
 type Post struct {
-  model.ModelSoftDelete
+  model.Model
   Title string `json:"title" gorm:"index" `
   Content string `json:"content" `
   UserId int64 `json:"userId" gorm:"index" `
@@ -28,9 +28,13 @@ type Post struct {
 func (*Post) IsModel() bool { return true }
 
 
-func init() {
-	model.GetDB().AutoMigrate(
-    &User{},
+func Migrate() error {
+	err := model.GetDB().AutoMigrate(
+		&User{},
     &Post{},
   )
+  if err != nil {
+    return err
+  }
+  return nil
 }

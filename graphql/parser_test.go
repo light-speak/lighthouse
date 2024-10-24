@@ -57,9 +57,14 @@ func TestParseOperation(t *testing.T) {
 	}
 
 	qp := p.NewQueryParser(nl)
-	log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children)
-	log.Debug().Msgf("result: %+v", qp.Fields["getUser"].Children["result"].Children)
-	log.Debug().Msgf("user: %+v", qp.Fields["getUser"].Children["result"].Children["User"].Children)
+	qp.Variables = make(map[string]any)
+	qp.Variables["$id"] = "1"
+	qp.Variables["$test"] = "1"
+
+	// log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children)
+	// log.Debug().Msgf("result: %+v", qp.Fields["getUser"].Children["result"].Children)
+	// log.Debug().Msgf("user: %+v", qp.Fields["getUser"].Children["result"].Children["User"].Children)
+	log.Info().Msgf("qp: %+v", qp.Parser.NodeStore.Objects["Query"].Fields["getUser"].Args["id"].Type.OfType)
 	err = qp.Validate(p.NodeStore)
 	if err != nil {
 		t.Fatal(err)

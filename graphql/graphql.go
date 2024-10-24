@@ -1,15 +1,12 @@
 package graphql
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/config"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
-	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/log"
 )
@@ -58,52 +55,6 @@ func ParserSchema(files []string) (map[string]ast.Node, error) {
 	return nodes, nil
 }
 
-func ExecuteQuery(query string, variables json.RawMessage) (interface{}, error) {
-	p := GetParser()
-	qp := p.NewQueryParser(lexer.NewLexer([]*lexer.Content{
-		{
-			Content: query,
-		},
-	}))
-	qp.ParseSchema()
-	err := qp.Validate(p.NodeStore)
-	if err != nil {
-		return nil, err
-	}
-	res := map[string]interface{}{}
-	for _, field := range qp.Fields {
-		queryFunc, ok := queryMap[field.Name]
-		if !ok {
-			return nil, fmt.Errorf("query %s not found", field.Name)
-		}
-		res[field.Name], err = queryFunc(qp, field)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-var queryMap = map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error){
-	"__schema": ResolveSchemaFields,
-	"__type":   ResolveTypeByName,
-}
-
-var mutationMap = make(map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error))
-
-var subscriptionMap = make(map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error))
-
-func AddQuery(name string, fn func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)) {
-	queryMap[name] = fn
-}
-
-func AddMutation(name string, fn func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)) {
-	mutationMap[name] = fn
-}
-
-func AddSubscription(name string, fn func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)) {
-	subscriptionMap[name] = fn
-}
 
 func LoadSchema() error {
 	schemaFiles := []string{}
@@ -133,12 +84,6 @@ func LoadSchema() error {
 	if err != nil {
 		return err
 	}
-
-	// for _, node := range nodes {
-	// 	if node.GetKind() == ast.KindObject {
-	// 		log.Debug().Msgf("Object: %s", node.GetName())
-	// 	}
-	// }
 
 	return nil
 }

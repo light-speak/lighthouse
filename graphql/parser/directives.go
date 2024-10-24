@@ -6,6 +6,7 @@ import (
 )
 
 func (p *Parser) addReservedDirective() {
+	// deprecated
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "deprecated", Description: utils.StrPtr("The field is deprecated."),
 		Locations: []ast.Location{
@@ -24,6 +25,7 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// skip
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "skip", Description: utils.StrPtr("skip current field or fragment, when the parameter is true."),
 		Locations: []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
@@ -37,6 +39,7 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// include
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "include", Description: utils.StrPtr("include current field or fragment, when the parameter is true."),
 		Locations: []ast.Location{ast.LocationField, ast.LocationFragmentSpread, ast.LocationInlineFragment},
@@ -50,6 +53,7 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// enum
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "enum", Description: utils.StrPtr("Change the value of the enum."),
 		Locations: []ast.Location{ast.LocationEnumValue},
@@ -70,6 +74,7 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// paginate
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "paginate", Description: utils.StrPtr("The response will return paginate information and a list. The field must be in the form of a list."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
@@ -90,18 +95,22 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// external
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "external",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
+	// requires
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "requires",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
+	// provides
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "provides",
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
+	// key
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "key",
 		Locations: []ast.Location{ast.LocationObject, ast.LocationInterface},
@@ -118,18 +127,22 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// extends
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "extends",
 		Locations: []ast.Location{ast.LocationObject},
 	})
+	// softDeleteModel
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "softDeleteModel", Description: utils.StrPtr("The model is soft delete."),
 		Locations: []ast.Location{ast.LocationObject},
 	})
+	// model
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "model", Description: utils.StrPtr("The model."),
 		Locations: []ast.Location{ast.LocationObject},
 	})
+	// tag
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "tag", Description: utils.StrPtr("The tag of the field."),
 		Locations:  []ast.Location{ast.LocationFieldDefinition},
@@ -151,6 +164,7 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// index
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "index", Description: utils.StrPtr("The field is indexed."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
@@ -164,10 +178,12 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// unique
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "unique", Description: utils.StrPtr("The field is unique."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
+	// default
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "default", Description: utils.StrPtr("The default value of the field."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
@@ -181,4 +197,12 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
+	// first
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "first", Description: utils.StrPtr("The response will return only one item."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+	})
+
+
+
 }

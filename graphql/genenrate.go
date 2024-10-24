@@ -1,48 +1,48 @@
 package graphql
 
+import (
+	"os"
+
+	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model/generate"
+)
+
 func Generate() error {
+	p := GetParser()
+	nodes := p.NodeStore.Nodes
 
-	// p := GetParser()
-	// nodes := p.NodeStore.Nodes
+	typeNodes := []*ast.ObjectNode{}
+	responseNodes := []*ast.ObjectNode{}
 
-	// typeNodes := []*ast.ObjectNode{}
-	// responseNodes := []*ast.ObjectNode{}
+	for _, node := range nodes {
+		switch node.GetKind() {
+		case ast.KindObject:
+			objectNode, _ := node.(*ast.ObjectNode)
+			if !objectNode.IsModel {
+				responseNodes = append(responseNodes, objectNode)
+			} else {
+				typeNodes = append(typeNodes, objectNode)
+			}
+		}
+	}
 
-	// for _, node := range nodes {
-	// 	switch node.GetKind() {
-	// 	case ast.KindObject:
-	// 		typeNode, _ := node.(*ast.ObjectNode)
-	// 		if typeNode.IsResponse {
-	// 			responseNodes = append(responseNodes, typeNode)
-	// 		} else {
-	// 			typeNodes = append(typeNodes, typeNode)
-	// 		}
-	// 	}
-	// }
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
-	// if err := generate.GenType(typeNodes, currentPath); err != nil {
-	// 	return err
-	// }
-	// if err := generate.GenResponse(responseNodes, currentPath); err != nil {
-	// 	return err
-	// }
-	// if err := generate.GenInterface(p.InterfaceMap, currentPath); err != nil {
-	// 	return err
-	// }
-	// if err := generate.GenInput(p.InputMap, currentPath); err != nil {
-	// 	return err
-	// }
-
-	// schema := generateSchema(nodes)
-	// options := &template.Options{
-	// 	Path:         currentPath,
-	// 	Template:     schema,
-	// 	FileName:     "schema",
-	// 	FileExt:      "graphql",
-	// 	Editable:     false,
-	// 	SkipIfExists: false,
-	// }
-	// template.Render(options)
+	if err := generate.GenObject(typeNodes, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenResponse(responseNodes, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -1,7 +1,6 @@
 type Post @key(fields: "id") @softDeleteModel {
   title: String! @index
   content: String!
-  userId: ID! @index
   user: User!
 }
 

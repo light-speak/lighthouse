@@ -22,10 +22,6 @@ type QueryParser struct {
 }
 
 func (p *QueryParser) Validate(store *ast.NodeStore) error {
-	p.Variables = make(map[string]any)
-	p.Variables["$id"] = "123"
-	p.Variables["$test"] = "test"
-
 	for _, arg := range p.Args {
 		if p.Variables[arg.Name] == nil {
 			return &errors.ValidateError{

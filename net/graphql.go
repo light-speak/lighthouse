@@ -4,28 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/light-speak/lighthouse/graphql"
+	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/graphql/excute"
 	"github.com/light-speak/lighthouse/log"
 )
 
 type GraphQLRequest struct {
-	Query     string          `json:"query"`
-	Variables json.RawMessage `json:"variables"`
+	Query     string         `json:"query"`
+	Variables map[string]any `json:"variables"`
 }
 
 type GraphQLResponse struct {
-	Data   interface{}     `json:"data"`
-	Errors []*GraphQLError `json:"errors,omitempty"`
-}
-
-type GraphQLError struct {
-	Message   string             `json:"message"`
-	Locations []*GraphQLLocation `json:"locations"`
-}
-
-type GraphQLLocation struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
+	Data   interface{}            `json:"data"`
+	Errors []*errors.GraphQLError `json:"errors,omitempty"`
 }
 
 func graphQLHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,13 +50,13 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := graphql.ExecuteQuery(request.Query, request.Variables)
+	data, err := excute.ExecuteQuery(request.Query, request.Variables)
 	response := GraphQLResponse{
 		Data: data,
 	}
 	if err != nil {
 		log.Error().Msgf("Error executing query: %v", err)
-		response.Errors = []*GraphQLError{
+		response.Errors = []*errors.GraphQLError{
 			{
 				Message: err.Error(),
 			},
@@ -83,7 +74,7 @@ func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	response := GraphQLResponse{
-		Errors: []*GraphQLError{
+		Errors: []*errors.GraphQLError{
 			{
 				Message: message,
 			},

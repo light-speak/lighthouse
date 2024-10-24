@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -82,6 +81,7 @@ type ObjectNode struct {
 	BaseNode
 	Fields         map[string]*Field `json:"fields"`
 	InterfaceNames []string          `json:"-"`
+	IsModel        bool              `json:"-"`
 }
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
@@ -104,6 +104,11 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store, LocationObject); err != nil {
 		return err
 	}
+
+	if err := o.ParseObjectDirectives(store); err != nil {
+		return err
+	}
+
 	if len(o.InterfaceNames) > 0 {
 		for _, interfaceName := range o.InterfaceNames {
 			interfaceNode, ok := store.Interfaces[interfaceName]
@@ -287,6 +292,8 @@ type Field struct {
 	IsFragment bool              `json:"-"`
 	IsUnion    bool              `json:"-"`
 	Fragment   *Fragment         `json:"-"`
+
+	DefinitionDirectives []*Directive `json:"-"`
 }
 
 func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) error {
@@ -317,9 +324,11 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
-	err := f.ParseDirectives(store)
-	if err != nil {
-		return err
+	if objectNode == nil {
+		err := f.ParseFieldDirectives(store)
+		if err != nil {
+			return err
+		}
 	}
 
 	if f.Type != nil {
@@ -332,16 +341,16 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		if objectNode == nil {
 			return &errors.ValidateError{
 				NodeName: f.Name,
-				Message:  "field type must be object type",
+				Message:  "field type must be object type, but got nil",
 			}
 		} else {
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
+				// merge
+				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
 			} else {
 				// if the field is not found, it means the field is a fragment field
 				// we need to validate the fragment field
-				log.Error().Msgf("f.Name: %+v", f.Name)
-				log.Error().Msgf("f.Name: %+v", f)
 				if f.IsFragment {
 					for _, child := range f.Children {
 						if err := child.Validate(store, objectFields, objectNode, location, fragments, args); err != nil {
@@ -351,7 +360,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				} else {
 					return &errors.ValidateError{
 						NodeName: f.Name,
-						Message:  "field type must be object type",
+						Message:  "field type must be object type, and the field is not a fragment field",
 					}
 				}
 			}
@@ -411,6 +420,31 @@ type TypeRef struct {
 	Name     string   `json:"name"`
 	OfType   *TypeRef `json:"ofType"`
 	TypeNode Node     `json:"-"`
+}
+
+func (t *TypeRef) GetGoType(NonNull bool) string {
+	if t == nil {
+		return "interface{}"
+	}
+
+	switch t.Kind {
+	case KindScalar:
+		return t.Name
+	case KindEnum:
+		return t.Name
+	case KindObject:
+		return t.Name
+	case KindInputObject:
+		return t.Name
+	case KindList:
+		if NonNull {
+			return "[]" + t.OfType.GetGoType(false)
+		}
+		return "*[]" + t.OfType.GetGoType(true)
+	case KindNonNull:
+		return t.OfType.GetGoType(true)
+	}
+	return "any"
 }
 
 func (t *TypeRef) Validate(store *NodeStore) error {

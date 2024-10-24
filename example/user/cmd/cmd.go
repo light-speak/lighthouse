@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"user/cmd/migrate"
 	"user/cmd/start"
 
 	"github.com/light-speak/lighthouse/command"
@@ -18,6 +19,7 @@ func (c *Command) GetCommands() []command.Command {
 	return []command.Command{
 		// Func:GetCommands user code start. Do not remove this comment.
 		&start.Start{},
+		&migrate.Migrate{},
 		// Func:GetCommands user code end. Do not remove this comment.
 	}
 }

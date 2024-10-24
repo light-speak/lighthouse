@@ -9,7 +9,7 @@ func (this *{{ $name | ucFirst }}) Get{{ .GetName | ucFirst }}() {{ .Type.GoType
 {{- end }}
 {{ end }}
 
-func init() {
+func AutoMigrate() {
 	model.GetDB().AutoMigrate(
     {{- range $index, $node := .Nodes }}
     &{{ $node.GetName }}{},
