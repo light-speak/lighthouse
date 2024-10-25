@@ -8,10 +8,11 @@ import (
 )
 
 var excludeFieldName = map[string]struct{}{
-	"id":        {},
-	"createdAt": {},
-	"updatedAt": {},
-	"deletedAt": {},
+	"id":         {},
+	"createdAt":  {},
+	"updatedAt":  {},
+	"deletedAt":  {},
+	"__typename": {},
 }
 
 func Fields(fields map[string]*Field) string {
@@ -93,4 +94,8 @@ func Model(typeNode *ObjectNode) string {
 		builder.WriteString(fmt.Sprintf("\nfunc (%s) TableName() string { return \"%s\" }", typeNode.GetName(), dbName))
 	}
 	return builder.String()
+}
+
+func BuildRelation(field *Field) string {
+	return fmt.Sprintf("{Relation: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Relation, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
 }

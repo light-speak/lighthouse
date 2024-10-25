@@ -108,10 +108,8 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 		}
 	}
 
-	if p.QueryParser == nil {
-		p.AddReserved()
-		p.MergeScalarType()
-	}
+	p.AddReserved()
+
 	return p.NodeStore.Nodes
 }
 

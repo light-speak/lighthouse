@@ -5,9 +5,15 @@ import (
 
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model/generate"
+	"github.com/light-speak/lighthouse/log"
 )
 
 func Generate() error {
+	err := LoadSchema()
+	if err != nil {
+		log.Error().Msgf("Failed to load schema: %v", err)
+		return err
+	}
 	p := GetParser()
 	nodes := p.NodeStore.Nodes
 
@@ -34,15 +40,15 @@ func Generate() error {
 	if err := generate.GenObject(typeNodes, currentPath); err != nil {
 		return err
 	}
-	if err := generate.GenResponse(responseNodes, currentPath); err != nil {
-		return err
-	}
-	if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
-		return err
-	}
-	if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
-		return err
-	}
+	// if err := generate.GenResponse(responseNodes, currentPath); err != nil {
+	// 	return err
+	// }
+	// if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+	// 	return err
+	// }
+	// if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

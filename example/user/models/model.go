@@ -2,39 +2,43 @@
 package models
 
 import (
-	"github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/graphql/ast"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "time"
 )
 
+
+type Post struct {
+  model.ModelSoftDelete
+  Deleted_at time.Time `json:"deleted_at" `
+  User_id int64 `json:"user_id" `
+  Updated_at time.Time `json:"updated_at" `
+  Created_at time.Time `json:"created_at" `
+  Title string `json:"title" gorm:"index" `
+  Content string `json:"content" `
+  User User `json:"user" `
+}
+
+func (*Post) IsModel() bool { return true }
+func (*Post) GetProvide() map[string]*ast.Relation { return map[string]*ast.Relation{"content": {},"created_at": {},"deleted_at": {},"id": {},"title": {},"updated_at": {},"user": {Relation: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"},"user_id": {},}}
 
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index" `
-  Posts []*Post `json:"posts" gorm:"-"`
+  Posts []Post `json:"posts" `
+  Created_at time.Time `json:"created_at" `
+  Updated_at time.Time `json:"updated_at" `
 }
 
 func (*User) IsModel() bool { return true }
 func (*User) IsHasName() bool { return true }
 func (this *User) GetName() string { return this.Name }
-
-
-type Post struct {
-  model.Model
-  Title string `json:"title" gorm:"index" `
-  Content string `json:"content" `
-  UserId int64 `json:"userId" gorm:"index" `
-  User User `json:"user" `
-}
-
-func (*Post) IsModel() bool { return true }
+func (*User) GetProvide() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {},"updated_at": {},}}
 
 
 func Migrate() error {
-	err := model.GetDB().AutoMigrate(
-		&User{},
+	return model.GetDB().AutoMigrate(
     &Post{},
+    &User{},
   )
-  if err != nil {
-    return err
-  }
-  return nil
 }

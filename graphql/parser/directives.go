@@ -202,7 +202,26 @@ func (p *Parser) addReservedDirective() {
 		Name: "first", Description: utils.StrPtr("The response will return only one item."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
-
-
+	// belongsTo
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "belongsTo", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+			"foreignKey": {
+				Name: "foreignKey",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
 
 }

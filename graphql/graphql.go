@@ -9,6 +9,8 @@ import (
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/log"
+
+	_ "github.com/light-speak/lighthouse/graphql/ast/directive"
 )
 
 var (
@@ -54,7 +56,6 @@ func ParserSchema(files []string) (map[string]ast.Node, error) {
 
 	return nodes, nil
 }
-
 
 func LoadSchema() error {
 	schemaFiles := []string{}

@@ -294,6 +294,22 @@ type Field struct {
 	Fragment   *Fragment         `json:"-"`
 
 	DefinitionDirectives []*Directive `json:"-"`
+	Relation             *Relation    `json:"-"`
+}
+
+type RelationType string
+
+const (
+	RelationTypeBelongsTo RelationType = "RelationTypeBelongsTo"
+	RelationTypeHasMany   RelationType = "RelationTypeHasMany"
+	RelationTypeHasOne    RelationType = "RelationTypeHasOne"
+)
+
+type Relation struct {
+	Relation     string       `json:"relation"`
+	ForeignKey   string       `json:"foreignKey"`
+	Reference    string       `json:"reference"`
+	RelationType RelationType `json:"relationType"`
 }
 
 func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) error {
@@ -324,11 +340,8 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
-	if objectNode == nil {
-		err := f.ParseFieldDirectives(store)
-		if err != nil {
-			return err
-		}
+	if err := f.ParseFieldDirectives(store); err != nil {
+		return err
 	}
 
 	if f.Type != nil {
@@ -429,18 +442,17 @@ func (t *TypeRef) GetGoType(NonNull bool) string {
 
 	switch t.Kind {
 	case KindScalar:
-		return t.Name
-	case KindEnum:
-		return t.Name
-	case KindObject:
-		return t.Name
-	case KindInputObject:
-		return t.Name
+		return t.TypeNode.(*ScalarNode).ScalarType.GoType()
+	case KindEnum, KindObject, KindInputObject:
+		if NonNull {
+			return t.Name
+		}
+		return "*" + t.Name
 	case KindList:
 		if NonNull {
 			return "[]" + t.OfType.GetGoType(false)
 		}
-		return "*[]" + t.OfType.GetGoType(true)
+		return "*[]" + t.OfType.GetGoType(false)
 	case KindNonNull:
 		return t.OfType.GetGoType(true)
 	}

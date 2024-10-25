@@ -1,7 +1,8 @@
 type Post @key(fields: "id") @softDeleteModel {
   title: String! @index
   content: String!
-  user: User!
+  user_id: ID! 
+  user: User! @belongsTo
 }
 
 extend type Query {
