@@ -1,9 +1,16 @@
 package graphql
 
 import (
+	"os"
+	"path/filepath"
+
+	"github.com/light-speak/lighthouse/config"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
+	"github.com/light-speak/lighthouse/log"
+
+	_ "github.com/light-speak/lighthouse/graphql/ast/directive"
 )
 
 var (
@@ -28,11 +35,6 @@ type schema struct {
 	Types        []ast.Node                 `json:"types"`
 }
 
-// // GetSchema Get service schema
-// func GetSchema() string {
-// 	return generateSchema(Parser.Nodes)
-// }
-
 func GetParser() *parser.Parser {
 	if Parser == nil {
 		panic("Parser is not initialized")
@@ -45,7 +47,6 @@ func ParserSchema(files []string) (map[string]ast.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	Parser = parser.NewParser(lexer)
 	nodes := Parser.ParseSchema()
 	err = validate.ValidateNodes(nodes, Parser)
@@ -56,14 +57,34 @@ func ParserSchema(files []string) (map[string]ast.Node, error) {
 	return nodes, nil
 }
 
-func ExecuteQuery(qp *parser.QueryParser) (interface{}, error) {
-	var err error
-	res := map[string]interface{}{}
-	for _, field := range qp.Fields {
-		res[field.Name], err = ResolveIntrospectionSchema(qp, field)
-		if err != nil {
-			return nil, err
+func LoadSchema() error {
+	schemaFiles := []string{}
+	currPath, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	config, err := config.ReadConfig(currPath) // read yml config
+	if err != nil {
+		return err
+	}
+	projectSchemaFiles := []string{}
+	for _, path := range config.Schema.Path {
+		for _, ext := range config.Schema.Ext {
+			projectSchemaFiles = append(projectSchemaFiles, filepath.Join(currPath, path, "*."+ext))
 		}
 	}
-	return res, nil
+	for _, path := range projectSchemaFiles {
+		matches, _ := filepath.Glob(path)
+		schemaFiles = append(schemaFiles, matches...)
+		for _, match := range matches {
+			log.Debug().Msgf("Loading schema from %v", match)
+		}
+	}
+
+	_, err = ParserSchema(schemaFiles)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

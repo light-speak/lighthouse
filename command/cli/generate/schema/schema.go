@@ -3,6 +3,7 @@ package schema
 
 import (
 	"github.com/light-speak/lighthouse/command"
+	"github.com/light-speak/lighthouse/graphql"
 )
 
 type Schema struct{}
@@ -29,13 +30,17 @@ func (c *Schema) Args() []*command.CommandArg {
 func (c *Schema) Action() func(flagValues map[string]interface{}) error {
 	return func(flagValues map[string]interface{}) error {
 		// Func:Action user code start. Do not remove this comment.
-		// err := graphql.Generate()
-		// if err != nil {
-		// return err
-		// }
+		err := graphql.Generate()
+		if err != nil {
+		return err
+		}
 		// Func:Action user code end. Do not remove this comment.
 		return nil
 	}
+}
+
+func (c *Schema) OnExit() func() {
+	return func() {}
 }
 
 // Section: user code section start. Do not remove this comment.

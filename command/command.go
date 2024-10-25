@@ -23,6 +23,7 @@ type Command interface {
 	Usage() string
 	Args() []*CommandArg
 	Action() func(flagValues map[string]interface{}) error
+	OnExit() func()
 }
 
 type CommandArg struct {

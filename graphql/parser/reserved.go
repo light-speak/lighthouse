@@ -14,14 +14,6 @@ func (p *Parser) AddReserved() {
 	p.addReservedObject()
 }
 
-func (p *Parser) MergeScalarType() {
-	for name, scalar := range p.NodeStore.Scalars {
-		if _, ok := p.NodeStore.ScalarTypes[name]; ok {
-			scalar.ScalarType = p.NodeStore.ScalarTypes[name]
-		}
-	}
-}
-
 func (p *Parser) addReservedScalar() {
 	p.AddScalar(&ast.ScalarNode{
 		BaseNode: ast.BaseNode{
@@ -150,5 +142,5 @@ func (p *Parser) addReservedEnum() {
 				Value:       int8(-1),
 			},
 		},
-	})
+	}, false)
 }

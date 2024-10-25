@@ -27,7 +27,6 @@ type Model struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (m *Model) IsModel() bool                 { return true }
 func (m *Model) GetId() int64                  { return m.ID }
 func (m *Model) GetCreatedAt() time.Time       { return m.CreatedAt }
 func (m *Model) GetUpdatedAt() time.Time       { return m.UpdatedAt }
@@ -38,5 +37,4 @@ type ModelSoftDelete struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (m *ModelSoftDelete) IsModel() bool                 { return true }
 func (m *ModelSoftDelete) GetDeletedAt() *gorm.DeletedAt { return &m.DeletedAt }

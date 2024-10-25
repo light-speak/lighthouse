@@ -83,3 +83,7 @@ func (c *GenCmd) Action() func(flagValues map[string]interface{}) error {
 		return nil
 	}
 }
+
+func (c *GenCmd) OnExit() func() {
+	return func() {}
+}

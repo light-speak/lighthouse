@@ -34,3 +34,7 @@ func (i *BooleanScalar) ParseLiteral(v ast.Value) (interface{}, error) {
 func (i *BooleanScalar) GoType() string {
 	return "bool"
 }
+
+func init() {
+	
+}

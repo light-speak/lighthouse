@@ -1,90 +1,101 @@
 package ast
 
-// var excludeFieldName = map[string]struct{}{
-// 	"id":        {},
-// 	"createdAt": {},
-// 	"updatedAt": {},
-// 	"deletedAt": {},
-// }
+import (
+	"fmt"
+	"strings"
 
-// func Fields(fields []*FieldNode) string {
-// 	var lines []string
-// 	for _, field := range fields {
-// 		if _, ok := excludeFieldName[field.Name]; ok {
-// 			continue
-// 		}
-// 		//TODO: 这里需要处理下 Go Type => TypeRef
-// 		// line := fmt.Sprintf("  %s %s %s", utils.UcFirst(field.Name), field.Type.GoType(), genTag(field))
-// 		// lines = append(lines, line)
-// 	}
-// 	return strings.Join(lines, "\n")
-// }
+	"github.com/light-speak/lighthouse/utils"
+)
 
-// func genTag(field *FieldNode) string {
-// 	tags := map[string][]string{
-// 		"json": {field.Name},
-// 	}
+var excludeFieldName = map[string]struct{}{
+	"id":         {},
+	"createdAt":  {},
+	"updatedAt":  {},
+	"deletedAt":  {},
+	"__typename": {},
+}
 
-// 	// Collect directives
-// 	for _, directive := range field.GetDirectivesByName("tag") {
-// 		if arg := directive.GetArg("name"); arg != nil {
-// 			tags[arg.Name] = append(tags[arg.Name], arg.Value.Value.(*StringValue).Value)
-// 		}
-// 	}
+func Fields(fields map[string]*Field) string {
+	var lines []string
+	for _, field := range fields {
+		if _, ok := excludeFieldName[field.Name]; ok {
+			continue
+		}
+		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(field.Name), field.Type.GetGoType(false), genTag(field))
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
+}
 
-// 	if directive := field.GetDirective("index"); directive != nil {
-// 		if arg := directive.GetArg("name"); arg != nil {
-// 			tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", arg.Value.Value.(*StringValue).Value))
-// 		} else {
-// 			tags["gorm"] = append(tags["gorm"], "index")
-// 		}
-// 	}
+func genTag(field *Field) string {
+	tags := map[string][]string{
+		"json": {field.Name},
+	}
 
-// 	if directive := field.GetDirective("unique"); directive != nil {
-// 		tags["gorm"] = append(tags["gorm"], "unique")
-// 	}
+	// Collect directives
+	for _, directive := range GetDirective("tag", field.Directives) {
+		if arg := directive.GetArg("name"); arg != nil {
+			tags[arg.Name] = append(tags[arg.Name], arg.Value.(string))
+		}
+	}
 
-// 	// Build the tag string using strings.Builder
-// 	var builder strings.Builder
-// 	builder.WriteString("`") // Start with a single backtick
+	if directive := GetDirective("index", field.Directives); len(directive) == 1 {
+		if arg := directive[0].GetArg("name"); arg != nil {
+			tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", arg.Value.(string)))
+		} else {
+			tags["gorm"] = append(tags["gorm"], "index")
+		}
+	}
 
-// 	for key, value := range tags {
-// 		builder.WriteString(fmt.Sprintf("%s:\"%s\" ", key, strings.Join(value, ";")))
-// 	}
+	if directive := GetDirective("unique", field.Directives); len(directive) == 1 {
+		tags["gorm"] = append(tags["gorm"], "unique")
+	}
 
-// 	builder.WriteString("`") // End with a single backtick
-// 	return builder.String()
-// }
+	// Build the tag string using strings.Builder
+	var builder strings.Builder
+	builder.WriteString("`") // Start with a single backtick
 
-// func Model(typeNode *TypeNode) string {
-// 	dbName := ""
-// 	trackName := ""
-// 	var builder strings.Builder
+	for key, value := range tags {
+		builder.WriteString(fmt.Sprintf("%s:\"%s\" ", key, strings.Join(value, ";")))
+	}
 
-// 	if directive := typeNode.GetDirective("model"); directive != nil {
-// 		if arg := directive.GetArg("name"); arg != nil {
-// 			dbName = arg.Value.Value.(*StringValue).Value
-// 		}
-// 		trackName = "model.Model"
-// 	}
-// 	if directive := typeNode.GetDirective("softDeleteModel"); directive != nil {
-// 		if arg := directive.GetArg("name"); arg != nil {
-// 			dbName = arg.Value.Value.(*StringValue).Value
-// 		}
-// 		trackName = "model.ModelSoftDelete"
-// 	}
+	builder.WriteString("`") // End with a single backtick
+	return builder.String()
+}
 
-// 	builder.WriteString(fmt.Sprintf("type %s struct {\n", typeNode.GetName()))
-// 	if trackName != "" {
-// 		builder.WriteString(fmt.Sprintf("  %s\n", trackName))
-// 	}
-// 	builder.WriteString(Fields(typeNode.Fields))
-// 	builder.WriteString("\n}\n")
+func Model(typeNode *ObjectNode) string {
+	dbName := ""
+	trackName := ""
+	var builder strings.Builder
 
-// 	builder.WriteString(fmt.Sprintf("\nfunc (*%s) IsModel() bool { return true }", typeNode.GetName()))
+	if directive := GetDirective("model", typeNode.Directives); len(directive) == 1 {
+		if arg := directive[0].GetArg("name"); arg != nil {
+			dbName = arg.Value.(string)
+		}
+		trackName = "model.Model"
+	}
+	if directive := GetDirective("softDeleteModel", typeNode.Directives); len(directive) == 1 {
+		if arg := directive[0].GetArg("name"); arg != nil {
+			dbName = arg.Value.(string)
+		}
+		trackName = "model.ModelSoftDelete"
+	}
 
-// 	if dbName != "" {
-// 		builder.WriteString(fmt.Sprintf("\nfunc (%s) TableName() string { return \"%s\" }", typeNode.GetName(), dbName))
-// 	}
-// 	return builder.String()
-// }
+	builder.WriteString(fmt.Sprintf("type %s struct {\n", typeNode.GetName()))
+	if trackName != "" {
+		builder.WriteString(fmt.Sprintf("  %s\n", trackName))
+	}
+	builder.WriteString(Fields(typeNode.Fields))
+	builder.WriteString("\n}\n")
+
+	builder.WriteString(fmt.Sprintf("\nfunc (*%s) IsModel() bool { return true }", typeNode.GetName()))
+
+	if dbName != "" {
+		builder.WriteString(fmt.Sprintf("\nfunc (%s) TableName() string { return \"%s\" }", typeNode.GetName(), dbName))
+	}
+	return builder.String()
+}
+
+func BuildRelation(field *Field) string {
+	return fmt.Sprintf("{Relation: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Relation, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
+}

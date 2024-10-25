@@ -68,8 +68,9 @@ type LoaderBatch[T ModelInterface] struct {
 }
 
 // Load loads a single item by key
-func (l *Loader[T]) Load(key int64) (*T, error) {
-	return l.loadThunk(key)()
+func (l *Loader[T]) Load(key int64) (T, error) {
+	ptr, _ := l.loadThunk(key)()
+	return *ptr, nil
 }
 
 // loadThunk creates a thunk for loading a single item

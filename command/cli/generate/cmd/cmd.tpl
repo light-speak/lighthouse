@@ -33,5 +33,11 @@ func (c *{{ $structName }}) Action() func(flagValues map[string]interface{}) err
 	}
 }
 
+func (c *{{ $structName }}) OnExit() func() {
+	return func() {
+		{{ funcStart "OnExit" }}
+		{{ funcEnd "OnExit" }}
+	}
+}
 
 {{ section }}

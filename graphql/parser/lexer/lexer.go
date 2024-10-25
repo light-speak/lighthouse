@@ -314,9 +314,6 @@ func (l *Lexer) readMessage() *Token {
 	}
 
 	tokenType := Message
-	if l.currentToken != nil && l.currentToken.Type == Colon {
-		tokenType = Letter
-	}
 
 	return &Token{
 		Type:         tokenType,

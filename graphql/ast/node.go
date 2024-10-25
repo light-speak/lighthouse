@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/utils"
 )
 
 // Node represents a GraphQL AST node.
@@ -28,6 +29,7 @@ type Node interface {
 	// GetDirectives returns the directives of the node.
 	GetDirectives() []*Directive
 	GetFields() map[string]*Field
+	GetPossibleTypes() map[string]*ObjectNode
 }
 
 type Kind string
@@ -70,19 +72,30 @@ func (n *BaseNode) GetDescription() string {
 func (n *BaseNode) GetDirectivesByName(name string) []*Directive {
 	return GetDirective(name, n.Directives)
 }
-func (n *BaseNode) GetDirectives() []*Directive     { return n.Directives }
-func (n *BaseNode) GetFields() map[string]*Field    { return nil }
-func (n *BaseNode) Validate(store *NodeStore) error { return nil }
+func (n *BaseNode) GetDirectives() []*Directive              { return n.Directives }
+func (n *BaseNode) GetFields() map[string]*Field             { return nil }
+func (n *BaseNode) Validate(store *NodeStore) error          { return nil }
+func (n *BaseNode) GetPossibleTypes() map[string]*ObjectNode { return n.PossibleTypes }
 
 type ObjectNode struct {
 	BaseNode
 	Fields         map[string]*Field `json:"fields"`
-	Interface      []*InterfaceNode  `json:"interfaces"`
 	InterfaceNames []string          `json:"-"`
+	IsModel        bool              `json:"-"`
 }
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
 func (o *ObjectNode) Validate(store *NodeStore) error {
+	o.Fields["__typename"] = &Field{
+		Name: "__typename",
+		Type: &TypeRef{
+			Kind: KindNonNull,
+			OfType: &TypeRef{
+				Kind: KindScalar,
+				Name: "String",
+			},
+		},
+	}
 	for _, field := range o.Fields {
 		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
@@ -91,6 +104,11 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store, LocationObject); err != nil {
 		return err
 	}
+
+	if err := o.ParseObjectDirectives(store); err != nil {
+		return err
+	}
+
 	if len(o.InterfaceNames) > 0 {
 		for _, interfaceName := range o.InterfaceNames {
 			interfaceNode, ok := store.Interfaces[interfaceName]
@@ -100,7 +118,10 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 					Message:  fmt.Sprintf("interface %s not found", interfaceName),
 				}
 			}
-			o.Interface = append(o.Interface, interfaceNode)
+			if o.Interfaces == nil {
+				o.Interfaces = make(map[string]*InterfaceNode)
+			}
+			o.Interfaces[interfaceName] = interfaceNode
 			if interfaceNode.PossibleTypes == nil {
 				interfaceNode.PossibleTypes = make(map[string]*ObjectNode)
 			}
@@ -183,9 +204,9 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(e.Name, e.Directives, store, LocationEnumValue); err != nil {
 		return err
 	}
-	directives := GetDirective("enum", e.Directives)
-	if len(directives) == 1 {
-		directive := directives[0]
+	enum := GetDirective("enum", e.Directives)
+	if len(enum) == 1 {
+		directive := enum[0]
 		value := directive.GetArg("value")
 		if value != nil {
 			if value.Value == nil {
@@ -195,6 +216,18 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 				}
 			}
 			e.Value = int8(value.Value.(int64))
+		}
+	}
+	deprecated := GetDirective("deprecated", e.Directives)
+	if len(deprecated) == 1 {
+		e.IsDeprecated = true
+		reason := deprecated[0].GetArg("reason")
+		if reason != nil {
+			if reason.Value != nil {
+				e.DeprecationReason = utils.StrPtr(reason.Value.(string))
+			} else {
+				e.DeprecationReason = utils.StrPtr(reason.DefaultValue.(string))
+			}
 		}
 	}
 	return nil
@@ -259,6 +292,24 @@ type Field struct {
 	IsFragment bool              `json:"-"`
 	IsUnion    bool              `json:"-"`
 	Fragment   *Fragment         `json:"-"`
+
+	DefinitionDirectives []*Directive `json:"-"`
+	Relation             *Relation    `json:"-"`
+}
+
+type RelationType string
+
+const (
+	RelationTypeBelongsTo RelationType = "RelationTypeBelongsTo"
+	RelationTypeHasMany   RelationType = "RelationTypeHasMany"
+	RelationTypeHasOne    RelationType = "RelationTypeHasOne"
+)
+
+type Relation struct {
+	Relation     string       `json:"relation"`
+	ForeignKey   string       `json:"foreignKey"`
+	Reference    string       `json:"reference"`
+	RelationType RelationType `json:"relationType"`
 }
 
 func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) error {
@@ -289,8 +340,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
-	err := f.ParseDirectives(store)
-	if err != nil {
+	if err := f.ParseFieldDirectives(store); err != nil {
 		return err
 	}
 
@@ -304,15 +354,27 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		if objectNode == nil {
 			return &errors.ValidateError{
 				NodeName: f.Name,
-				Message:  "field type must be object type",
+				Message:  "field type must be object type, but got nil",
 			}
 		} else {
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
+				// merge
+				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
 			} else {
-				return &errors.ValidateError{
-					NodeName: f.Name,
-					Message:  "field type must be object type",
+				// if the field is not found, it means the field is a fragment field
+				// we need to validate the fragment field
+				if f.IsFragment {
+					for _, child := range f.Children {
+						if err := child.Validate(store, objectFields, objectNode, location, fragments, args); err != nil {
+							return err
+						}
+					}
+				} else {
+					return &errors.ValidateError{
+						NodeName: f.Name,
+						Message:  "field type must be object type, and the field is not a fragment field",
+					}
 				}
 			}
 		}
@@ -324,11 +386,11 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				Message:  "field type must be object type",
 			}
 		}
-		obj := objectNode.(*UnionNode).PossibleTypes[f.Type.Name]
+		obj := objectNode.GetPossibleTypes()[f.Type.Name]
 		if obj == nil {
 			return &errors.ValidateError{
 				NodeName: f.Name,
-				Message:  "field type must be a possible type of the union",
+				Message:  "field type must be a possible type of the union or interface",
 			}
 		}
 		for _, child := range f.Children {
@@ -371,6 +433,30 @@ type TypeRef struct {
 	Name     string   `json:"name"`
 	OfType   *TypeRef `json:"ofType"`
 	TypeNode Node     `json:"-"`
+}
+
+func (t *TypeRef) GetGoType(NonNull bool) string {
+	if t == nil {
+		return "interface{}"
+	}
+
+	switch t.Kind {
+	case KindScalar:
+		return t.TypeNode.(*ScalarNode).ScalarType.GoType()
+	case KindEnum, KindObject, KindInputObject:
+		if NonNull {
+			return t.Name
+		}
+		return "*" + t.Name
+	case KindList:
+		if NonNull {
+			return "[]" + t.OfType.GetGoType(false)
+		}
+		return "*[]" + t.OfType.GetGoType(false)
+	case KindNonNull:
+		return t.OfType.GetGoType(true)
+	}
+	return "any"
 }
 
 func (t *TypeRef) Validate(store *NodeStore) error {

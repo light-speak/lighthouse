@@ -56,7 +56,7 @@ enum Role {
 enum UserStatus {
   ACTIVE
   INACTIVE
-  BLOCKED
+  BLOCKED @deprecated(reason: "已锁定")
 }
 
 # 定义输入类型
@@ -84,7 +84,7 @@ extend type Query {
 }
 
 # 定义变更操作
-type Mutation {
+extend type Mutation {
   createUser(input: UserInput!): User
   deleteUser(id: ID!): Boolean
   createProduct(name: String!, price: Float!): Product
@@ -95,7 +95,7 @@ type Mutation {
 }
 
 # 定义订阅操作
-type Subscription {
+extend type Subscription {
   userCreated: User
   productCreated: Product
   orderCreated(userId: ID!): Order
@@ -106,8 +106,14 @@ extend type User {
   address: String
 }
 
+extend interface Named @testInterface
+
+extend type User @testObject
+
 # 定义指令
 "这是一个测试"
+directive @testInterface on INTERFACE
+directive @testObject on OBJECT
 directive @test(name: String!) on FIELD_DEFINITION
 directive @testMulti(l: [[Int!]!]!) on FIELD_DEFINITION | ARGUMENT_DEFINITION
 directive @testRole(role: Role!) on FIELD_DEFINITION

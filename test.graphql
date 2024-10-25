@@ -1,69 +1,37 @@
 """The DateTime scalar type represents a date and time."""
 scalar DateTime
 
-type Mutation {
-  updateUserLocation(id: ID!, location: UserLocation!): User
-  createUser(input: UserInput!): User
-  deleteUser(id: ID!): Boolean
-  createProduct(name: String!, price: Float!): Product
-  deleteProduct(id: ID!): Boolean
-  updateUser(id: ID!, input: UserInput!): User
-  createOrder(userId: ID!, productId: ID!): Order
-}
-
-interface Named {
+interface HasName {
   name: String!
 }
 
-interface Node {
-  id: ID!
-}
-
-type Order {
-  product: Product!
-  orderedAt: DateTime!
-  id: ID!
-  total: Float!
-}
-
-"""The OrderPaginateResponse type represents a paginated list of Order."""
-type OrderPaginateResponse {
-  paginateInfo: PaginateInfo!
-  data: [Order!]!
-}
+type Mutation
 
 """The PaginateInfo type represents information about a paginated list."""
 type PaginateInfo {
+  currentPage: Int!
   totalPage: Int!
   hasNextPage: Boolean!
   totalCount: Int!
-  currentPage: Int!
 }
 
-"""商品啊"""
-type Product {
-  id: ID!
-  name: String!
-  price: Float!
-  createdAt: DateTime
+type Post {
+  content: String!
+  userId: ID!
+  user: User!
+  title: String!
+}
+
+"""The PostPaginateResponse type represents a paginated list of Post."""
+type PostPaginateResponse {
+  data: [Post!]!
+  paginateInfo: PaginateInfo!
 }
 
 type Query {
-  listProducts: [Product!]!
-  search(query: String!): [SearchResult!]!
-  testQuery(id: [[ID!]!]!): User
-  getUser(id: ID!): User
-  listUsers(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [User!]!
-  getProduct(id: ID!, name: String): Product
+  users(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [User!]!
+  posts(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [Post!]!
 }
-
-enum Role {
-  ADMIN
-  USER
-  GUEST
-}
-
-union SearchResult = Product | User
 
 """The SortOrder enum type represents the order of a list."""
 enum SortOrder {
@@ -74,49 +42,22 @@ enum SortOrder {
   DESC
 }
 
-type Subscription {
-  userCreated: User
-  productCreated: Product
-  orderCreated(userId: ID!): Order
-}
+type Subscription
 
-"""用户啊"""
-type User {
-  age: Int
-  orders: [Order!]
-  myOrders(page: Int = 1, size: Int = 10, sort: SortOrder = ASC): [Order!]!
-  result: SearchResult
-  address: String
-  id: ID!
+"""test user"""
+type User implements HasName {
   name: String!
-  role: Role!
-  createdAt: DateTime
-  friends: [User!]!
-  test(a: ID!): User
+  posts(size: Int = 10, sort: SortOrder = ASC, page: Int = 1): [Post!]!
 }
 
-input UserInput {
-  location: UserLocation
-  role: Role
-  name: String!
-  age: Int
-  email: String
-}
-
-input UserLocation {
-  lat: String!
-  lng: String!
+interface Userable {
+  userId: ID!
+  user: User!
 }
 
 """The UserPaginateResponse type represents a paginated list of User."""
 type UserPaginateResponse {
   data: [User!]!
   paginateInfo: PaginateInfo!
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
 }
 

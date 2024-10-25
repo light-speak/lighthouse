@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/light-speak/lighthouse/version"
 )
@@ -27,6 +28,17 @@ func Run(c CommandList, args []string) error {
 }
 
 func runREPL(cmd Command) error {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+
+	go func() {
+		<-sigChan
+		fmt.Print("\r")
+		fmt.Println("\033[33mThank you for using lighthouse cli. Bye!\033[0m")
+		cmd.OnExit()
+		os.Exit(0)
+	}()
+
 	printLogo()
 	fmt.Println("Welcome to use lighthouse cli. Type 'exit' to quit.")
 	fmt.Printf("\033[36m%s\033[0m\n", cmd.Usage())

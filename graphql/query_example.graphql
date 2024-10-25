@@ -1,9 +1,9 @@
 query UserTest($id: ID!, $test: ID!) {
-  getUser(id: $id)  {
+  getUser(id: $id) {
     id
-    fuck: name  
+    fuck: name
     result {
-      wtf: ... on User {
+      ... on User {
         id
         ...UserFragment
       }

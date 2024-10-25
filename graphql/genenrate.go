@@ -1,83 +1,54 @@
 package graphql
 
-// import (
-// 	"os"
-// 	"path/filepath"
+import (
+	"os"
 
-// 	"github.com/light-speak/lighthouse/config"
-// 	"github.com/light-speak/lighthouse/graphql/ast"
-// 	"github.com/light-speak/lighthouse/graphql/model/generate"
-// 	"github.com/light-speak/lighthouse/template"
-// )
+	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model/generate"
+	"github.com/light-speak/lighthouse/log"
+)
 
-// func Generate() error {
-// 	currentPath, err := os.Getwd()
-// 	if err != nil {
-// 		return err
-// 	}
+func Generate() error {
+	err := LoadSchema()
+	if err != nil {
+		log.Error().Msgf("Failed to load schema: %v", err)
+		return err
+	}
+	p := GetParser()
+	nodes := p.NodeStore.Nodes
 
-// 	config, err := config.ReadConfig(currentPath)
-// 	if err != nil {
-// 		return err
-// 	}
+	typeNodes := []*ast.ObjectNode{}
+	responseNodes := []*ast.ObjectNode{}
 
-// 	schemaFiles := []string{}
-// 	for _, path := range config.Schema.Path {
-// 		for _, ext := range config.Schema.Ext {
-// 			schemaFiles = append(schemaFiles, filepath.Join(currentPath, path, "*."+ext))
-// 		}
-// 	}
+	for _, node := range nodes {
+		switch node.GetKind() {
+		case ast.KindObject:
+			objectNode, _ := node.(*ast.ObjectNode)
+			if !objectNode.IsModel {
+				responseNodes = append(responseNodes, objectNode)
+			} else {
+				typeNodes = append(typeNodes, objectNode)
+			}
+		}
+	}
 
-// 	files := make([]string, 0)
-// 	for _, path := range schemaFiles {
-// 		matches, _ := filepath.Glob(path)
-// 		files = append(files, matches...)
-// 	}
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
-// 	nodes, err := ParserSchema(files)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	p := GetParser()
+	if err := generate.GenObject(typeNodes, currentPath); err != nil {
+		return err
+	}
+	// if err := generate.GenResponse(responseNodes, currentPath); err != nil {
+	// 	return err
+	// }
+	// if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+	// 	return err
+	// }
+	// if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
+	// 	return err
+	// }
 
-// 	typeNodes := []*ast.TypeNode{}
-// 	responseNodes := []*ast.TypeNode{}
-
-// 	for _, node := range nodes {
-// 		switch node.GetNodeType() {
-// 		case ast.NodeTypeObject:
-// 			typeNode, _ := node.(*ast.TypeNode)
-// 			if typeNode.IsResponse {
-// 				responseNodes = append(responseNodes, typeNode)
-// 			} else {
-// 				typeNodes = append(typeNodes, typeNode)
-// 			}
-// 		}
-// 	}
-
-// 	if err := generate.GenType(typeNodes, currentPath); err != nil {
-// 		return err
-// 	}
-// 	if err := generate.GenResponse(responseNodes, currentPath); err != nil {
-// 		return err
-// 	}
-// 	if err := generate.GenInterface(p.InterfaceMap, currentPath); err != nil {
-// 		return err
-// 	}
-// 	if err := generate.GenInput(p.InputMap, currentPath); err != nil {
-// 		return err
-// 	}
-
-// 	schema := generateSchema(nodes)
-// 	options := &template.Options{
-// 		Path:         currentPath,
-// 		Template:     schema,
-// 		FileName:     "schema",
-// 		FileExt:      "graphql",
-// 		Editable:     false,
-// 		SkipIfExists: false,
-// 	}
-// 	template.Render(options)
-
-// 	return nil
-// }
+	return nil
+}

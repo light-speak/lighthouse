@@ -23,18 +23,8 @@ func isInternalType(name string) bool {
 	return len(name) >= 2 && name[:2] == "__"
 }
 
-// ResolveIntrospectionSchema resolves the introspection schema based on the given query parser and field.
-func ResolveIntrospectionSchema(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
-	if field.Name == "__schema" {
-		return resolveSchemaFields(qp, field)
-	} else if field.Name == "__type" {
-		return resolveTypeByName(qp, field)
-	}
-	return nil, nil
-}
-
 // resolveSchemaFields resolves the fields of the __schema query.
-func resolveSchemaFields(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
+func ResolveSchemaFields(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
 	res := make(map[string]interface{})
 	for _, cField := range field.Children {
 		var err error
@@ -55,21 +45,11 @@ func resolveSchemaFields(qp *parser.QueryParser, field *ast.Field) (interface{},
 	return res, nil
 }
 
-// resolveSchemaField resolves each specific field in the __schema query.
+// resolveSchemaField resolve the specific field in the __schema query
 func resolveSchemaField(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
 	switch field.Name {
-	case "queryType":
-		return map[string]interface{}{
-			"name": "Query",
-		}, nil
-	case "mutationType":
-		return map[string]interface{}{
-			"name": "Mutation",
-		}, nil
-	case "subscriptionType":
-		return map[string]interface{}{
-			"name": "Subscription",
-		}, nil
+	case "queryType", "mutationType", "subscriptionType":
+		return resolveOperationType(qp, field.Name)
 	case "types":
 		return resolveAllTypes(qp, field), nil
 	case "directives":
@@ -79,8 +59,18 @@ func resolveSchemaField(qp *parser.QueryParser, field *ast.Field) (interface{}, 
 	}
 }
 
+// resolveOperationType parse the operation type
+func resolveOperationType(qp *parser.QueryParser, typeName string) (interface{}, error) {
+	opType := utils.UcFirst(typeName[:len(typeName)-4])
+	obj := qp.Parser.NodeStore.Objects[opType]
+	if obj == nil || len(obj.Fields) == 0 {
+		return nil, nil
+	}
+	return map[string]interface{}{"name": opType}, nil
+}
+
 // resolveTypeByName resolves the __type query by type name.
-func resolveTypeByName(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
+func ResolveTypeByName(qp *parser.QueryParser, field *ast.Field) (interface{}, error) {
 	typeName, ok := field.Args["name"].Value.(string)
 	if !ok {
 		return nil, nil
@@ -90,7 +80,7 @@ func resolveTypeByName(qp *parser.QueryParser, field *ast.Field) (interface{}, e
 	if node == nil {
 		return nil, nil
 	}
-	return resolveTypeFields(qp, field, node)
+	return resolveTypeFields(field, node)
 }
 
 // resolveAllTypes resolves the "types" field by returning all types except internal ones.
@@ -98,7 +88,7 @@ func resolveAllTypes(qp *parser.QueryParser, field *ast.Field) []interface{} {
 	var types []interface{}
 	for _, node := range qp.Parser.NodeStore.Nodes {
 		if !isInternalType(node.GetName()) {
-			typeRes, _ := resolveTypeFields(qp, field, node)
+			typeRes, _ := resolveTypeFields(field, node)
 			types = append(types, typeRes)
 		}
 	}
@@ -128,19 +118,19 @@ func shouldIncludeDirective(directive *ast.DirectiveDefinition) bool {
 }
 
 // resolveTypeFields resolves all fields for a given type node.
-func resolveTypeFields(qp *parser.QueryParser, field *ast.Field, node ast.Node) (interface{}, error) {
+func resolveTypeFields(field *ast.Field, node ast.Node) (interface{}, error) {
 	res := make(map[string]interface{})
 	for _, cField := range field.Children {
 		var err error
 		if cField.IsFragment || cField.IsUnion {
 			for _, fragmentField := range cField.Children {
-				res[fragmentField.Name], err = resolveTypeField(qp, fragmentField, node)
+				res[fragmentField.Name], err = resolveTypeField(fragmentField, node)
 				if err != nil {
 					return nil, err
 				}
 			}
 		} else {
-			res[cField.Name], err = resolveTypeField(qp, cField, node)
+			res[cField.Name], err = resolveTypeField(cField, node)
 			if err != nil {
 				return nil, err
 			}
@@ -150,12 +140,12 @@ func resolveTypeFields(qp *parser.QueryParser, field *ast.Field, node ast.Node) 
 }
 
 // resolveTypeField resolves a specific field for a given type node.
-func resolveTypeField(qp *parser.QueryParser, field *ast.Field, node ast.Node) (interface{}, error) {
+func resolveTypeField(field *ast.Field, node ast.Node) (interface{}, error) {
 	switch field.Name {
 	case "name", "description", "kind":
 		return getBasicTypeInfo(node, field.Name)
 	case "fields", "inputFields", "interfaces", "possibleTypes", "enumValues":
-		return resolveComplexTypeField(qp, field, node)
+		return resolveComplexTypeField(field, node)
 	}
 	return nil, nil
 }
@@ -174,13 +164,13 @@ func getBasicTypeInfo(node ast.Node, infoType string) (interface{}, error) {
 }
 
 // resolveComplexTypeField handles more complex type fields.
-func resolveComplexTypeField(qp *parser.QueryParser, field *ast.Field, node ast.Node) (interface{}, error) {
+func resolveComplexTypeField(field *ast.Field, node ast.Node) (interface{}, error) {
 	var res []interface{}
 
 	switch field.Name {
 	case "fields":
 		if node.GetKind() == ast.KindObject || node.GetKind() == ast.KindInterface {
-			res = resolveFields(qp, field, node.GetFields())
+			res = resolveFields(field, node.GetFields())
 		}
 	case "inputFields":
 		if node.GetKind() == ast.KindInputObject {
@@ -188,11 +178,11 @@ func resolveComplexTypeField(qp *parser.QueryParser, field *ast.Field, node ast.
 		}
 	case "interfaces":
 		if node.GetKind() == ast.KindObject {
-			res = resolveInterfaces(node.(*ast.ObjectNode).Interfaces)
+			res = resolveInterfaces(field, node.(*ast.ObjectNode).Interfaces)
 		}
 	case "possibleTypes":
 		if node.GetKind() == ast.KindInterface || node.GetKind() == ast.KindUnion {
-			res = resolvePossibleTypes(qp, field, node)
+			res = resolvePossibleTypes(field, node)
 		}
 	case "enumValues":
 		if node.GetKind() == ast.KindEnum {
@@ -207,35 +197,43 @@ func resolveComplexTypeField(qp *parser.QueryParser, field *ast.Field, node ast.
 }
 
 // resolveTypeRef creates a type reference, handling nested types like NonNull and List.
-func resolveTypeRef(typeRef *ast.TypeRef) map[string]interface{} {
+func resolveTypeRef(field *ast.Field, typeRef *ast.TypeRef) interface{} {
 	if typeRef == nil {
 		return nil
 	}
+	result := make(map[string]interface{})
 
-	result := map[string]interface{}{
-		"kind": typeRef.Kind,
-		"name": nil,
+	for _, cField := range field.Children {
+		if cField.IsFragment || cField.IsUnion {
+
+			for _, fragmentField := range cField.Children {
+				result[fragmentField.Name] = resolveTypeRefField(fragmentField, typeRef)
+			}
+		} else {
+			result[cField.Name] = resolveTypeRefField(cField, typeRef)
+		}
 	}
-
-	if typeRef.Name != "" {
-		result["name"] = typeRef.Name
-	}
-
-	if typeRef.OfType != nil {
-		result["ofType"] = resolveTypeRef(typeRef.OfType)
-	} else {
-		result["ofType"] = nil
-	}
-
 	return result
 }
 
+func resolveTypeRefField(field *ast.Field, typeRef *ast.TypeRef) interface{} {
+	switch field.Name {
+	case "name":
+		return typeRef.Name
+	case "kind":
+		return typeRef.Kind
+	case "ofType":
+		return resolveTypeRef(field, typeRef.OfType)
+	}
+	return nil
+}
+
 // resolveFields resolves fields for an object or interface type.
-func resolveFields(qp *parser.QueryParser, field *ast.Field, fields map[string]*ast.Field) []interface{} {
+func resolveFields(field *ast.Field, fields map[string]*ast.Field) []interface{} {
 	var result []interface{}
 	for _, f := range fields {
 		if !isInternalType(f.Name) {
-			fieldRes, _ := resolveFieldFields(qp, field, f)
+			fieldRes, _ := resolveFieldFields(field, f)
 			result = append(result, fieldRes)
 		}
 	}
@@ -243,7 +241,7 @@ func resolveFields(qp *parser.QueryParser, field *ast.Field, fields map[string]*
 }
 
 // resolveFieldFields resolves fields for a specific field in a type.
-func resolveFieldFields(qp *parser.QueryParser, field *ast.Field, nodeField *ast.Field) (interface{}, error) {
+func resolveFieldFields(field *ast.Field, nodeField *ast.Field) (interface{}, error) {
 	res := make(map[string]interface{})
 	for _, cField := range field.Children {
 		if cField.IsFragment || cField.IsUnion {
@@ -254,9 +252,9 @@ func resolveFieldFields(qp *parser.QueryParser, field *ast.Field, nodeField *ast
 				case "description":
 					res[fragmentField.Name] = nodeField.Description
 				case "args":
-					res[fragmentField.Name] = resolveArguments(nodeField.Args)
+					res[fragmentField.Name] = resolveArguments(fragmentField, nodeField.Args)
 				case "type":
-					res[fragmentField.Name] = resolveTypeRef(nodeField.Type)
+					res[fragmentField.Name] = resolveTypeRef(fragmentField, nodeField.Type)
 				case "isDeprecated":
 					res[fragmentField.Name] = nodeField.IsDeprecated
 				case "deprecationReason":
@@ -270,9 +268,9 @@ func resolveFieldFields(qp *parser.QueryParser, field *ast.Field, nodeField *ast
 			case "description":
 				res[cField.Name] = nodeField.Description
 			case "args":
-				res[cField.Name] = resolveArguments(nodeField.Args)
+				res[cField.Name] = resolveArguments(cField, nodeField.Args)
 			case "type":
-				res[cField.Name] = resolveTypeRef(nodeField.Type)
+				res[cField.Name] = resolveTypeRef(cField, nodeField.Type)
 			case "isDeprecated":
 				res[cField.Name] = nodeField.IsDeprecated
 			case "deprecationReason":
@@ -284,14 +282,19 @@ func resolveFieldFields(qp *parser.QueryParser, field *ast.Field, nodeField *ast
 }
 
 // resolveArguments resolves arguments for a field or directive.
-func resolveArguments(args map[string]*ast.Argument) []interface{} {
+func resolveArguments(field *ast.Field, args map[string]*ast.Argument) []interface{} {
 	var result []interface{}
+
 	for _, arg := range args {
-		argRes := map[string]interface{}{
-			"name":         arg.Name,
-			"description":  arg.Description,
-			"type":         resolveTypeRef(arg.Type),
-			"defaultValue": arg.GetDefaultValue(),
+		argRes := make(map[string]interface{})
+		for _, cField := range field.Children {
+			if cField.IsFragment || cField.IsUnion {
+				for _, fragmentField := range cField.Children {
+					argRes[fragmentField.Name], _ = resolveArgumentField(fragmentField, arg)
+				}
+			} else {
+				argRes[cField.Name], _ = resolveArgumentField(cField, arg)
+			}
 		}
 		result = append(result, argRes)
 	}
@@ -299,6 +302,20 @@ func resolveArguments(args map[string]*ast.Argument) []interface{} {
 		return []interface{}{}
 	}
 	return result
+}
+
+func resolveArgumentField(field *ast.Field, arg *ast.Argument) (interface{}, error) {
+	switch field.Name {
+	case "name":
+		return arg.Name, nil
+	case "description":
+		return arg.Description, nil
+	case "type":
+		return resolveTypeRef(field, arg.Type), nil
+	case "defaultValue":
+		return arg.GetDefaultValue(), nil
+	}
+	return nil, nil
 }
 
 // resolveInputFields resolves input fields for an input object type.
@@ -309,19 +326,22 @@ func resolveInputFields(inputFields map[string]*ast.Field) []interface{} {
 			inputFieldRes := map[string]interface{}{
 				"name":        inputField.Name,
 				"description": inputField.Description,
-				"type":        resolveTypeRef(inputField.Type),
+				"type":        resolveTypeRef(inputField, inputField.Type),
 			}
 			result = append(result, inputFieldRes)
 		}
+	}
+	if len(result) == 0 {
+		return []interface{}{}
 	}
 	return result
 }
 
 // resolveInterfaces resolves interfaces implemented by an object type.
-func resolveInterfaces(interfaces map[string]*ast.InterfaceNode) []interface{} {
+func resolveInterfaces(field *ast.Field, interfaces map[string]*ast.InterfaceNode) []interface{} {
 	var result []interface{}
 	for _, iface := range interfaces {
-		result = append(result, resolveTypeRef(&ast.TypeRef{
+		result = append(result, resolveTypeRef(field, &ast.TypeRef{
 			Kind: iface.Kind,
 			Name: iface.Name,
 		}))
@@ -330,19 +350,19 @@ func resolveInterfaces(interfaces map[string]*ast.InterfaceNode) []interface{} {
 }
 
 // resolvePossibleTypes resolves possible types for an interface or union.
-func resolvePossibleTypes(qp *parser.QueryParser, field *ast.Field, node ast.Node) []interface{} {
+func resolvePossibleTypes(field *ast.Field, node ast.Node) []interface{} {
 	var result []interface{}
 	switch n := node.(type) {
 	case *ast.InterfaceNode:
 		for _, objectNode := range n.PossibleTypes {
-			result = append(result, resolveTypeRef(&ast.TypeRef{
+			result = append(result, resolveTypeRef(field, &ast.TypeRef{
 				Kind: objectNode.Kind,
 				Name: objectNode.Name,
 			}))
 		}
 	case *ast.UnionNode:
 		for _, objectNode := range n.PossibleTypes {
-			result = append(result, resolveTypeRef(&ast.TypeRef{
+			result = append(result, resolveTypeRef(field, &ast.TypeRef{
 				Kind: objectNode.Kind,
 				Name: objectNode.Name,
 			}))
@@ -380,7 +400,7 @@ func resolveDirectiveFields(field *ast.Field, directive *ast.DirectiveDefinition
 				case "description":
 					res[fragmentField.Name] = directive.GetDescription()
 				case "args":
-					res[fragmentField.Name] = resolveArguments(directive.Args)
+					res[fragmentField.Name] = resolveArguments(fragmentField, directive.Args)
 				case "locations":
 					res[fragmentField.Name] = directive.Locations
 				}
@@ -392,7 +412,7 @@ func resolveDirectiveFields(field *ast.Field, directive *ast.DirectiveDefinition
 			case "description":
 				res[cField.Name] = directive.GetDescription()
 			case "args":
-				res[cField.Name] = resolveArguments(directive.Args)
+				res[cField.Name] = resolveArguments(cField, directive.Args)
 			case "locations":
 				res[cField.Name] = directive.Locations
 			}

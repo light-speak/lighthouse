@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -58,12 +59,13 @@ func (o *Options) addFunc() {
 	o.Funcs["funcStart"] = UserCodeStart
 	o.Funcs["funcEnd"] = UserCodeEnd
 	o.Funcs["section"] = UserCodeSection
-	// o.Funcs["fields"] = ast.Fields
-	// o.Funcs["genModel"] = ast.Model
+	o.Funcs["fields"] = ast.Fields
+	o.Funcs["genModel"] = ast.Model
 	o.Funcs["add"] = Add
 	o.Funcs["sub"] = Sub
 	o.Funcs["mul"] = Mul
 	o.Funcs["div"] = Div
+	o.Funcs["buildRelation"] = ast.BuildRelation
 }
 
 func Render(options *Options) error {

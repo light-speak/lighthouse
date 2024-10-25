@@ -9,7 +9,7 @@ import (
 )
 
 func TestReadGraphQLFile(t *testing.T) {
-	l, err := parser.ReadGraphQLFile("base.graphql")
+	l, err := parser.ReadGraphQLFile("demo.graphql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,10 +57,16 @@ func TestParseOperation(t *testing.T) {
 	}
 
 	qp := p.NewQueryParser(nl)
+	qp.Variables = make(map[string]any)
+	qp.Variables["$id"] = "1"
+	qp.Variables["$test"] = "1"
+
+	// log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children)
+	// log.Debug().Msgf("result: %+v", qp.Fields["getUser"].Children["result"].Children)
+	// log.Debug().Msgf("user: %+v", qp.Fields["getUser"].Children["result"].Children["User"].Children)
+	log.Info().Msgf("qp: %+v", qp.Parser.NodeStore.Objects["Query"].Fields["getUser"].Args["id"].Type.OfType)
 	err = qp.Validate(p.NodeStore)
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children["name"])
-	// log.Debug().Msgf("qp: %+v", qp.Fields["getUser"].Children["result"].Children["User"])
 }

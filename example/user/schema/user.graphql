@@ -1,11 +1,12 @@
 "test user"
 type User implements HasName @key(fields: "id") @model {
   name: String! @index
-  posts: [Post!]! @paginate
+  posts: [Post!]!
 }
 
 extend type Query {
   users: [User!]! @paginate
+  user(id: ID!): User! @first
 }
 
 interface Userable {

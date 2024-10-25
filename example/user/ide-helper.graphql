@@ -22,3 +22,4 @@ directive @defaultInt(value: Int!) on FIELD_DEFINITION
 directive @unique on FIELD_DEFINITION
 directive @model(name: String) on OBJECT
 directive @softDeleteModel(name: String) on OBJECT
+directive @deprecated(reason: String) on FIELD_DEFINITION

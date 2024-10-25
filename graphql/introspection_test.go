@@ -9,7 +9,7 @@ import (
 )
 
 func TestIntrospectionQuery(t *testing.T) {
-	_, err := ParserSchema([]string{"base.graphql", "demo.graphql"})
+	_, err := ParserSchema([]string{"demo.graphql"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestIntrospectionQuery(t *testing.T) {
 
 	res := map[string]interface{}{}
 	for _, field := range qp.Fields {
-		res[field.Name], err = ResolveIntrospectionSchema(qp, field)
+		res[field.Name], err = ResolveSchemaFields(qp, field)
 		if err != nil {
 			t.Fatal(err)
 		}
