@@ -1,74 +1,81 @@
 package excute
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
-	"github.com/light-speak/lighthouse/log"
+	"gorm.io/gorm"
 )
 
-func QuickExecute(field *ast.Field) (interface{}, error) {
+func QuickExecute(field *ast.Field) (interface{}, bool, error) {
 	paginate := ast.GetDirective("paginate", field.DefinitionDirectives)
 	if paginate != nil {
-		return executePaginate(field)
+		res, err := executePaginate(field)
+		return res, true, err
 	}
 	first := ast.GetDirective("first", field.DefinitionDirectives)
 	if first != nil {
-		return executeFirst(field)
+		res, err := executeFirst(field)
+		return res, true, err
 	}
 	create := ast.GetDirective("create", field.DefinitionDirectives)
 	if create != nil {
-		return nil, nil
+		return nil, false, nil
 	}
 	update := ast.GetDirective("update", field.DefinitionDirectives)
 	if update != nil {
-		return nil, nil
+		return nil, false, nil
 	}
 	delete := ast.GetDirective("delete", field.DefinitionDirectives)
 	if delete != nil {
-		return nil, nil
+		return nil, false, nil
 	}
 
-	return nil, nil
+	return nil, false, nil
 }
 
 var quickListMap = make(map[string]func() ([]map[string]interface{}, error))
 
-var quickFirstMap = make(map[string]func() (map[string]interface{}, error))
+var quickFirstMap = make(map[string]func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
 
 func AddQuickList(name string, fn func() ([]map[string]interface{}, error)) {
 	quickListMap[name] = fn
 }
 
-func AddQuickFirst(name string, fn func() (map[string]interface{}, error)) {
+func AddQuickFirst(name string, fn func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
 	quickFirstMap[name] = fn
 }
 
+func GetQuickFirst(name string) func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+	fn, ok := quickFirstMap[name]
+	if !ok {
+		return nil
+	}
+	return fn
+}
+
 func executeFirst(field *ast.Field) (interface{}, error) {
-	fn, ok := quickFirstMap[field.Name]
+	fn, ok := quickFirstMap[field.Type.GetGoName()]
 	if !ok {
 		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("field %s not found", field.Name),
+			Message:   fmt.Sprintf("field %s not found", field.Type.GetGoName()),
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
 
-	column, err := getColumn(field)
+	columns, err := getColumns(field)
 	if err != nil {
 		return nil, err
 	}
-	columnJson, err := json.Marshal(column)
-	if err != nil {
-		return nil, err
-	}
-	log.Error().Msgf("%s", columnJson)
 
-	d, err := fn()
+	d, err := fn(columns)
 	if err != nil {
 		return nil, err
+	}
+	if d == nil {
+		return nil, nil
 	}
 	data := make(map[string]interface{})
 	for _, child := range field.Children {
@@ -128,7 +135,7 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 	return v, nil
 }
 
-func getColumn(field *ast.Field) (map[string]interface{}, error) {
+func getColumns(field *ast.Field) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	if len(field.Children) == 0 {
 		return nil, nil
@@ -136,7 +143,7 @@ func getColumn(field *ast.Field) (map[string]interface{}, error) {
 	for _, child := range field.Children {
 		if child.IsFragment || child.IsUnion {
 			for _, c := range child.Children {
-				column, err := getColumn(c)
+				column, err := getColumns(c)
 				if err != nil {
 					return nil, err
 				}
@@ -145,7 +152,7 @@ func getColumn(field *ast.Field) (map[string]interface{}, error) {
 		} else if child.Children != nil {
 			cRes := make(map[string]interface{})
 			for _, c := range child.Children {
-				column, err := getColumn(c)
+				column, err := getColumns(c)
 				if err != nil {
 					return nil, err
 				}

@@ -1,9 +1,9 @@
 package ast
 
-var fieldDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore) error)
+var fieldDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) error)
 var objectDirectiveMap = make(map[string]func(o *ObjectNode, d *Directive, store *NodeStore) error)
 
-func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeStore) error) {
+func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) error) {
 	fieldDirectiveMap[name] = fn
 }
 
@@ -11,10 +11,10 @@ func AddObjectDirective(name string, fn func(o *ObjectNode, d *Directive, store 
 	objectDirectiveMap[name] = fn
 }
 
-func (f *Field) ParseFieldDirectives(store *NodeStore) error {
+func (f *Field) ParseFieldDirectives(store *NodeStore, parent Node) error {
 	for _, directive := range f.Directives {
 		if fn, ok := fieldDirectiveMap[directive.Name]; ok {
-			if err := fn(f, directive, store); err != nil {
+			if err := fn(f, directive, store, parent); err != nil {
 				return err
 			}
 		}

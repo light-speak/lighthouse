@@ -4,20 +4,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
 var excludeFieldName = map[string]struct{}{
 	"id":         {},
-	"createdAt":  {},
-	"updatedAt":  {},
-	"deletedAt":  {},
+	"created_at": {},
+	"updated_at": {},
+	"deleted_at": {},
 	"__typename": {},
 }
 
 func Fields(fields map[string]*Field) string {
 	var lines []string
 	for _, field := range fields {
+		log.Warn().Msgf("field: %+v", field)
 		if _, ok := excludeFieldName[field.Name]; ok {
 			continue
 		}
@@ -97,5 +99,5 @@ func Model(typeNode *ObjectNode) string {
 }
 
 func BuildRelation(field *Field) string {
-	return fmt.Sprintf("{Relation: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Relation, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
+	return fmt.Sprintf("{Relation: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Name, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
 }

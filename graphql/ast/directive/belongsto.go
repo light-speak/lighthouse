@@ -5,14 +5,14 @@ import (
 	"github.com/light-speak/lighthouse/utils"
 )
 
-func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore) error {
+func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
 	relation := &ast.Relation{
 		RelationType: ast.RelationTypeBelongsTo,
 	}
 	if relationName := d.GetArg("relation"); relationName != nil {
-		relation.Relation = relationName.Value.(string)
+		relation.Name = relationName.Value.(string)
 	} else {
-		relation.Relation = utils.LcFirst(f.Name)
+		relation.Name = utils.LcFirst(f.Name)
 	}
 	if reference := d.GetArg("reference"); reference != nil {
 		relation.Reference = reference.Value.(string)

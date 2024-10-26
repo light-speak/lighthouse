@@ -2,7 +2,7 @@ package directive
 
 import "github.com/light-speak/lighthouse/graphql/ast"
 
-func handlerDeprecated(f *ast.Field, d *ast.Directive, store *ast.NodeStore) error {
+func handlerDeprecated(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
 	reason := d.GetArg("reason")
 	if reason != nil {
 		f.IsDeprecated = true

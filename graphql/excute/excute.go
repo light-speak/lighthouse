@@ -29,7 +29,7 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
-	res := map[string]interface{}{}
+	res := make(map[string]interface{})
 
 	var funMap map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)
 	switch qp.OperationType {
@@ -47,7 +47,7 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 	}
 
 	for _, field := range qp.Fields {
-		quickRes, err := QuickExecute(field)
+		quickRes, isQuick, err := QuickExecute(field)
 		if err != nil {
 			return nil, &errors.GraphQLError{
 				Message:   err.Error(),
@@ -55,7 +55,23 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 			}
 		}
 		if quickRes != nil {
+			if err != nil {
+				return nil, &errors.GraphQLError{
+					Message:   err.Error(),
+					Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+				}
+			}
 			res[field.Name] = quickRes
+			continue
+		}
+		if isQuick {
+			if field.Type.Kind == ast.KindNonNull {
+				return nil, &errors.GraphQLError{
+					Message:   "field is not nullable",
+					Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+				}
+			}
+			res[field.Name] = nil
 			continue
 		}
 		queryFunc, ok := funMap[field.Name]

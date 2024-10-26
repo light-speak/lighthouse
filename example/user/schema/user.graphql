@@ -7,6 +7,7 @@ type User implements HasName @key(fields: "id") @model {
 extend type Query {
   users: [User!]! @paginate
   user(id: ID!): User! @first
+  post(id: ID!): Post! @first
 }
 
 interface Userable {

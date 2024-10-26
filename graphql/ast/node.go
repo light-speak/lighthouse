@@ -306,7 +306,7 @@ const (
 )
 
 type Relation struct {
-	Relation     string       `json:"relation"`
+	Name         string       `json:"relation"`
 	ForeignKey   string       `json:"foreignKey"`
 	Reference    string       `json:"reference"`
 	RelationType RelationType `json:"relationType"`
@@ -340,7 +340,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 	if err := ValidateDirectives(f.Name, f.Directives, store, location); err != nil {
 		return err
 	}
-	if err := f.ParseFieldDirectives(store); err != nil {
+	if err := f.ParseFieldDirectives(store, objectNode); err != nil {
 		return err
 	}
 
@@ -433,6 +433,17 @@ type TypeRef struct {
 	Name     string   `json:"name"`
 	OfType   *TypeRef `json:"ofType"`
 	TypeNode Node     `json:"-"`
+}
+
+func (t *TypeRef) GetGoName() string {
+	switch t.Kind {
+	case KindList:
+		return t.OfType.GetGoName()
+	case KindNonNull:
+		return t.OfType.GetGoName()
+	default:
+		return utils.UcFirst(t.Name)
+	}
 }
 
 func (t *TypeRef) GetGoType(NonNull bool) string {
@@ -547,7 +558,6 @@ func (t *TypeRef) validateScalarValue(v interface{}) error {
 			}
 		}
 	default:
-		// For custom scalar types, we might need a more sophisticated validation
 		return nil
 	}
 	return nil

@@ -6,13 +6,13 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
-func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore) error {
+func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
 	relation := &ast.Relation{
-		Relation:     d.GetArg("relation").Value.(string),
+		Name:         d.GetArg("relation").Value.(string),
 		RelationType: ast.RelationTypeHasMany,
 	}
 	if relationName := d.GetArg("relation"); relationName != nil {
-		relation.Relation = relationName.Value.(string)
+		relation.Name = relationName.Value.(string)
 	} else {
 		return fmt.Errorf("relation name is required for hasMany directive")
 	}
