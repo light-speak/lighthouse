@@ -30,9 +30,6 @@ func (p *QueryParser) Validate(store *ast.NodeStore) error {
 			}
 		}
 		arg.Value = p.Variables[arg.Name]
-		if err := arg.Validate(store, nil, nil); err != nil {
-			return err
-		}
 	}
 	for _, field := range p.Fields {
 		obj := p.Parser.NodeStore.Objects[p.OperationType]

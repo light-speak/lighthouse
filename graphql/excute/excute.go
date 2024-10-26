@@ -55,12 +55,6 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 			}
 		}
 		if quickRes != nil {
-			if err != nil {
-				return nil, &errors.GraphQLError{
-					Message:   err.Error(),
-					Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
-				}
-			}
 			res[field.Name] = quickRes
 			continue
 		}

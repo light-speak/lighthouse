@@ -13,16 +13,20 @@ type User struct {
 func (*User) IsModel() bool { return true }
 func (*User) IsHasName() bool { return true }
 func (this *User) GetName() string { return this.Name }
+func (*User) TableName() string { return "users" }
+func (*User) TypeName() string { return "user" }
 
 type Post struct {
   model.ModelSoftDelete
+  UserId int64 `json:"user_id" `
+  Title string `json:"title" gorm:"index" `
   Content string `json:"content" `
   User User `json:"user" `
-  Title string `json:"title" gorm:"index" `
-  User_id int64 `json:"user_id" `
 }
 
 func (*Post) IsModel() bool { return true }
+func (*Post) TableName() string { return "posts" }
+func (*Post) TypeName() string { return "post" }
 
 
 func Migrate() error {

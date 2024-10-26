@@ -9,7 +9,12 @@ import (
 )
 
 func Generate() error {
-	err := LoadSchema()
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	err = LoadSchema()
 	if err != nil {
 		log.Error().Msgf("Failed to load schema: %v", err)
 		return err
@@ -18,37 +23,32 @@ func Generate() error {
 	nodes := p.NodeStore.Nodes
 
 	typeNodes := []*ast.ObjectNode{}
-	responseNodes := []*ast.ObjectNode{}
 
 	for _, node := range nodes {
+		if isInternalType(node.GetName()) {
+			continue
+		}
 		switch node.GetKind() {
 		case ast.KindObject:
 			objectNode, _ := node.(*ast.ObjectNode)
-			if !objectNode.IsModel {
-				responseNodes = append(responseNodes, objectNode)
-			} else {
+			if objectNode.IsModel {
 				typeNodes = append(typeNodes, objectNode)
 			}
 		}
 	}
 
-	currentPath, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
 	if err := generate.GenObject(typeNodes, currentPath); err != nil {
 		return err
 	}
-	// if err := generate.GenResponse(responseNodes, currentPath); err != nil {
-	// 	return err
-	// }
-	// if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
-	// 	return err
-	// }
-	// if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
-	// 	return err
-	// }
+	if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenRepo(typeNodes, currentPath); err != nil {
+		return err
+	}
 
 	return nil
 }

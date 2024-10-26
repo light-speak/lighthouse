@@ -55,6 +55,14 @@ func addPaginationResponseType(f *ast.Field, store *ast.NodeStore) {
 			},
 		},
 	})
+	f.Type = &ast.TypeRef{
+		Kind:     ast.KindNonNull,
+		OfType: &ast.TypeRef{
+			Kind:     ast.KindObject,
+			Name:     responseName,
+			TypeNode: store.Objects[responseName],
+		},
+	}
 }
 
 // addPaginationArguments adds a pagination arguments to the field

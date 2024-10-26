@@ -111,3 +111,23 @@ func GenInput(nodes map[string]*ast.InputObjectNode, path string) error {
 	}
 	return template.Render(options)
 }
+
+func GenRepo(nodes []*ast.ObjectNode, path string) error {
+	repoTemplate, err := modelFs.ReadFile("tpl/repo.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "repo"),
+		Template:     string(repoTemplate),
+		FileName:     "repo",
+		FileExt:      "go",
+		Package:      "repo",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Nodes": nodes,
+		},
+	}
+	return template.Render(options)
+}

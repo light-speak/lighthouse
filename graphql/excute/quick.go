@@ -6,7 +6,7 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
-	"gorm.io/gorm"
+	"github.com/light-speak/lighthouse/log"
 )
 
 func QuickExecute(field *ast.Field) (interface{}, bool, error) {
@@ -36,40 +36,18 @@ func QuickExecute(field *ast.Field) (interface{}, bool, error) {
 	return nil, false, nil
 }
 
-var quickListMap = make(map[string]func() ([]map[string]interface{}, error))
-
-var quickFirstMap = make(map[string]func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
-
-func AddQuickList(name string, fn func() ([]map[string]interface{}, error)) {
-	quickListMap[name] = fn
-}
-
-func AddQuickFirst(name string, fn func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
-	quickFirstMap[name] = fn
-}
-
-func GetQuickFirst(name string) func(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-	fn, ok := quickFirstMap[name]
-	if !ok {
-		return nil
-	}
-	return fn
-}
-
 func executeFirst(field *ast.Field) (interface{}, error) {
-	fn, ok := quickFirstMap[field.Type.GetGoName()]
-	if !ok {
+	fn := model.GetQuickFirst(field.Type.GetGoName())
+	if fn == nil {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Type.GetGoName()),
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
-
 	columns, err := getColumns(field)
 	if err != nil {
 		return nil, err
 	}
-
 	d, err := fn(columns)
 	if err != nil {
 		return nil, err
@@ -92,7 +70,14 @@ func executePaginate(field *ast.Field) (interface{}, error) {
 	res := make(map[string]interface{})
 	info := &model.PaginateInfo{}
 	res["paginateInfo"] = info
-	datas, err := quickListMap[field.Name]()
+	fn := model.GetQuickList(field.Type.GetGoName())
+	if fn == nil {
+		return nil, &errors.GraphQLError{
+			Message:   fmt.Sprintf("field %s not found", field.Name),
+			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+		}
+	}
+	datas, err := fn()
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +116,11 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 			cv[child.Name] = c
 		}
 		return cv, nil
+	}
+	v, err := ValidateValue(field, v, false)
+	log.Error().Msgf("mergeData %v", v)
+	if err != nil {
+		return nil, err
 	}
 	return v, nil
 }

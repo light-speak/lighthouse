@@ -96,16 +96,16 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 			},
 		},
 	}
+	if err := o.ParseObjectDirectives(store); err != nil {
+		return err
+	}
+
 	for _, field := range o.Fields {
 		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
 		}
 	}
 	if err := ValidateDirectives(o.GetName(), o.GetDirectives(), store, LocationObject); err != nil {
-		return err
-	}
-
-	if err := o.ParseObjectDirectives(store); err != nil {
 		return err
 	}
 
@@ -261,20 +261,13 @@ func (s *ScalarNode) Validate(store *NodeStore) error {
 	if err := ValidateDirectives(s.GetName(), s.GetDirectives(), store, LocationScalar); err != nil {
 		return err
 	}
-	s.ScalarType = store.ScalarTypes[s.GetName()]
-	if s.ScalarType == nil {
-		return &errors.ValidateError{
-			NodeName: s.GetName(),
-			Message:  fmt.Sprintf("scalar %s not found", s.GetName()),
-		}
-	}
 	return nil
 }
 
 type ScalarType interface {
 	ParseValue(v string) (interface{}, error)
 	Serialize(v interface{}) (string, error)
-	ParseLiteral(v Value) (interface{}, error)
+	ParseLiteral(v interface{}) (interface{}, error)
 	GoType() string
 }
 
@@ -359,6 +352,13 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		} else {
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
+				realType := f.Type.GetRealType()
+				if realType.TypeNode == nil || (realType.TypeNode.GetKind() == KindScalar && realType.TypeNode.(*ScalarNode).ScalarType == nil) {
+					return &errors.ValidateError{
+						NodeName: f.Name,
+						Message:  "field type must be scalar type",
+					}
+				}
 				// merge
 				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
 			} else {
@@ -379,6 +379,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 			}
 		}
 	}
+
 	if f.IsUnion {
 		if f.Type.TypeNode.GetKind() != KindObject {
 			return &errors.ValidateError{
@@ -446,6 +447,16 @@ func (t *TypeRef) GetGoName() string {
 	}
 }
 
+func (t *TypeRef) GetRealType() *TypeRef {
+	if t.Kind == KindNonNull {
+		return t.OfType.GetRealType()
+	}
+	if t.Kind == KindList {
+		return t.OfType.GetRealType()
+	}
+	return t
+}
+
 func (t *TypeRef) GetGoType(NonNull bool) string {
 	if t == nil {
 		return "interface{}"
@@ -506,59 +517,45 @@ func (t *TypeRef) Validate(store *NodeStore) error {
 		} else {
 			t.Kind = node.GetKind()
 			t.TypeNode = node
+			if t.Kind == KindScalar && t.TypeNode.(*ScalarNode).ScalarType == nil {
+				t.TypeNode.(*ScalarNode).ScalarType = store.ScalarTypes[t.Name]
+			}
 		}
 	}
 	return nil
 }
 
-func (t *TypeRef) ValidateValue(v interface{}) error {
+func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) error {
 	switch t.Kind {
 	case KindScalar:
-		return t.validateScalarValue(v)
+		return t.validateScalarValue(v, isVariable)
 	case KindEnum:
 		return t.validateEnumValue(v)
 	case KindObject:
-		return t.validateObjectValue(v)
+		return t.validateObjectValue(v, isVariable)
 	case KindInputObject:
-		return t.validateInputObjectValue(v)
+		return t.validateInputObjectValue(v, isVariable)
 	case KindList:
-		return t.validateListValue(v)
+		return t.validateListValue(v, isVariable)
 	case KindNonNull:
 		if v == nil {
 			return fmt.Errorf("value cannot be nil for non-null type %s", t.Name)
 		}
-		return t.OfType.ValidateValue(v)
+		return t.OfType.ValidateValue(v, isVariable)
 	default:
 		return fmt.Errorf("unsupported type kind: %s", t.Kind)
 	}
 }
 
-func (t *TypeRef) validateScalarValue(v interface{}) error {
-	switch t.Name {
-	case "Int":
-		if _, ok := v.(int64); !ok {
-			return fmt.Errorf("expected Int64, got %T", v)
-		}
-	case "Float":
-		if _, ok := v.(float64); !ok {
-			return fmt.Errorf("expected Float, got %T", v)
-		}
-	case "String":
-		if _, ok := v.(string); !ok {
-			return fmt.Errorf("expected String, got %T", v)
-		}
-	case "Boolean":
-		if _, ok := v.(bool); !ok {
-			return fmt.Errorf("expected Boolean, got %T", v)
-		}
-	case "ID":
-		if _, ok := v.(string); !ok {
-			if _, ok := v.(int); !ok {
-				return fmt.Errorf("expected ID (String or Int), got %T", v)
-			}
-		}
-	default:
-		return nil
+func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) error {
+	var err error
+	if isVariable {
+		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseValue(v.(string))
+	} else {
+		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseLiteral(v)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -583,7 +580,7 @@ func (t *TypeRef) validateEnumValue(v interface{}) error {
 	return fmt.Errorf("invalid enum value: %s", strValue)
 }
 
-func (t *TypeRef) validateObjectValue(v interface{}) error {
+func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) error {
 	objValue, ok := v.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("expected object value to be map[string]interface{}, got %T", v)
@@ -600,7 +597,7 @@ func (t *TypeRef) validateObjectValue(v interface{}) error {
 			return fmt.Errorf("required field %s is missing", field.Name)
 		}
 		if exists {
-			if err := field.Type.ValidateValue(fieldValue); err != nil {
+			if err := field.Type.ValidateValue(fieldValue, isVariable); err != nil {
 				return fmt.Errorf("invalid value for field %s: %v", field.Name, err)
 			}
 		}
@@ -609,7 +606,7 @@ func (t *TypeRef) validateObjectValue(v interface{}) error {
 	return nil
 }
 
-func (t *TypeRef) validateInputObjectValue(v interface{}) error {
+func (t *TypeRef) validateInputObjectValue(v interface{}, isVariable bool) error {
 	inputObjValue, ok := v.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("expected input object value to be map[string]interface{}, got %T", v)
@@ -626,7 +623,7 @@ func (t *TypeRef) validateInputObjectValue(v interface{}) error {
 			return fmt.Errorf("required input field %s is missing", field.Name)
 		}
 		if exists {
-			if err := field.Type.ValidateValue(fieldValue); err != nil {
+			if err := field.Type.ValidateValue(fieldValue, isVariable); err != nil {
 				return fmt.Errorf("invalid value for input field %s: %v", field.Name, err)
 			}
 		}
@@ -635,14 +632,14 @@ func (t *TypeRef) validateInputObjectValue(v interface{}) error {
 	return nil
 }
 
-func (t *TypeRef) validateListValue(v interface{}) error {
+func (t *TypeRef) validateListValue(v interface{}, isVariable bool) error {
 	list, ok := v.([]interface{})
 	if !ok {
 		return fmt.Errorf("expected list, got %T", v)
 	}
 
 	for i, item := range list {
-		if err := t.OfType.ValidateValue(item); err != nil {
+		if err := t.OfType.ValidateValue(item, isVariable); err != nil {
 			return fmt.Errorf("invalid value for list item at index %d: %v", i, err)
 		}
 	}
@@ -916,13 +913,18 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 	if err := a.Type.Validate(store); err != nil {
 		return err
 	}
-	if a.Value != nil {
-		if err := a.Type.ValidateValue(a.Value); err != nil {
+	if a.Value != nil && !a.IsReference {
+		if err := a.Type.ValidateValue(a.Value, false); err != nil {
 			return err
 		}
 	}
-	if a.DefaultValue != nil {
-		if err := a.Type.ValidateValue(a.DefaultValue); err != nil {
+	if a.DefaultValue != nil && !a.IsReference {
+		if err := a.Type.ValidateValue(a.DefaultValue, false); err != nil {
+			return err
+		}
+	}
+	if a.Value != nil && a.IsReference {
+		if err := a.Type.ValidateValue(a.Value, true); err != nil {
 			return err
 		}
 	}
