@@ -1,103 +1,47 @@
 package excute
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/graphql/model"
-	"github.com/light-speak/lighthouse/log"
+	"gorm.io/gorm"
 )
 
-func QuickExecute(field *ast.Field) (interface{}, bool, error) {
-	paginate := ast.GetDirective("paginate", field.DefinitionDirectives)
-	if paginate != nil {
-		res, err := executePaginate(field)
-		return res, true, err
+var quickExcuteMap = map[string]func(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, error){
+	"find":     executeFind,
+	"first":    executeFirst,
+	"paginate": executePaginate,
+	// TODO: create, update, delete,
+}
+
+func QuickExecute(ctx context.Context, field *ast.Field) (interface{}, bool, error) {
+	scopes := make([]func(db *gorm.DB) *gorm.DB, 0)
+	for _, arg := range field.DefinitionArgs {
+		if len(arg.Directives) > 0 {
+			scope, err := executeFilter(ctx, arg, field.Args[arg.Name].Value)
+			if err != nil {
+				return nil, false, err
+			}
+			scopes = append(scopes, scope)
+		}
 	}
-	first := ast.GetDirective("first", field.DefinitionDirectives)
-	if first != nil {
-		res, err := executeFirst(field)
-		return res, true, err
-	}
-	create := ast.GetDirective("create", field.DefinitionDirectives)
-	if create != nil {
-		return nil, false, nil
-	}
-	update := ast.GetDirective("update", field.DefinitionDirectives)
-	if update != nil {
-		return nil, false, nil
-	}
-	delete := ast.GetDirective("delete", field.DefinitionDirectives)
-	if delete != nil {
-		return nil, false, nil
+	for _, directive := range field.DefinitionDirectives {
+		if fn, ok := quickExcuteMap[directive.Name]; ok {
+			res, err := fn(ctx, field, scopes...)
+			if err != nil {
+				return nil, true, err
+			}
+			if err := field.Type.ValidateValue(res, true); err != nil {
+				return nil, true, err
+			}
+			return res, true, nil
+		}
 	}
 
 	return nil, false, nil
 }
-
-func executeFirst(field *ast.Field) (interface{}, error) {
-	fn := model.GetQuickFirst(field.Type.GetGoName())
-	if fn == nil {
-		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("field %s not found", field.Type.GetGoName()),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
-		}
-	}
-	columns, err := getColumns(field)
-	if err != nil {
-		return nil, err
-	}
-	d, err := fn(columns)
-	if err != nil {
-		return nil, err
-	}
-	if d == nil {
-		return nil, nil
-	}
-	data := make(map[string]interface{})
-	for _, child := range field.Children {
-		v, err := mergeData(child, d)
-		data[child.Name] = v
-		if err != nil {
-			return nil, err
-		}
-	}
-	return data, nil
-}
-
-func executePaginate(field *ast.Field) (interface{}, error) {
-	res := make(map[string]interface{})
-	info := &model.PaginateInfo{}
-	res["paginateInfo"] = info
-	fn := model.GetQuickList(field.Type.GetGoName())
-	if fn == nil {
-		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("field %s not found", field.Name),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
-		}
-	}
-	datas, err := fn()
-	if err != nil {
-		return nil, err
-	}
-	values := make([]map[string]interface{}, 0)
-	for _, data := range datas {
-		d := make(map[string]interface{}, 0)
-		for _, child := range field.Children {
-			v, err := mergeData(child, data)
-			d[child.Name] = v
-			if err != nil {
-				return nil, err
-			}
-		}
-		values = append(values, d)
-	}
-	res["data"] = values
-
-	return res, nil
-}
-
 func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, error) {
 	v, ok := datas[field.Name]
 	if !ok {
@@ -106,10 +50,43 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
+	if v == nil {
+		return nil, nil
+	}
+
+	typeRef := field.Type
+	if typeRef.Kind == ast.KindNonNull {
+		typeRef = typeRef.OfType
+	}
+
+	if typeRef.Kind == ast.KindList {
+		vList, ok := v.([]map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("expected list but got %T", v)
+		}
+
+		result := make([]interface{}, len(vList))
+		for i, item := range vList {
+			listField := &ast.Field{
+				Name:     field.Name,
+				Children: field.Children,
+				Type:     typeRef.OfType,
+			}
+
+			merged, err := mergeData(listField, map[string]interface{}{field.Name: item})
+			if err != nil {
+				return nil, err
+			}
+			result[i] = merged
+		}
+		return result, nil
+	}
+
 	if field.Children != nil {
 		cv := make(map[string]interface{})
+		vMap := v.(map[string]interface{})
 		for _, child := range field.Children {
-			c, err := mergeData(child, v.(map[string]interface{}))
+			c, err := mergeData(child, vMap)
 			if err != nil {
 				return nil, err
 			}
@@ -117,8 +94,8 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 		}
 		return cv, nil
 	}
+
 	v, err := ValidateValue(field, v, false)
-	log.Error().Msgf("mergeData %v", v)
 	if err != nil {
 		return nil, err
 	}

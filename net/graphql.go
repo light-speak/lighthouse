@@ -50,7 +50,7 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := excute.ExecuteQuery(request.Query, request.Variables)
+	data, err := excute.ExecuteQuery(r.Context(), request.Query, request.Variables)
 	response := GraphQLResponse{
 		Data: data,
 	}

@@ -82,6 +82,8 @@ type ObjectNode struct {
 	Fields         map[string]*Field `json:"fields"`
 	InterfaceNames []string          `json:"-"`
 	IsModel        bool              `json:"-"`
+
+	Table string `json:"-"`
 }
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
@@ -286,8 +288,9 @@ type Field struct {
 	IsUnion    bool              `json:"-"`
 	Fragment   *Fragment         `json:"-"`
 
-	DefinitionDirectives []*Directive `json:"-"`
-	Relation             *Relation    `json:"-"`
+	DefinitionDirectives []*Directive         `json:"-"`
+	DefinitionArgs       map[string]*Argument `json:"-"`
+	Relation             *Relation            `json:"-"`
 }
 
 type RelationType string
@@ -299,7 +302,7 @@ const (
 )
 
 type Relation struct {
-	Name         string       `json:"relation"`
+	Name         string       `json:"name"`
 	ForeignKey   string       `json:"foreignKey"`
 	Reference    string       `json:"reference"`
 	RelationType RelationType `json:"relationType"`
@@ -361,6 +364,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				}
 				// merge
 				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
+				f.DefinitionArgs = objectNode.GetFields()[f.Name].Args
 			} else {
 				// if the field is not found, it means the field is a fragment field
 				// we need to validate the fragment field
@@ -583,7 +587,7 @@ func (t *TypeRef) validateEnumValue(v interface{}) error {
 func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) error {
 	objValue, ok := v.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("expected object value to be map[string]interface{}, got %T", v)
+		return fmt.Errorf("expected object value to be %v,you need return map[string]interface{}, got %T", t.Name, v)
 	}
 
 	objNode, ok := t.TypeNode.(*ObjectNode)
@@ -593,7 +597,7 @@ func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) error {
 
 	for _, field := range objNode.Fields {
 		fieldValue, exists := objValue[field.Name]
-		if !exists && field.Type.Kind == KindNonNull {
+		if !exists && field.Type.Kind == KindNonNull && !isVariable {
 			return fmt.Errorf("required field %s is missing", field.Name)
 		}
 		if exists {
@@ -633,8 +637,13 @@ func (t *TypeRef) validateInputObjectValue(v interface{}, isVariable bool) error
 }
 
 func (t *TypeRef) validateListValue(v interface{}, isVariable bool) error {
-	list, ok := v.([]interface{})
-	if !ok {
+	var list []interface{}
+	switch v := v.(type) {
+	case []interface{}:
+		list = v
+	case map[string]interface{}:
+		list = []interface{}{v}
+	default:
 		return fmt.Errorf("expected list, got %T", v)
 	}
 

@@ -74,27 +74,6 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
-	// paginate
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "paginate", Description: utils.StrPtr("The response will return paginate information and a list. The field must be in the form of a list."),
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-		Args: map[string]*ast.Argument{
-			"scopes": {
-				Name: "scopes",
-				Type: &ast.TypeRef{
-					Kind: ast.KindScalar,
-					Name: "String",
-					OfType: &ast.TypeRef{
-						Kind: ast.KindList,
-						OfType: &ast.TypeRef{
-							Kind: ast.KindScalar,
-							Name: "String",
-						},
-					},
-				},
-			},
-		},
-	})
 	// external
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name:      "external",
@@ -132,15 +111,271 @@ func (p *Parser) addReservedDirective() {
 		Name:      "extends",
 		Locations: []ast.Location{ast.LocationObject},
 	})
+
+	p.addFilterDirective()
+	p.addReturnDirective()
+	p.addRelationDirective()
+	p.addObjectDirective()
+}
+
+func (p *Parser) addReturnDirective() {
+	// first
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "first", Description: utils.StrPtr("The response will return only one item."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"scopes": {
+				Name: "scopes",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+					OfType: &ast.TypeRef{
+						Kind: ast.KindList,
+						OfType: &ast.TypeRef{
+							Kind: ast.KindScalar,
+							Name: "String",
+						},
+					},
+				},
+			},
+		},
+	})
+	// paginate
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "paginate", Description: utils.StrPtr("The response will return paginate information and a list. The field must be in the form of a list."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"scopes": {
+				Name: "scopes",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+					OfType: &ast.TypeRef{
+						Kind: ast.KindList,
+						OfType: &ast.TypeRef{
+							Kind: ast.KindScalar,
+							Name: "String",
+						},
+					},
+				},
+			},
+		},
+	})
+	// find
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "find", Description: utils.StrPtr("The response will return only one item."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"scopes": {
+				Name: "scopes",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+					OfType: &ast.TypeRef{
+						Kind: ast.KindList,
+						OfType: &ast.TypeRef{
+							Kind: ast.KindScalar,
+							Name: "String",
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
+func (p *Parser) addFilterDirective() {
+	// eq
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "eq", Description: utils.StrPtr("The field is equal to the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// neq
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "neq", Description: utils.StrPtr("The field is not equal to the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// gt
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "gt", Description: utils.StrPtr("The field is greater than the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// gte
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "gte", Description: utils.StrPtr("The field is greater than or equal to the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// lt
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "lt", Description: utils.StrPtr("The field is less than the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// lte
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "lte", Description: utils.StrPtr("The field is less than or equal to the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// in
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "in", Description: utils.StrPtr("The field is in the value list."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// notIn
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "notIn", Description: utils.StrPtr("The field is not in the value list."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+	// like
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "like", Description: utils.StrPtr("The field is like the value."),
+		Locations: []ast.Location{ast.LocationArgumentDefinition},
+		Args: map[string]*ast.Argument{
+			"field": {
+				Name: "field",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "String",
+				},
+			},
+		},
+	})
+}
+
+func (p *Parser) addRelationDirective() {
+	// belongsTo
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "belongsTo", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"foreignKey": {
+				Name: "foreignKey",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+	// hasMany
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "hasMany", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"foreignKey": {
+				Name: "foreignKey",
+				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+}
+
+func (p *Parser) addObjectDirective() {
 	// softDeleteModel
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "softDeleteModel", Description: utils.StrPtr("The model is soft delete."),
 		Locations: []ast.Location{ast.LocationObject},
+		Args: map[string]*ast.Argument{
+			"table": {
+				Name: "table",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
 	})
 	// model
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
 		Name: "model", Description: utils.StrPtr("The model."),
 		Locations: []ast.Location{ast.LocationObject},
+		Args: map[string]*ast.Argument{
+			"table": {
+				Name: "table",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
 	})
 	// tag
 	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
@@ -197,31 +432,4 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
-	// first
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "first", Description: utils.StrPtr("The response will return only one item."),
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-	})
-	// belongsTo
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name: "belongsTo", Description: utils.StrPtr("The field is a relationship with another model."),
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-		Args: map[string]*ast.Argument{
-			"relation": {
-				Name: "relation",
-				Type: &ast.TypeRef{
-					Kind: ast.KindScalar,
-					Name: "String",
-				},
-			},
-			"foreignKey": {
-				Name: "foreignKey",
-				Type: &ast.TypeRef{
-					Kind: ast.KindScalar,
-					Name: "String",
-				},
-			},
-		},
-	})
-
 }

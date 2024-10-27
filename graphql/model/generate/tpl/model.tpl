@@ -7,7 +7,7 @@ func (*{{ $name | ucFirst }}) Is{{ .Name | ucFirst }}() bool { return true }
 func (this *{{ $name | ucFirst }}) Get{{ .Name | ucFirst }}() {{ false | .Type.GetGoType }} { return this.{{ .Name | ucFirst }} }
 {{- end }}
 {{- end }}
-func (*{{ $name | ucFirst }}) TableName() string { return "{{ .Name | pluralize | lcFirst }}" }
+func (*{{ $name | ucFirst }}) TableName() string { return "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ .Name | pluralize | lcFirst }}{{ end }}" }
 func (*{{ $name | ucFirst }}) TypeName() string { return "{{ .Name | lcFirst }}" }
 {{ end }}
 

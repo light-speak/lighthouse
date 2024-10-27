@@ -18,10 +18,10 @@ func (*User) TypeName() string { return "user" }
 
 type Post struct {
   model.ModelSoftDelete
-  UserId int64 `json:"user_id" `
-  Title string `json:"title" gorm:"index" `
   Content string `json:"content" `
+  UserId int64 `json:"user_id" `
   User User `json:"user" `
+  Title string `gorm:"index" json:"title" `
 }
 
 func (*Post) IsModel() bool { return true }

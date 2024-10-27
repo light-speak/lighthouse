@@ -1,6 +1,7 @@
 package excute
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
@@ -10,7 +11,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
 
-func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
+func ExecuteQuery(ctx context.Context, query string, variables map[string]any) (interface{}, error) {
 	p := graphql.GetParser()
 	qp := p.NewQueryParser(lexer.NewLexer([]*lexer.Content{
 		{
@@ -47,7 +48,7 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 	}
 
 	for _, field := range qp.Fields {
-		quickRes, isQuick, err := QuickExecute(field)
+		quickRes, isQuick, err := QuickExecute(ctx, field)
 		if err != nil {
 			return nil, &errors.GraphQLError{
 				Message:   err.Error(),

@@ -2,105 +2,178 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/graphql/ast"
-  "github.com/light-speak/lighthouse/graphql/model"
-  "gorm.io/gorm"
+  "github.com/light-speak/lighthouse/utils"
   "user/models"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/graphql/ast"
+  "gorm.io/gorm"
+  "context"
+  "sync"
 )
 
-func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {},"updated_at": {},}}
+func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"updated_at": {},}}
+func Load__User(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+  return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
+}
 func Query__User(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.User{}).Scopes(scopes...)
 }
-func Fields__User(user *models.User, key string) (interface{}, error) {
-  switch key {
-    case "created_at": 
-      return user.CreatedAt, nil
-    case "id": 
-      return user.Id, nil
-    case "name": 
-      return user.Name, nil
-    case "posts": 
-      return user.Posts, nil
-    case "updated_at": 
-      return user.UpdatedAt, nil
-  }
-  return nil, nil
-} 
-func First__User(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__User(ctx context.Context, columns map[string]interface{},data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+  var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__User())
-  user := &models.User{}
-  err := Query__User().Scopes(scopes...).Select(selectColumns).First(user).Error
-  if err != nil {
-    return nil, err
-  }
-  res, err := model.StructToMap(user)
-  if err != nil {
-    return nil, err
-  }
-  for _, relation := range selectRelations {
-    fieldValue, err := Fields__User(user, relation.Relation.ForeignKey)
-    if err != nil {
-      return nil, err
-    }
-    res, err = model.FetchRelation(res, relation, fieldValue)
+  if data == nil {
+    data = make(map[string]interface{})
+    err = Query__User().Scopes(scopes...).Select(selectColumns).First(data).Error
     if err != nil {
       return nil, err
     }
   }
-  return res, nil
+  var wg sync.WaitGroup
+  errChan := make(chan error, len(selectRelations))
+  var mu sync.Mutex
+  
+  for key, relation := range selectRelations {
+    wg.Add(1)
+    go func(data map[string]interface{}, relation *model.SelectRelation)  {
+      defer wg.Done()
+      cData, err := model.FetchRelation(ctx, data, relation)
+      if err != nil {
+        errChan <- err
+      }
+      mu.Lock()
+      defer mu.Unlock()
+      data[key] = cData
+    }(data, relation) 
+  }
+  wg.Wait()
+  close(errChan)
+  for err := range errChan {
+    return nil, err
+  }
+  return data, nil
+}
+func List__User(ctx context.Context, columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+  selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__User())
+  var datas []map[string]interface{}
+  err := Query__User().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
+  if err != nil {
+    return nil, err
+  }
+  var wg sync.WaitGroup
+  errChan := make(chan error, len(datas)*len(selectRelations))
+  var mu sync.Mutex
+  
+  for _, data := range datas {
+    for key, relation := range selectRelations {
+      wg.Add(1)
+      go func(data map[string]interface{}, relation *model.SelectRelation)  {
+        defer wg.Done()
+        cData, err := model.FetchRelation(ctx, data, relation)
+        if err != nil {
+          errChan <- err
+        }
+        t , err := model.GetQuickFirst(utils.UcFirst(relation.Relation.Name))(ctx, relation.SelectColumns, cData.(map[string]interface{}))
+        if err != nil {
+          errChan <- err
+        }
+        mu.Lock()
+        defer mu.Unlock()
+        data[key] = t
+      }(data, relation) 
+    }
+  }
+  wg.Wait()
+  close(errChan)
+  for err := range errChan {
+    return nil, err
+  }
+  return datas, nil
 }
 func Provide__Post() map[string]*ast.Relation { return map[string]*ast.Relation{"content": {},"created_at": {},"deleted_at": {},"id": {},"title": {},"updated_at": {},"user": {Name: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"},"user_id": {},}}
+func Load__Post(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+  return model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
+}
 func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
 }
-func Fields__Post(post *models.Post, key string) (interface{}, error) {
-  switch key {
-    case "content": 
-      return post.Content, nil
-    case "created_at": 
-      return post.CreatedAt, nil
-    case "deleted_at": 
-      return post.DeletedAt, nil
-    case "id": 
-      return post.Id, nil
-    case "title": 
-      return post.Title, nil
-    case "updated_at": 
-      return post.UpdatedAt, nil
-    case "user": 
-      return post.User, nil
-    case "user_id": 
-      return post.UserId, nil
-  }
-  return nil, nil
-} 
-func First__Post(columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__Post(ctx context.Context, columns map[string]interface{},data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+  var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__Post())
-  post := &models.Post{}
-  err := Query__Post().Scopes(scopes...).Select(selectColumns).First(post).Error
-  if err != nil {
-    return nil, err
-  }
-  res, err := model.StructToMap(post)
-  if err != nil {
-    return nil, err
-  }
-  for _, relation := range selectRelations {
-    fieldValue, err := Fields__Post(post, relation.Relation.ForeignKey)
-    if err != nil {
-      return nil, err
-    }
-    res, err = model.FetchRelation(res, relation, fieldValue)
+  if data == nil {
+    data = make(map[string]interface{})
+    err = Query__Post().Scopes(scopes...).Select(selectColumns).First(data).Error
     if err != nil {
       return nil, err
     }
   }
-  return res, nil
+  var wg sync.WaitGroup
+  errChan := make(chan error, len(selectRelations))
+  var mu sync.Mutex
+  
+  for key, relation := range selectRelations {
+    wg.Add(1)
+    go func(data map[string]interface{}, relation *model.SelectRelation)  {
+      defer wg.Done()
+      cData, err := model.FetchRelation(ctx, data, relation)
+      if err != nil {
+        errChan <- err
+      }
+      mu.Lock()
+      defer mu.Unlock()
+      data[key] = cData
+    }(data, relation) 
+  }
+  wg.Wait()
+  close(errChan)
+  for err := range errChan {
+    return nil, err
+  }
+  return data, nil
+}
+func List__Post(ctx context.Context, columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+  selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__Post())
+  var datas []map[string]interface{}
+  err := Query__Post().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
+  if err != nil {
+    return nil, err
+  }
+  var wg sync.WaitGroup
+  errChan := make(chan error, len(datas)*len(selectRelations))
+  var mu sync.Mutex
+  
+  for _, data := range datas {
+    for key, relation := range selectRelations {
+      wg.Add(1)
+      go func(data map[string]interface{}, relation *model.SelectRelation)  {
+        defer wg.Done()
+        cData, err := model.FetchRelation(ctx, data, relation)
+        if err != nil {
+          errChan <- err
+        }
+        t , err := model.GetQuickFirst(utils.UcFirst(relation.Relation.Name))(ctx, relation.SelectColumns, cData.(map[string]interface{}))
+        if err != nil {
+          errChan <- err
+        }
+        mu.Lock()
+        defer mu.Unlock()
+        data[key] = t
+      }(data, relation) 
+    }
+  }
+  wg.Wait()
+  close(errChan)
+  for err := range errChan {
+    return nil, err
+  }
+  return datas, nil
 }
 
 
 func init() {
   model.AddQuickFirst("User", First__User)
+  model.AddQuickList("User", List__User)
+  model.AddQuickLoader("User", Load__User)
   model.AddQuickFirst("Post", First__Post)
+  model.AddQuickList("Post", List__Post)
+  model.AddQuickLoader("Post", Load__Post)
 }
