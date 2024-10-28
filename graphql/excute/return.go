@@ -55,7 +55,7 @@ func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *g
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
-	datas, err := fn(ctx, columns, scopes...)
+	datas, err := fn(ctx, columns, nil, scopes...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func executeFind(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
-	datas, err := fn(ctx, columns, scopes...)
+	datas, err := fn(ctx, columns, nil, scopes...)
 	if err != nil {
 		return nil, err
 	}

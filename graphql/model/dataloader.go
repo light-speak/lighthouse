@@ -36,9 +36,9 @@ func cleanupLoaderCache() {
 
 // LoaderConfig defines the configuration for a data loader
 type LoaderConfig[K comparable] struct {
-	MaxBatch int                                                // Maximum number of keys to batch in a single fetch
-	Wait     time.Duration                                      // Amount of time to wait before processing a batch
-	Fetch    func(keys []K) ([]map[string]interface{}, []error) // Function to fetch data for a batch of keys
+	MaxBatch int                                                  // Maximum number of keys to batch in a single fetch
+	Wait     time.Duration                                        // Amount of time to wait before processing a batch
+	Fetch    func(keys []K) ([][]map[string]interface{}, []error) // Function to fetch data for a batch of keys
 
 	Field string
 }
@@ -47,7 +47,7 @@ func GetLoader[K comparable](db *gorm.DB, table string, field string, config ...
 	if len(config) > 0 {
 		field = config[0].Field
 	}
-	loaderKey := fmt.Sprintf("%T-%T-%v", table, *new(K), field)
+	loaderKey := fmt.Sprintf("%T-%v", table, field)
 	loaderMutex.Lock()
 	defer loaderMutex.Unlock()
 	if loader, ok := loaderCache[loaderKey]; ok {
@@ -67,18 +67,21 @@ func getLoader[K comparable](db *gorm.DB, table string, field string, c ...*Load
 	}
 
 	if len(c) == 0 {
-		fetch := func(keys []K) ([]map[string]interface{}, []error) {
+		fetch := func(keys []K) ([][]map[string]interface{}, []error) {
 			var data []map[string]interface{}
 			if err := db.Table(table).Where(fmt.Sprintf("%s IN (?)", config.Field), keys).Find(&data).Error; err != nil {
 				return nil, []error{err}
 			}
 
-			dataByKey := make(map[K]map[string]interface{})
+			dataByKey := make(map[K][]map[string]interface{})
 			for _, d := range data {
-				dataByKey[d[config.Field].(K)] = d
+				if _, ok := dataByKey[d[config.Field].(K)]; !ok {
+					dataByKey[d[config.Field].(K)] = make([]map[string]interface{}, 0)
+				}
+				dataByKey[d[config.Field].(K)] = append(dataByKey[d[config.Field].(K)], d)
 			}
 
-			result := make([]map[string]interface{}, len(keys))
+			result := make([][]map[string]interface{}, len(keys))
 			for i, key := range keys {
 				if val, ok := dataByKey[key]; ok {
 					result[i] = val
@@ -97,30 +100,49 @@ func getLoader[K comparable](db *gorm.DB, table string, field string, c ...*Load
 		maxBatch: config.MaxBatch,
 		wait:     config.Wait,
 		fetch:    config.Fetch,
-		cache:    make(map[K]map[string]interface{}), // Initialize cache
+		cache:    make(map[K][]map[string]interface{}), // Initialize cache
 		Field:    config.Field,
+		expiry:   make(map[K]time.Time),
 	}
 }
 
 // Loader represents a data loader that can batch and cache requests
 type Loader[K comparable] struct {
-	wait     time.Duration                                      // Amount of time to wait before processing a batch
-	maxBatch int                                                // Maximum number of keys to batch in a single fetch
-	fetch    func(keys []K) ([]map[string]interface{}, []error) // Function to fetch data for a batch of keys
+	wait     time.Duration                                        // Amount of time to wait before processing a batch
+	maxBatch int                                                  // Maximum number of keys to batch in a single fetch
+	fetch    func(keys []K) ([][]map[string]interface{}, []error) // Function to fetch data for a batch of keys
 
-	cache map[K]map[string]interface{} // Cache to store fetched data
-	batch *LoaderBatch[K]              // Current batch of requests
-	mu    sync.Mutex                   // Mutex to protect concurrent access
-	Field string
+	cache  map[K][]map[string]interface{} // Cache to store fetched data
+	batch  *LoaderBatch[K]                // Current batch of requests
+	expiry map[K]time.Time
+	mu     sync.Mutex // Mutex to protect concurrent access
+	Field  string
 }
 
 // LoaderBatch represents a batch of data loader requests
 type LoaderBatch[K comparable] struct {
 	keys    []K
-	results []map[string]interface{}
+	results [][]map[string]interface{}
 	errors  []error
 	closing bool
 	done    chan struct{}
+}
+
+func (l *Loader[K]) updateExpiry(key K) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.expiry[key] = time.Now().Add(300 * time.Millisecond)
+	go l.startExpiryTimer(key)
+}
+
+func (l *Loader[K]) startExpiryTimer(key K) {
+	time.Sleep(300 * time.Millisecond)
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if expiryTime, ok := l.expiry[key]; ok && time.Now().After(expiryTime) {
+		delete(l.cache, key)
+		delete(l.expiry, key)
+	}
 }
 
 // Load loads a single item by key
@@ -129,7 +151,7 @@ func (l *Loader[K]) Load(key K) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	l.Clear(key)
+	l.updateExpiry(key)
 	return ptr, nil
 }
 
@@ -138,7 +160,7 @@ func (l *Loader[K]) loadThunk(key K) func() (map[string]interface{}, error) {
 	l.mu.Lock()
 	if d, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (map[string]interface{}, error) { return d, nil }
+		return func() (map[string]interface{}, error) { return d[0], nil }
 	}
 
 	if l.batch == nil {
@@ -148,6 +170,45 @@ func (l *Loader[K]) loadThunk(key K) func() (map[string]interface{}, error) {
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 	return func() (map[string]interface{}, error) {
+		<-batch.done
+
+		if pos < len(batch.results) {
+			res := batch.results[pos]
+			if len(batch.errors) == 0 || batch.errors[pos] == nil {
+				l.set(key, res)
+				return res[0], nil
+			}
+			return res[0], batch.errors[pos]
+		}
+
+		return nil, &errors.DataloaderError{Msg: fmt.Sprintf("key %v not found", key)}
+	}
+}
+
+// LoadList loads a list of items by key
+func (l *Loader[K]) LoadList(key K) ([]map[string]interface{}, error) {
+	ptr, err := l.loadListThunk(key)()
+	if err != nil {
+		return nil, err
+	}
+	l.updateExpiry(key)
+	return ptr, nil
+}
+
+func (l *Loader[K]) loadListThunk(key K) func() ([]map[string]interface{}, error) {
+	l.mu.Lock()
+	if d, ok := l.cache[key]; ok {
+		l.mu.Unlock()
+		return func() ([]map[string]interface{}, error) { return d, nil }
+	}
+
+	if l.batch == nil {
+		l.batch = &LoaderBatch[K]{done: make(chan struct{})}
+	}
+	batch := l.batch
+	pos := batch.keyIndex(l, key)
+	l.mu.Unlock()
+	return func() ([]map[string]interface{}, error) {
 		<-batch.done
 
 		if pos < len(batch.results) {
@@ -179,7 +240,7 @@ func (l *Loader[K]) LoadAll(keys []K) ([]map[string]interface{}, []error) {
 }
 
 // Prime adds the provided key-value pair to the cache
-func (l *Loader[K]) Prime(key K, value map[string]interface{}) bool {
+func (l *Loader[K]) Prime(key K, value []map[string]interface{}) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if _, ok := l.cache[key]; !ok {
@@ -197,14 +258,14 @@ func (l *Loader[K]) Clear(key K) {
 }
 
 // set adds the provided key-value pair to the cache
-func (l *Loader[K]) set(key K, value map[string]interface{}) {
+func (l *Loader[K]) set(key K, value []map[string]interface{}) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.unsafeSet(key, value)
 }
 
 // unsafeSet adds the provided key-value pair to the cache without locking
-func (l *Loader[K]) unsafeSet(key K, value map[string]interface{}) {
+func (l *Loader[K]) unsafeSet(key K, value []map[string]interface{}) {
 	l.cache[key] = value
 }
 
@@ -248,7 +309,7 @@ func (b *LoaderBatch[K]) end(l *Loader[K]) {
 	b.results, b.errors = l.fetch(b.keys)
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.cache = make(map[K]map[string]interface{})
+	l.cache = make(map[K][]map[string]interface{})
 	close(b.done)
 }
 
@@ -256,7 +317,7 @@ func (b *LoaderBatch[K]) end(l *Loader[K]) {
 func (l *Loader[K]) ClearAll() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.cache = make(map[K]map[string]interface{})
+	l.cache = make(map[K][]map[string]interface{})
 }
 
 // CacheSize returns the number of entries in the cache

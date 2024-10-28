@@ -8,10 +8,13 @@ func Provide__{{ $name | ucFirst }}() map[string]*ast.Relation { return map[stri
 func Load__{{ $name | ucFirst }}(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).Load(key)
 }
+func LoadList__{{ $name | ucFirst }}(ctx context.Context, key int64, field string) ([]map[string]interface{}, error) {
+  return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).LoadList(key)
+}
 func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.{{ $name | ucFirst }}{}).Scopes(scopes...)
 }
-func First__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{},data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if data == nil {
@@ -45,12 +48,15 @@ func First__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interf
   }
   return data, nil
 }
-func List__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func List__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+  var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
-  var datas []map[string]interface{}
-  err := Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
-  if err != nil {
-    return nil, err
+  if datas == nil {
+    datas = make([]map[string]interface{}, 0)
+    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
+    if err != nil {
+      return nil, err
+    }
   }
   var wg sync.WaitGroup
   errChan := make(chan error, len(datas)*len(selectRelations))
@@ -65,13 +71,9 @@ func List__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interfa
         if err != nil {
           errChan <- err
         }
-        t , err := model.GetQuickFirst(utils.UcFirst(relation.Relation.Name))(ctx, relation.SelectColumns, cData.(map[string]interface{}))
-        if err != nil {
-          errChan <- err
-        }
         mu.Lock()
         defer mu.Unlock()
-        data[key] = t
+        data[key] = cData
       }(data, relation) 
     }
   }
@@ -88,6 +90,7 @@ func init() {
   {{- range .Nodes }}
   model.AddQuickFirst("{{ .Name | ucFirst }}", First__{{ .Name | ucFirst }})
   model.AddQuickList("{{ .Name | ucFirst }}", List__{{ .Name | ucFirst }})
-  model.AddQuickLoader("{{ .Name | ucFirst }}", Load__{{ .Name | ucFirst }})
+  model.AddQuickLoad("{{ .Name | ucFirst }}", Load__{{ .Name | ucFirst }})
+  model.AddQuickLoadList("{{ .Name | ucFirst }}", LoadList__{{ .Name | ucFirst }})
   {{- end }}
 }
