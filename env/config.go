@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -62,7 +63,7 @@ type Config struct {
 	}
 	Server struct {
 		Throttle int
-		Port string
+		Port     string
 	}
 	Api struct {
 		Restful bool
@@ -107,7 +108,10 @@ func init() {
 	if err != nil {
 		return
 	}
-	godotenv.Load(filepath.Join(curPath, ".env"))
+	err = godotenv.Load(filepath.Join(curPath, ".env"))
+	if err != nil {
+		fmt.Println("Error loading .env file:", err)
+	}
 	LighthouseConfig = &Config{
 		App: struct {
 			Name        string

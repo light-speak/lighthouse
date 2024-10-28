@@ -18,7 +18,7 @@ func StartService() {
 	}
 
 	log.Info().Msgf("Starting GraphQL service")
-	port := env.GetEnv("PORT", "8000")
+	port := env.LighthouseConfig.Server.Port
 	r := net.New()
 
 	log.Info().Msgf("GraphQL service started on port %s, You can access the service at http://localhost:%s/query", port, port)

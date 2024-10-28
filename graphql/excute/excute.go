@@ -1,6 +1,7 @@
 package excute
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
@@ -10,7 +11,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
 
-func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
+func ExecuteQuery(ctx context.Context, query string, variables map[string]any) (interface{}, error) {
 	p := graphql.GetParser()
 	qp := p.NewQueryParser(lexer.NewLexer([]*lexer.Content{
 		{
@@ -29,7 +30,7 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
 		}
 	}
-	res := map[string]interface{}{}
+	res := make(map[string]interface{})
 
 	var funMap map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)
 	switch qp.OperationType {
@@ -47,7 +48,7 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 	}
 
 	for _, field := range qp.Fields {
-		quickRes, err := QuickExecute(field)
+		quickRes, isQuick, err := QuickExecute(ctx, field)
 		if err != nil {
 			return nil, &errors.GraphQLError{
 				Message:   err.Error(),
@@ -56,6 +57,16 @@ func ExecuteQuery(query string, variables map[string]any) (interface{}, error) {
 		}
 		if quickRes != nil {
 			res[field.Name] = quickRes
+			continue
+		}
+		if isQuick {
+			if field.Type.Kind == ast.KindNonNull {
+				return nil, &errors.GraphQLError{
+					Message:   "field is not nullable",
+					Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+				}
+			}
+			res[field.Name] = nil
 			continue
 		}
 		queryFunc, ok := funMap[field.Name]

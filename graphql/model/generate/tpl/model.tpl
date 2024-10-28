@@ -7,11 +7,8 @@ func (*{{ $name | ucFirst }}) Is{{ .Name | ucFirst }}() bool { return true }
 func (this *{{ $name | ucFirst }}) Get{{ .Name | ucFirst }}() {{ false | .Type.GetGoType }} { return this.{{ .Name | ucFirst }} }
 {{- end }}
 {{- end }}
-func (*{{ $name | ucFirst }}) GetProvide() map[string]*ast.Relation { return map[string]*ast.Relation{
-  {{- range .Fields }}
-  {{- if ne .Name "__typename" }}"{{ .Name }}": {{ if .Relation }}{{ buildRelation . }}{{ else }}{}{{ end }},{{ end -}}
-  {{- end -}}
-}}
+func (*{{ $name | ucFirst }}) TableName() string { return "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ .Name | pluralize | lcFirst }}{{ end }}" }
+func (*{{ $name | ucFirst }}) TypeName() string { return "{{ .Name | lcFirst }}" }
 {{ end }}
 
 func Migrate() error {

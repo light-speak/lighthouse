@@ -3,8 +3,6 @@ package scalar
 import (
 	"fmt"
 	"strconv"
-
-	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
 type BooleanScalar struct{}
@@ -24,9 +22,9 @@ func (i *BooleanScalar) Serialize(v interface{}) (string, error) {
 	return "", fmt.Errorf("value is not a boolean: %v", v)
 }
 
-func (i *BooleanScalar) ParseLiteral(v ast.Value) (interface{}, error) {
-	if vt, ok := v.(*ast.BooleanValue); ok {
-		return vt.Value, nil
+func (i *BooleanScalar) ParseLiteral(v interface{}) (interface{}, error) {
+	if vt, ok := v.(bool); ok {
+		return vt, nil
 	}
 	return nil, fmt.Errorf("invalid literal for Boolean: %v", v)
 }

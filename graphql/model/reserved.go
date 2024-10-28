@@ -19,18 +19,22 @@ type ModelInterface interface {
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
 	GetDeletedAt() *gorm.DeletedAt
+	TypeName() string
+	TableName() string
 }
 
 type Model struct {
-	ID        int64     `json:"id" gorm:"primary_key;autoIncrement"`
+	Id        int64     `json:"id" gorm:"primary_key;autoIncrement"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (m *Model) GetId() int64                  { return m.ID }
+func (m *Model) GetId() int64                  { return m.Id }
 func (m *Model) GetCreatedAt() time.Time       { return m.CreatedAt }
 func (m *Model) GetUpdatedAt() time.Time       { return m.UpdatedAt }
 func (m *Model) GetDeletedAt() *gorm.DeletedAt { return nil }
+func (m *Model) TypeName() string              { return "Model" }
+func (m *Model) TableName() string             { return "models" }
 
 type ModelSoftDelete struct {
 	Model

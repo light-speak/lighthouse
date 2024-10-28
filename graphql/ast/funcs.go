@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
 var excludeFieldName = map[string]struct{}{
 	"id":         {},
-	"createdAt":  {},
-	"updatedAt":  {},
-	"deletedAt":  {},
+	"created_at": {},
+	"updated_at": {},
+	"deleted_at": {},
 	"__typename": {},
 }
 
@@ -21,10 +22,45 @@ func Fields(fields map[string]*Field) string {
 		if _, ok := excludeFieldName[field.Name]; ok {
 			continue
 		}
-		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(field.Name), field.Type.GetGoType(false), genTag(field))
+		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), field.Type.GetGoType(false), genTag(field))
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+func indexDirective(tags map[string][]string, directive *Directive) error {
+	if arg := directive.GetArg("name"); arg != nil {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", arg.Value.(string)))
+	} else {
+		tags["gorm"] = append(tags["gorm"], "index")
+	}
+	return nil
+}
+
+func uniqueDirective(tags map[string][]string, directive *Directive) error {
+	tags["gorm"] = append(tags["gorm"], "unique")
+	return nil
+}
+
+func tagDirective(tags map[string][]string, directive *Directive) error {
+	if arg := directive.GetArg("name"); arg != nil {
+		tags[arg.Name] = append(tags[arg.Name], arg.Value.(string))
+	}
+	return nil
+}
+
+func defaultDirective(tags map[string][]string, directive *Directive) error {
+	if arg := directive.GetArg("value"); arg != nil {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("default:%s", arg.Value.(string)))
+	}
+	return nil
+}
+
+var directiveFns = map[string]func(map[string][]string, *Directive) error{
+	"index":   indexDirective,
+	"unique":  uniqueDirective,
+	"tag":     tagDirective,
+	"default": defaultDirective,
 }
 
 func genTag(field *Field) string {
@@ -32,23 +68,13 @@ func genTag(field *Field) string {
 		"json": {field.Name},
 	}
 
-	// Collect directives
-	for _, directive := range GetDirective("tag", field.Directives) {
-		if arg := directive.GetArg("name"); arg != nil {
-			tags[arg.Name] = append(tags[arg.Name], arg.Value.(string))
+	for _, directive := range field.Directives {
+		if fn, ok := directiveFns[directive.Name]; ok {
+			if err := fn(tags, directive); err != nil {
+				log.Error().Err(err).Msgf("failed to apply directive %s to field %s", directive.Name, field.Name)
+				return ""
+			}
 		}
-	}
-
-	if directive := GetDirective("index", field.Directives); len(directive) == 1 {
-		if arg := directive[0].GetArg("name"); arg != nil {
-			tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", arg.Value.(string)))
-		} else {
-			tags["gorm"] = append(tags["gorm"], "index")
-		}
-	}
-
-	if directive := GetDirective("unique", field.Directives); len(directive) == 1 {
-		tags["gorm"] = append(tags["gorm"], "unique")
 	}
 
 	// Build the tag string using strings.Builder
@@ -97,5 +123,5 @@ func Model(typeNode *ObjectNode) string {
 }
 
 func BuildRelation(field *Field) string {
-	return fmt.Sprintf("{Relation: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Relation, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
+	return fmt.Sprintf("{Name: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Name, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
 }

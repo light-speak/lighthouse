@@ -16,6 +16,9 @@ func handlerModel(o *ast.ObjectNode, d *ast.Directive, store *ast.NodeStore) err
 		Name: "updated_at",
 		Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "DateTime", TypeNode: store.Scalars["DateTime"]}},
 	}
+	if arg := d.GetArg("table"); arg != nil {
+		o.Table = arg.Value.(string)
+	}
 	return nil
 }
 

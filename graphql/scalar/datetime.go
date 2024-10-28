@@ -3,14 +3,12 @@ package scalar
 import (
 	"fmt"
 	"time"
-
-	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
 type DateTimeScalar struct{}
 
 func (d *DateTimeScalar) ParseValue(v string) (interface{}, error) {
-	t, err := time.Parse(time.RFC3339, v)
+	t, err := time.Parse("2006-01-02 15:04:05", v)
 	if err != nil {
 		return nil, fmt.Errorf("invalid datetime value: %s", v)
 	}
@@ -18,15 +16,23 @@ func (d *DateTimeScalar) ParseValue(v string) (interface{}, error) {
 }
 
 func (d *DateTimeScalar) Serialize(v interface{}) (string, error) {
-	if t, ok := v.(time.Time); ok {
-		return t.Format(time.RFC3339), nil
+	switch t := v.(type) {
+	case time.Time:
+		return t.Format("2006-01-02 15:04:05"), nil
+	case string:
+		parsedTime, err := time.Parse("2006-01-02T15:04:05Z07:00", t)
+		if err != nil {
+			return "", fmt.Errorf("invalid datetime string: %s", t)
+		}
+		return parsedTime.Format("2006-01-02 15:04:05"), nil
+	default:
+		return "", fmt.Errorf("unsupported value type: %v, type is %T", v, v)
 	}
-	return "", fmt.Errorf("value is not a datetime: %v", v)
 }
 
-func (d *DateTimeScalar) ParseLiteral(v ast.Value) (interface{}, error) {
-	if vt, ok := v.(*ast.StringValue); ok {
-		return d.ParseValue(vt.Value)
+func (d *DateTimeScalar) ParseLiteral(v interface{}) (interface{}, error) {
+	if vt, ok := v.(string); ok {
+		return d.ParseValue(vt)
 	}
 	return nil, fmt.Errorf("invalid literal for DateTime: %v", v)
 }

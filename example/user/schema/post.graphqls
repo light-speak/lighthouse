@@ -6,5 +6,12 @@ type Post @key(fields: "id") @softDeleteModel {
 }
 
 extend type Query {
-  posts: [Post!]! @paginate
+  postPage: [Post!]! @paginate
+
+  posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find
+
+  post(id: ID! @eq): Post! @first
+
+  getPost(fuck: String!): Post!
 }
+

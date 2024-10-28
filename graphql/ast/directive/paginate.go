@@ -6,7 +6,10 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
-func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore) error {
+func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
+	if parent.GetName() != "Query" {
+		return fmt.Errorf("paginate directive can only be used on Query type")
+	}
 	addPaginationResponseType(f, store)
 	addPaginationArguments(f, store)
 	return nil
@@ -52,6 +55,14 @@ func addPaginationResponseType(f *ast.Field, store *ast.NodeStore) {
 			},
 		},
 	})
+	f.Type = &ast.TypeRef{
+		Kind:     ast.KindNonNull,
+		OfType: &ast.TypeRef{
+			Kind:     ast.KindObject,
+			Name:     responseName,
+			TypeNode: store.Objects[responseName],
+		},
+	}
 }
 
 // addPaginationArguments adds a pagination arguments to the field

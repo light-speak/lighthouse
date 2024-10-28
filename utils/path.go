@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -67,4 +68,29 @@ func EnsureDir(path string) error {
 		}
 	}
 	return nil
+}
+
+
+// getModuleName reads the go.mod file and returns the module name
+func GetModuleName(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "module ") {
+			// Extract the module name
+			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return "", fmt.Errorf("module name not found")
 }

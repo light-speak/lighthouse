@@ -11,6 +11,6 @@ type HasName interface {
 
 type Userable interface {
   IsUserable()
-  GetUserId() int64
   GetUser() User
+  GetUserId() int64
 }

@@ -66,6 +66,7 @@ func (o *Options) addFunc() {
 	o.Funcs["mul"] = Mul
 	o.Funcs["div"] = Div
 	o.Funcs["buildRelation"] = ast.BuildRelation
+	o.Funcs["pluralize"] = utils.Pluralize
 }
 
 func Render(options *Options) error {
@@ -235,5 +236,28 @@ func getCommentPrefixAndSuffix(options *Options) (string, string) {
 		return "<!--", "-->"
 	default:
 		return "//", ""
+	}
+}
+
+func init() {
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return
+	}
+	goModel, err := utils.GetModuleName(filepath.Join(currentPath, "go.mod"))
+	if err != nil {
+		return
+	}
+
+	packages := []string{
+		"cmd",
+		"schema",
+		"service",
+		"models",
+		"resolver",
+		"repo",
+	}
+	for _, pkgName := range packages {
+		AddImportRegex(fmt.Sprintf(`%s\.`, pkgName), fmt.Sprintf("%s/%s", goModel, pkgName), "")
 	}
 }

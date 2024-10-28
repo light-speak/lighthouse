@@ -2,7 +2,7 @@
 type {{ .GetName }} interface {
   Is{{ .GetName }}()
   {{- range .GetFields }}
-  Get{{ .GetName | ucFirst }}() {{ .Type.GoType }}
+  Get{{ .Name | ucFirst }}() {{ false | .Type.GetGoType }}
   {{- end }}
 }
 {{ end }}
