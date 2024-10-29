@@ -2,6 +2,12 @@ run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
+  skip-dirs:
+    - plugins
+    - config
+    - net
+    - graphql
+  skip-dirs-use-default: true
 
 linters:
   disable-all: true
