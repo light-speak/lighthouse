@@ -1,12 +1,6 @@
 run:
   timeout: 5m
-  tests: true
   modules-download-mode: readonly
-  skip-dirs:
-    - plugins
-    - config
-    - net
-    - graphql
   skip-dirs-use-default: true
 
 linters:
@@ -17,7 +11,6 @@ linters:
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - gofmt
     - goimports
@@ -29,6 +22,12 @@ linters-settings:
     simplify: true
   goimports:
     local-prefixes: github.com/light-speak/lighthouse
+  govet:
+    check-shadowing: false
+  revive:
+    rules:
+      - name: package-comments
+        disabled: true
 
 issues:
   exclude-use-default: false
@@ -38,7 +37,4 @@ issues:
     - path: _test\.go
       linters:
         - errcheck
-    - path: _test\.go
-      linters:
         - revive
-      text: "package-comments"
