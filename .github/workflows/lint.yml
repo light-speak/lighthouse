@@ -19,20 +19,44 @@ jobs:
           go-version: '1.23.1'
           cache: false
 
+      - name: Debug Go environment
+        run: |
+          go version
+          go env
+          pwd
+          ls -la
+
       - name: Install dependencies
         run: |
+          # 清理并重新下载依赖
           go clean -modcache
           go mod download
           go mod tidy
           go mod verify
+          # 显示所有依赖
+          echo "Listing all dependencies:"
           go list -m all
 
       - name: Install golangci-lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.0
+          # 显示 golangci-lint 版本
+          golangci-lint --version
+
+      - name: Debug project structure
+        run: |
+          echo "Current directory structure:"
+          tree -L 3 || true
+          echo "Content of go.mod:"
+          cat go.mod
 
       - name: Run golangci-lint
         run: |
+          echo "Running golangci-lint..."
+          # 先尝试只检查 utils 包
+          golangci-lint run --timeout=5m ./utils/...
+          echo "Utils package check completed"
+          # 如果成功，再检查整个项目
           golangci-lint run --timeout=5m \
             --skip-files=".*\\.pb\\.go$,.*\\.gen\\.go$,.*\\.mock\\.go$,.*\\.tpl$,.*_gen\\.go$" \
             --modules-download-mode=readonly \
