@@ -2,10 +2,10 @@
 package resolver
 
 import (
-	"github.com/light-speak/lighthouse/graphql/excute"
-	"github.com/light-speak/lighthouse/context"
-	"user/models"
-	"fmt"
+  "github.com/light-speak/lighthouse/graphql/excute"
+  "fmt"
+  "user/models"
+  "github.com/light-speak/lighthouse/context"
 )
 
 func init () {

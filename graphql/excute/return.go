@@ -1,16 +1,16 @@
 package excute
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/context"
 	"gorm.io/gorm"
 )
 
-func executeFirst(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
+func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	fn := model.GetQuickFirst(field.Type.GetGoName())
 	if fn == nil {
 		return nil, &errors.GraphQLError{
@@ -43,7 +43,7 @@ func executeFirst(ctx context.Context, field *ast.Field, scopes ...func(db *gorm
 	return data, nil
 }
 
-func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
+func executePaginate(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	res := make(map[string]interface{})
 	info := &model.PaginateInfo{}
 	res["paginateInfo"] = info
@@ -82,7 +82,7 @@ func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *g
 	return res, nil
 }
 
-func executeFind(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
+func executeFind(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	columns, err := getColumns(field)
 	if err != nil {
 		return nil, err
