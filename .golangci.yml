@@ -2,7 +2,7 @@ run:
   timeout: 5m
   modules-download-mode: readonly
   skip-dirs-use-default: true
-  go: '1.22'
+  go: '1.23'
   skip-dirs:
     - vendor
     - third_party
