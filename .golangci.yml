@@ -2,8 +2,6 @@ run:
   timeout: 5m
   modules-download-mode: readonly
   skip-dirs-use-default: true
-  build-tags: []
-  allow-parallel-runners: true
   go: '1.22'
   skip-dirs:
     - vendor
@@ -12,6 +10,8 @@ run:
     - ".*\\.pb\\.go$"
     - ".*\\.gen\\.go$"
     - ".*\\.mock\\.go$"
+    - ".*\\.tpl$"
+    - ".*_gen\\.go$"
 
 output:
   format: colored-line-number
