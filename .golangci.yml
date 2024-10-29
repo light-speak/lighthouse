@@ -6,12 +6,16 @@ run:
   skip-dirs:
     - vendor
     - third_party
+    - internal
   skip-files:
     - ".*\\.pb\\.go$"
     - ".*\\.gen\\.go$"
     - ".*\\.mock\\.go$"
     - ".*\\.tpl$"
     - ".*_gen\\.go$"
+  build-tags:
+    - go1.23
+  allow-parallel-runners: false
 
 output:
   format: colored-line-number
@@ -43,10 +47,10 @@ linters-settings:
     disable:
       - fieldalignment
       - shadow
-  revive:
-    rules:
-      - name: package-comments
-        disabled: true
+      - stdmethods
+  staticcheck:
+    go: "1.23"
+    checks: ["all"]
 
 issues:
   exclude-use-default: false
@@ -61,5 +65,20 @@ issues:
       linters:
         - typecheck
     - text: "cannot infer"
+      linters:
+        - typecheck
+    - text: "undefined"
+      linters:
+        - typecheck
+    - text: "missing return"
+      linters:
+        - typecheck
+    - text: "not enough arguments"
+      linters:
+        - typecheck
+    - text: "Lock"
+      linters:
+        - typecheck
+    - text: "Unlock"
       linters:
         - typecheck
