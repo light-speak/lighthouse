@@ -2,13 +2,18 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/graphql/model"
-  "github.com/light-speak/lighthouse/log"
   "user/models"
+  "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/log"
 )
 
 
+func TestPostInputResolver(ctx *context.Context, input models.TestInput) (string, error) {
+	// Func:TestPostInput user code start. Do not remove this comment.
+	panic("not implement")
+	// Func:TestPostInput user code end. Do not remove this comment. 
+}
 func GetPostResolver(ctx *context.Context, fuck string) (*models.Post, error) {
 	// Func:GetPost user code start. Do not remove this comment.
 	log.Debug().Msg("GetPostResolver")
@@ -17,11 +22,6 @@ func GetPostResolver(ctx *context.Context, fuck string) (*models.Post, error) {
 	model.GetQuickLoad("Post")(ctx, 1, "id")
 	return nil, nil
 	// Func:GetPost user code end. Do not remove this comment. 
-}
-func TestPostInputResolver(ctx *context.Context, input models.TestInput) (string, error) {
-	// Func:TestPostInput user code start. Do not remove this comment.
-	panic("not implement")
-	// Func:TestPostInput user code end. Do not remove this comment. 
 }
 func TestPostEnumResolver(ctx *context.Context, enum models.TestEnum) (string, error) {
 	// Func:TestPostEnum user code start. Do not remove this comment.

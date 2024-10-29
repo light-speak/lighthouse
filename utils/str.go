@@ -24,24 +24,61 @@ func UcFirst(str string) string {
 // SnakeCase 下划线命名
 func SnakeCase(str string) string {
 	var result []string
+	var lastIsUpper bool
+	var currentWord []rune
+
 	for i, char := range str {
-		if unicode.IsUpper(char) && i > 0 {
-			result = append(result, "_")
+		isUpper := unicode.IsUpper(char)
+
+		// 处理连续的大写字母
+		if isUpper {
+			if !lastIsUpper && i > 0 {
+				// 如果前一个不是大写，当前是大写，添加下划线
+				result = append(result, string(currentWord))
+				currentWord = []rune{}
+			} else if lastIsUpper && i+1 < len(str) {
+				nextChar := rune(str[i+1])
+				// 只有当下一个字符是小写字母时才添加下划线
+				if !unicode.IsUpper(nextChar) && !unicode.IsNumber(nextChar) {
+					result = append(result, string(currentWord))
+					currentWord = []rune{}
+				}
+			}
 		}
-		result = append(result, string(unicode.ToLower(char)))
+
+		lastIsUpper = isUpper
+		currentWord = append(currentWord, unicode.ToLower(char))
 	}
-	return strings.Join(result, "")
+
+	if len(currentWord) > 0 {
+		result = append(result, string(currentWord))
+	}
+
+	return strings.Join(result, "_")
 }
 
 // CamelCase 驼峰命名
 func CamelCase(str string) string {
+	// 处理前导下划线
+	str = strings.TrimLeft(str, "_")
+	// 处理尾部下划线
+	str = strings.TrimRight(str, "_")
+	
 	parts := strings.Split(str, "_")
-	for i := range parts {
-		if i > 0 {
-			parts[i] = UcFirst(parts[i])
+	var result []string
+	
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+		if i == 0 {
+			result = append(result, strings.ToLower(part))
+		} else {
+			result = append(result, UcFirst(strings.ToLower(part)))
 		}
 	}
-	return strings.Join(parts, "")
+	
+	return strings.Join(result, "")
 }
 
 func StrPtr(str string) *string {

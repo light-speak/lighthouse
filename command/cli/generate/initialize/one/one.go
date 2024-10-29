@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/template"
-	"github.com/light-speak/lighthouse/utils"
 	"github.com/light-speak/lighthouse/version"
 )
 
@@ -19,13 +18,8 @@ var dirs = []string{"cmd", "schema", "service", "models", "resolver", "repo"}
 var oneFs embed.FS
 
 func Run(module string) error {
-	name, err := utils.GetPackageFromPath(module)
-	if err != nil {
-		return err
-	}
-	projectName = name
 	projectModule = module
-
+	projectName = filepath.Base(module)
 	for _, dir := range dirs {
 		template.AddImportRegex(fmt.Sprintf(`%s\.`, dir), fmt.Sprintf("%s/%s", projectModule, dir), "")
 	}

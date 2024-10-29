@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -91,7 +92,7 @@ func Render(options *Options) error {
 		}
 		existingContent = string(contentBytes)
 	} else {
-		utils.EnsureDir(options.Path)
+		utils.MkdirAll(options.Path)
 	}
 
 	// Step 2: Extract user code sections
@@ -243,12 +244,22 @@ func getCommentPrefixAndSuffix(options *Options) (string, string) {
 func init() {
 	currentPath, err := os.Getwd()
 	if err != nil {
+		log.Error().Msgf("Failed to get current path: %v", err)
 		return
 	}
-	goModel, err := utils.GetModuleName(filepath.Join(currentPath, "go.mod"))
+
+	goModel, err := utils.GetModPath(&currentPath) // Fix: Pass pointer to string
 	if err != nil {
+		log.Error().Msgf("Failed to get go module path: %v", err)
 		return
 	}
+
+	if goModel == "" {
+		log.Error().Msg("Go module path is empty")
+		return
+	}
+
+	log.Debug().Msgf("goModel: %s", goModel)
 
 	packages := []string{
 		"cmd",
@@ -258,7 +269,10 @@ func init() {
 		"resolver",
 		"repo",
 	}
+
 	for _, pkgName := range packages {
-		AddImportRegex(fmt.Sprintf(`%s\.`, pkgName), fmt.Sprintf("%s/%s", goModel, pkgName), "")
+		importPath := fmt.Sprintf("%s/%s", goModel, pkgName)
+		pattern := fmt.Sprintf(`%s\.`, pkgName)
+		AddImportRegex(pattern, importPath, "")
 	}
 }

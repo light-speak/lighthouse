@@ -1,96 +1,126 @@
 package utils
 
 import (
-	"bufio"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// GetProjectPath get the project path
+// GetProjectPath returns the project root path
 func GetProjectPath() (string, error) {
-	modPath, err := GetModPath(nil)
+	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Dir(modPath)
 	return dir, nil
 }
 
-// GetModPath get the path location of the go.mod file
-func GetModPath(path *string) (string, error) {
-	var currentDir string
-	var err error
-	if path == nil {
-		currentDir, err = os.Getwd()
-		if err != nil {
-			return "", err
-		}
-	} else {
-		currentDir = *path
+// GetModPath returns the module path
+func GetModPath(projectPath *string) (string, error) {
+	path := "."
+	if projectPath != nil {
+		path = *projectPath
 	}
 
-	for {
-		modPath := filepath.Join(currentDir, "go.mod")
-		if _, err := os.Stat(modPath); err == nil {
-			return modPath, nil
-		}
-
-		parentDir := filepath.Dir(currentDir)
-		if parentDir == currentDir {
-			break
-		}
-		currentDir = parentDir
-	}
-
-	return "", fmt.Errorf("go.mod file not found")
-}
-
-// GetPackageFromPath Get the package name from the path ending
-func GetPackageFromPath(path string) (string, error) {
-	paths := strings.Split(path, ",")
-	if len(paths) == 0 {
-		return "", fmt.Errorf("path is not valid")
-	}
-	return paths[len(paths)-1], nil
-}
-
-// EnsureDir makes sure the specified directory exists
-// If the directory doesn't exist, it creates it with full permissions
-func EnsureDir(path string) error {
-	path = filepath.Clean(path)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-	}
-	return nil
-}
-
-
-// getModuleName reads the go.mod file and returns the module name
-func GetModuleName(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	// Read go.mod file
+	data, err := os.ReadFile(filepath.Join(path, "go.mod"))
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
+	// Parse module path
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
 		if strings.HasPrefix(line, "module ") {
-			// Extract the module name
 			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	return "", errors.New("module path not found in go.mod")
+}
+
+// GetPkgPath returns the package path
+func GetPkgPath(projectPath, filePath string) (string, error) {
+	if filePath == "" {
+		return "", errors.New("file path is empty")
+	}
+
+	// Get directory of file
+	dir := filepath.Dir(filePath)
+	if dir == "." {
+		return "", nil
+	}
+
+	// Get module path
+	modPath, err := GetModPath(&projectPath)
+	if err != nil {
 		return "", err
 	}
 
-	return "", fmt.Errorf("module name not found")
+	// Combine full package path
+	return filepath.Join(modPath, dir), nil
+}
+
+// GetGoPath returns GOPATH
+func GetGoPath() string {
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		// If GOPATH not set in env, return default
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(home, "go")
+	}
+	return gopath
+}
+
+// GetFilePath returns the file path
+func GetFilePath(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("path is empty")
+	}
+
+	// 先检查路径是否存在
+	fileInfo, err := os.Stat(path)
+	if err == nil {
+		// 如果路径存在，检查是否是目录
+		if fileInfo.IsDir() {
+			return "", errors.New("path is a directory")
+		}
+		return filepath.Base(path), nil
+	}
+
+	// 如果路径不存在，尝试判断是否看起来像一个目录
+	if strings.HasSuffix(path, "/") || strings.HasSuffix(path, "\\") {
+		return "", errors.New("path is a directory")
+	}
+
+	// 检查最后一个部分是否包含扩展名
+	base := filepath.Base(path)
+	if !strings.Contains(base, ".") {
+		return "", errors.New("path is a directory")
+	}
+
+	return base, nil
+}
+
+// GetFileDir returns the directory containing the file
+func GetFileDir(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("path is empty")
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return ".", nil
+	}
+
+	return dir, nil
+}
+
+// MkdirAll creates a directory named path, along with any necessary parents
+func MkdirAll(path string) error {
+	return os.MkdirAll(path, os.ModePerm)
 }
