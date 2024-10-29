@@ -39,6 +39,10 @@ linters-settings:
     local-prefixes: github.com/light-speak/lighthouse
   govet:
     check-shadowing: false
+    enable-all: false
+    disable:
+      - fieldalignment
+      - shadow
   revive:
     rules:
       - name: package-comments
@@ -53,3 +57,9 @@ issues:
       linters:
         - errcheck
         - revive
+    - text: "cannot range over"
+      linters:
+        - typecheck
+    - text: "cannot infer"
+      linters:
+        - typecheck

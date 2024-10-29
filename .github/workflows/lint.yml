@@ -31,7 +31,6 @@ jobs:
       - name: Run golangci-lint
         run: |
           golangci-lint run --timeout=5m \
-            --skip-dirs=vendor,third_party,node_modules,plugins,config,graphql,net,example,internal \
             --skip-files=".*\\.pb\\.go$,.*\\.gen\\.go$,.*\\.mock\\.go$,.*\\.tpl$,.*_gen\\.go$" \
             --modules-download-mode=readonly \
             ./...
