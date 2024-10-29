@@ -107,3 +107,9 @@ func AddMutation(name string, fn func(qp *parser.QueryParser, field *ast.Field) 
 func AddSubscription(name string, fn func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)) {
 	subscriptionMap[name] = fn
 }
+
+var resolverMap = make(map[string]func(ctx context.Context, args map[string]any) (interface{}, error))
+
+func AddResolver(name string, fn func(ctx context.Context, args map[string]any) (interface{}, error)) {
+	resolverMap[name] = fn
+}

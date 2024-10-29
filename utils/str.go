@@ -82,3 +82,7 @@ func Pluralize(word string) string {
 func isVowel(c rune) bool {
 	return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u'
 }
+
+func IsInternalType(name string) bool {
+	return len(name) >= 2 && name[:2] == "__"
+}

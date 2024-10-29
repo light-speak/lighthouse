@@ -49,6 +49,28 @@ func Generate() error {
 	if err := generate.GenRepo(typeNodes, currentPath); err != nil {
 		return err
 	}
+	if err := generate.GenEnum(p.NodeStore.Enums, currentPath); err != nil {
+		return err
+	}
+
+	operationNodes := []*ast.ObjectNode{}
+
+	if _, ok := p.NodeStore.Objects["Query"]; ok {
+		operationNodes = append(operationNodes, p.NodeStore.Objects["Query"])
+		if err := generate.GenOperationResolver(p.NodeStore.Objects["Query"], currentPath, "query"); err != nil {
+			return err
+		}
+	}
+	if _, ok := p.NodeStore.Objects["Mutation"]; ok {
+		operationNodes = append(operationNodes, p.NodeStore.Objects["Mutation"])
+		if err := generate.GenOperationResolver(p.NodeStore.Objects["Mutation"], currentPath, "mutation"); err != nil {
+			return err
+		}
+	}
+	
+	if err := generate.GenOperationResolverGen(operationNodes, currentPath); err != nil {
+		return err
+	}
 
 	return nil
 }
