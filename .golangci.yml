@@ -1,41 +1,39 @@
+# 基本运行配置
 run:
   timeout: 5m
-  modules-download-mode: readonly
-  skip-dirs-use-default: true
   go: '1.23'
-  skip-dirs:
-    - vendor
-    - third_party
-    - internal
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-    - ".*\\.mock\\.go$"
-    - ".*\\.tpl$"
-    - ".*_gen\\.go$"
-  build-tags:
-    - go1.23
-  allow-parallel-runners: false
+  modules-download-mode: readonly
+  allow-parallel-runners: true
 
+# 输出格式配置
 output:
   format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
+  sort-results: true
 
+# 启用的 linters
 linters:
   disable-all: true
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - revive
+    # 错误检查
+    - errcheck     # 检查错误处理
+    - gosec       # 安全性检查
+    - govet       # Go 原生静态分析
+    
+    # 代码质量
+    - gosimple    # 代码简化建议
+    - staticcheck # 静态分析
+    - unused      # 未使用的代码
+    - ineffassign # 无效赋值
+    
+    # 代码风格
+    - gofmt       # 格式化检查
+    - goimports   # import 格式化
+    - misspell    # 拼写检查
+    - revive      # 代码风格检查
 
+# linter 具体设置
 linters-settings:
   gofmt:
     simplify: true
@@ -47,38 +45,34 @@ linters-settings:
     disable:
       - fieldalignment
       - shadow
-      - stdmethods
+  revive:
+    rules:
+      - name: package-comments
+        disabled: true
   staticcheck:
     go: "1.23"
     checks: ["all"]
 
+# 问题处理规则
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  
+  # 排除规则
   exclude-rules:
-    - path: _test\\.go
+    # 测试文件规则
+    - path: _test\.go
       linters:
         - errcheck
         - revive
+    
+    # Go 1.23 特定问题
     - text: "cannot range over"
-      linters:
-        - typecheck
+      linters: [typecheck]
     - text: "cannot infer"
-      linters:
-        - typecheck
+      linters: [typecheck]
     - text: "undefined"
-      linters:
-        - typecheck
+      linters: [typecheck]
     - text: "missing return"
-      linters:
-        - typecheck
-    - text: "not enough arguments"
-      linters:
-        - typecheck
-    - text: "Lock"
-      linters:
-        - typecheck
-    - text: "Unlock"
-      linters:
-        - typecheck
+      linters: [typecheck]
