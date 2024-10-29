@@ -29,14 +29,13 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go mod download
+
       - name: Run utils tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./utils/...
-
-      - name: Debug Environment
-        run: |
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub event name: ${{ github.event_name }}"
-          echo "Has CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
