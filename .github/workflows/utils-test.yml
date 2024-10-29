@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -30,10 +32,18 @@ jobs:
       - name: Run utils tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./utils/...
 
-      - name: Upload coverage report
+      - name: Debug Environment
+        run: |
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "GitHub event name: ${{ github.event_name }}"
+          echo "Has CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}"
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt
           flags: utils
           name: codecov-umbrella
-          fail_ci_if_error: true 
+          fail_ci_if_error: false
+          verbose: true 
