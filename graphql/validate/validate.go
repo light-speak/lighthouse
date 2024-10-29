@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
 )
@@ -8,7 +9,7 @@ import (
 var p *parser.Parser
 var store *ast.NodeStore
 
-func ValidateNodes(nodes map[string]ast.Node, parser *parser.Parser) error {
+func ValidateNodes(nodes map[string]ast.Node, parser *parser.Parser) errors.GraphqlErrorInterface {
 	p = parser
 	store = parser.NodeStore
 	for _, node := range nodes {

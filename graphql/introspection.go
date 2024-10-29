@@ -166,27 +166,42 @@ func getBasicTypeInfo(node ast.Node, infoType string) (interface{}, error) {
 // resolveComplexTypeField handles more complex type fields.
 func resolveComplexTypeField(field *ast.Field, node ast.Node) (interface{}, error) {
 	var res []interface{}
-
+	var err error
 	switch field.Name {
 	case "fields":
 		if node.GetKind() == ast.KindObject || node.GetKind() == ast.KindInterface {
-			res = resolveFields(field, node.GetFields())
+			res, err = resolveFields(field, node.GetFields())
+			if err != nil {
+				return nil, err
+			}
 		}
 	case "inputFields":
 		if node.GetKind() == ast.KindInputObject {
-			res = resolveInputFields(node.(*ast.InputObjectNode).Fields)
+			res, err = resolveInputFields(field, node.GetFields())
+			if err != nil {
+				return nil, err
+			}
 		}
 	case "interfaces":
 		if node.GetKind() == ast.KindObject {
-			res = resolveInterfaces(field, node.(*ast.ObjectNode).Interfaces)
+			res, err = resolveInterfaces(field, node.(*ast.ObjectNode).Interfaces)
+			if err != nil {
+				return nil, err
+			}
 		}
 	case "possibleTypes":
 		if node.GetKind() == ast.KindInterface || node.GetKind() == ast.KindUnion {
-			res = resolvePossibleTypes(field, node)
+			res, err = resolvePossibleTypes(field, node)
+			if err != nil {
+				return nil, err
+			}
 		}
 	case "enumValues":
 		if node.GetKind() == ast.KindEnum {
-			res = resolveEnumValues(node.(*ast.EnumNode).EnumValues)
+			res, err = resolveEnumValues(field, node.(*ast.EnumNode).EnumValues)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -229,15 +244,18 @@ func resolveTypeRefField(field *ast.Field, typeRef *ast.TypeRef) interface{} {
 }
 
 // resolveFields resolves fields for an object or interface type.
-func resolveFields(field *ast.Field, fields map[string]*ast.Field) []interface{} {
+func resolveFields(field *ast.Field, fields map[string]*ast.Field) ([]interface{}, error) {
 	var result []interface{}
 	for _, f := range fields {
 		if !isInternalType(f.Name) {
-			fieldRes, _ := resolveFieldFields(field, f)
+			fieldRes, err := resolveFieldFields(field, f)
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, fieldRes)
 		}
 	}
-	return result
+	return result, nil
 }
 
 // resolveFieldFields resolves fields for a specific field in a type.
@@ -319,26 +337,51 @@ func resolveArgumentField(field *ast.Field, arg *ast.Argument) (interface{}, err
 }
 
 // resolveInputFields resolves input fields for an input object type.
-func resolveInputFields(inputFields map[string]*ast.Field) []interface{} {
+func resolveInputFields(field *ast.Field, inputFields map[string]*ast.Field) ([]interface{}, error) {
 	var result []interface{}
-	for _, inputField := range inputFields {
-		if !isInternalType(inputField.Name) {
-			inputFieldRes := map[string]interface{}{
-				"name":        inputField.Name,
-				"description": inputField.Description,
-				"type":        resolveTypeRef(inputField, inputField.Type),
+	for _, f := range inputFields {
+		if !isInternalType(f.Name) {
+			fieldRes := make(map[string]interface{})
+			for _, cField := range field.Children {
+				if cField.IsFragment || cField.IsUnion {
+					for _, fragmentField := range cField.Children {
+						val, err := resolveInputField(fragmentField, f)
+						if err != nil {
+							return nil, err
+						}
+						fieldRes[fragmentField.Name] = val
+					}
+				} else {
+					val, err := resolveInputField(cField, f)
+					if err != nil {
+						return nil, err
+					}
+					fieldRes[cField.Name] = val
+				}
 			}
-			result = append(result, inputFieldRes)
+			result = append(result, fieldRes)
 		}
 	}
 	if len(result) == 0 {
-		return []interface{}{}
+		return []interface{}{}, nil
 	}
-	return result
+	return result, nil
+}
+
+func resolveInputField(field *ast.Field, inputField *ast.Field) (interface{}, error) {
+	switch field.Name {
+	case "name":
+		return inputField.Name, nil
+	case "description":
+		return inputField.Description, nil
+	case "type":
+		return resolveTypeRef(field, inputField.Type), nil
+	}
+	return nil, nil
 }
 
 // resolveInterfaces resolves interfaces implemented by an object type.
-func resolveInterfaces(field *ast.Field, interfaces map[string]*ast.InterfaceNode) []interface{} {
+func resolveInterfaces(field *ast.Field, interfaces map[string]*ast.InterfaceNode) ([]interface{}, error) {
 	var result []interface{}
 	for _, iface := range interfaces {
 		result = append(result, resolveTypeRef(field, &ast.TypeRef{
@@ -346,11 +389,11 @@ func resolveInterfaces(field *ast.Field, interfaces map[string]*ast.InterfaceNod
 			Name: iface.Name,
 		}))
 	}
-	return result
+	return result, nil
 }
 
 // resolvePossibleTypes resolves possible types for an interface or union.
-func resolvePossibleTypes(field *ast.Field, node ast.Node) []interface{} {
+func resolvePossibleTypes(field *ast.Field, node ast.Node) ([]interface{}, error) {
 	var result []interface{}
 	switch n := node.(type) {
 	case *ast.InterfaceNode:
@@ -368,24 +411,54 @@ func resolvePossibleTypes(field *ast.Field, node ast.Node) []interface{} {
 			}))
 		}
 	}
-	return result
+	return result, nil
 }
 
 // resolveEnumValues resolves enum values for an enum type.
-func resolveEnumValues(enumValues map[string]*ast.EnumValue) []interface{} {
+func resolveEnumValues(field *ast.Field, enumValues map[string]*ast.EnumValue) ([]interface{}, error) {
 	var result []interface{}
 	for _, enumValue := range enumValues {
 		if !isInternalType(enumValue.Name) {
-			valueRes := map[string]interface{}{
-				"name":              enumValue.Name,
-				"description":       enumValue.Description,
-				"isDeprecated":      enumValue.IsDeprecated,
-				"deprecationReason": enumValue.DeprecationReason,
+			valueRes, err := resolveEnumValue(field, enumValue)
+			if err != nil {
+				return nil, err
 			}
 			result = append(result, valueRes)
 		}
 	}
-	return result
+	return result, nil
+}
+
+func resolveEnumValue(field *ast.Field, enumValue *ast.EnumValue) (interface{}, error) {
+	res := make(map[string]interface{})
+	for _, cField := range field.Children {
+		if cField.IsFragment || cField.IsUnion {
+			for _, fragmentField := range cField.Children {
+				switch fragmentField.Name {
+				case "name":
+					res[fragmentField.Name] = enumValue.Name
+				case "description":
+					res[fragmentField.Name] = enumValue.Description
+				case "isDeprecated":
+					res[fragmentField.Name] = enumValue.IsDeprecated
+				case "deprecationReason":
+					res[fragmentField.Name] = enumValue.DeprecationReason
+				}
+			}
+		} else {
+			switch cField.Name {
+			case "name":
+				res[cField.Name] = enumValue.Name
+			case "description":
+				res[cField.Name] = enumValue.Description
+			case "isDeprecated":
+				res[cField.Name] = enumValue.IsDeprecated
+			case "deprecationReason":
+				res[cField.Name] = enumValue.DeprecationReason
+			}
+		}
+	}
+	return res, nil
 }
 
 // resolveDirectiveFields resolves fields for a directive.

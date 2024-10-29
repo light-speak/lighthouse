@@ -3,3 +3,9 @@ package models
 
 
 
+
+type TestInput struct {
+  E bool `json:"E"`
+  Enum TestEnum `json:"Enum"`
+  Id string `json:"Id"`
+}

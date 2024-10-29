@@ -3,12 +3,16 @@ package directive
 import (
 	"fmt"
 
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
-func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
+func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
 	if parent.GetName() != "Query" {
-		return fmt.Errorf("paginate directive can only be used on Query type")
+		return &errors.GraphQLError{
+			Message: "paginate directive can only be used on Query type",
+			Locations: []*errors.GraphqlLocation{d.GetLocation()},
+		}
 	}
 	addPaginationResponseType(f, store)
 	addPaginationArguments(f, store)

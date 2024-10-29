@@ -1,11 +1,12 @@
 package directive
 
 import (
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/utils"
 )
 
-func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) error {
+func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
 	relation := &ast.Relation{
 		RelationType: ast.RelationTypeBelongsTo,
 	}

@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
@@ -21,12 +23,12 @@ type QueryParser struct {
 	OperationType string
 }
 
-func (p *QueryParser) Validate(store *ast.NodeStore) error {
+func (p *QueryParser) Validate(store *ast.NodeStore) errors.GraphqlErrorInterface {
 	for _, arg := range p.Args {
 		if p.Variables[arg.Name] == nil {
-			return &errors.ValidateError{
-				NodeName: arg.Name,
-				Message:  "variable argument not found",
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("variable %s not found", arg.Name),
+				Locations: []*errors.GraphqlLocation{arg.GetLocation()},
 			}
 		}
 		arg.Value = p.Variables[arg.Name]
@@ -35,7 +37,8 @@ func (p *QueryParser) Validate(store *ast.NodeStore) error {
 		obj := p.Parser.NodeStore.Objects[p.OperationType]
 		if obj == nil {
 			return &errors.ParserError{
-				Message: "Operation " + p.OperationType + " not found",
+				Message:   "Operation " + p.OperationType + " not found",
+				Locations: field.GetLocation(),
 			}
 		}
 		if err := field.Validate(store, obj.Fields, obj, ast.LocationField, p.Fragments, p.Args); err != nil {
@@ -46,6 +49,15 @@ func (p *QueryParser) Validate(store *ast.NodeStore) error {
 }
 
 func (p *QueryParser) ParseSchema() *QueryParser {
+	defer func() {
+		e := recover()
+		if e != nil {
+			panic(&errors.ParserError{
+				Message:   e.(string),
+				Locations: &errors.GraphqlLocation{Line: 1, Column: 1},
+			})
+		}
+	}()
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
 		lexer.LowerQuery:        func() { p.parseOperation() },
 		lexer.LowerMutation:     func() { p.parseOperation() },
@@ -116,7 +128,6 @@ func (p *QueryParser) parseOperation() error {
 	if p.Parser.currToken.Type == lexer.LeftParent {
 		p.Args = p.Parser.parseArguments()
 	}
-
 	p.Directives = p.Parser.parseDirectives()
 
 	p.Parser.expect(lexer.LeftBrace)

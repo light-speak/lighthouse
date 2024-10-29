@@ -10,21 +10,24 @@ import (
 	"gorm.io/gorm"
 )
 
-func executeFirst(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, error) {
+func executeFirst(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	fn := model.GetQuickFirst(field.Type.GetGoName())
 	if fn == nil {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Type.GetGoName()),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
 	columns, err := getColumns(field)
 	if err != nil {
 		return nil, err
 	}
-	d, err := fn(ctx, columns, nil, scopes...)
-	if err != nil {
-		return nil, err
+	d, e := fn(ctx, columns, nil, scopes...)
+	if e != nil {
+		return nil, &errors.GraphQLError{
+			Message:   e.Error(),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
 	}
 	if d == nil {
 		return nil, nil
@@ -40,7 +43,7 @@ func executeFirst(ctx context.Context, field *ast.Field, scopes ...func(db *gorm
 	return data, nil
 }
 
-func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, error) {
+func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	res := make(map[string]interface{})
 	info := &model.PaginateInfo{}
 	res["paginateInfo"] = info
@@ -52,12 +55,15 @@ func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *g
 	if fn == nil {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Name),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
-	datas, err := fn(ctx, columns, nil, scopes...)
-	if err != nil {
-		return nil, err
+	datas, e := fn(ctx, columns, nil, scopes...)
+	if e != nil {
+		return nil, &errors.GraphQLError{
+			Message:   e.Error(),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
 	}
 	values := make([]map[string]interface{}, 0)
 	for _, data := range datas {
@@ -76,7 +82,7 @@ func executePaginate(ctx context.Context, field *ast.Field, scopes ...func(db *g
 	return res, nil
 }
 
-func executeFind(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, error) {
+func executeFind(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	columns, err := getColumns(field)
 	if err != nil {
 		return nil, err
@@ -85,12 +91,15 @@ func executeFind(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.
 	if fn == nil {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Name),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
-	datas, err := fn(ctx, columns, nil, scopes...)
-	if err != nil {
-		return nil, err
+	datas, e := fn(ctx, columns, nil, scopes...)
+	if e != nil {
+		return nil, &errors.GraphQLError{
+			Message:   e.Error(),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
 	}
 	data := make([]interface{}, 0)
 	for _, item := range datas {

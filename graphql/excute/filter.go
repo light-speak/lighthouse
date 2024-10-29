@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"gorm.io/gorm"
 )
 
-func executeFilter(ctx context.Context, arg *ast.Argument, value interface{}) (func(db *gorm.DB) *gorm.DB, error) {
+func executeFilter(ctx context.Context, arg *ast.Argument, value interface{}) (func(db *gorm.DB) *gorm.DB, errors.GraphqlErrorInterface) {
 	for _, directive := range arg.Directives {
 		filter := filterMap[directive.Name]
 		if filter == nil {

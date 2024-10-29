@@ -67,6 +67,7 @@ func (o *Options) addFunc() {
 	o.Funcs["div"] = Div
 	o.Funcs["buildRelation"] = ast.BuildRelation
 	o.Funcs["pluralize"] = utils.Pluralize
+	o.Funcs["isInternalType"] = utils.IsInternalType
 }
 
 func Render(options *Options) error {

@@ -4,15 +4,6 @@ import (
 	"fmt"
 )
 
-type ValidateError struct {
-	NodeName string
-	Message  string
-}
-
-func (e *ValidateError) Error() string {
-	return fmt.Sprintf("validate error: %s, node: %s", e.Message, e.NodeName)
-}
-
 type LexerError struct {
 	Path         *string
 	Line         int
@@ -27,10 +18,25 @@ func (e *LexerError) Error() string {
 	return fmt.Sprintf("lexer error: %s, line: %d, line position: %d", e.Message, e.Line, e.LinePosition)
 }
 
+func (e *LexerError) GraphqlError() *GraphQLError {
+	return &GraphQLError{
+		Message:   fmt.Sprintf("[lexer error]: %s", e.Message),
+		Locations: []*GraphqlLocation{{Line: e.Line, Column: e.LinePosition}},
+	}
+}
+
 type ParserError struct {
-	Message string
+	Message   string
+	Locations *GraphqlLocation
 }
 
 func (e *ParserError) Error() string {
 	return fmt.Sprintf("parser error: %s", e.Message)
+}
+
+func (e *ParserError) GraphqlError() *GraphQLError {
+	return &GraphQLError{
+		Message:   fmt.Sprintf("[parser error]: %s", e.Message),
+		Locations: []*GraphqlLocation{e.Locations},
+	}
 }
