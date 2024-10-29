@@ -1,22 +1,22 @@
 package excute
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/context"
 	"gorm.io/gorm"
 )
 
-var quickExcuteMap = map[string]func(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface){
+var quickExcuteMap = map[string]func(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface){
 	"find":     executeFind,
 	"first":    executeFirst,
 	"paginate": executePaginate,
 	// TODO: create, update, delete,
 }
 
-func QuickExecute(ctx context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
+func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
 	scopes := make([]func(db *gorm.DB) *gorm.DB, 0)
 	for _, arg := range field.DefinitionArgs {
 		if len(arg.Directives) > 0 {

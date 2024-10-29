@@ -18,9 +18,9 @@ func (*User) TypeName() string { return "user" }
 
 type Post struct {
   model.ModelSoftDelete
-  Title string `gorm:"index" json:"title" `
-  Content string `json:"content" `
   UserId int64 `json:"user_id" `
+  Title string `json:"title" gorm:"index" `
+  Content string `json:"content" `
   User User `json:"user" `
 }
 

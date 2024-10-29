@@ -5,7 +5,7 @@ func init () {
 {{- if not (isInternalType .Name) }}
 {{- if eq (len .Directives) 0 }}
 {{- $args := .Args }}
-  excute.AddResolver("{{ .Name | ucFirst }}Resolver", func(ctx context.Context, args map[string]any) (interface{}, error) {
+  excute.AddResolver("{{ .Name | ucFirst }}Resolver", func(ctx *context.Context, args map[string]any) (interface{}, error) {
   {{- range $index, $arg := $args }}
     {{ $arg.Name | lcFirst }}, ok := args["{{ $index }}"].({{ if eq $arg.Type.GetRealType.Kind "SCALAR" }}{{ else }}models.{{ end }}{{ false | $arg.Type.GetGoType }})
     if !ok {

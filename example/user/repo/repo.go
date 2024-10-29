@@ -3,24 +3,24 @@ package repo
 
 import (
   "github.com/light-speak/lighthouse/graphql/ast"
-  "github.com/light-speak/lighthouse/graphql/model"
   "gorm.io/gorm"
-  "sync"
+  "github.com/light-speak/lighthouse/context"
   "user/models"
-  "context"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "sync"
 )
 
 func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"updated_at": {},}}
-func Load__User(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+func Load__User(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
 }
-func LoadList__User(ctx context.Context, key int64, field string) ([]map[string]interface{}, error) {
+func LoadList__User(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "users", field).LoadList(key)
 }
 func Query__User(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.User{}).Scopes(scopes...)
 }
-func First__User(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__User(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__User())
   if data == nil {
@@ -54,7 +54,7 @@ func First__User(ctx context.Context, columns map[string]interface{}, data map[s
   }
   return data, nil
 }
-func List__User(ctx context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func List__User(ctx *context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__User())
   if datas == nil {
@@ -91,16 +91,16 @@ func List__User(ctx context.Context, columns map[string]interface{},datas []map[
   return datas, nil
 }
 func Provide__Post() map[string]*ast.Relation { return map[string]*ast.Relation{"content": {},"created_at": {},"deleted_at": {},"id": {},"title": {},"updated_at": {},"user": {Name: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"},"user_id": {},}}
-func Load__Post(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+func Load__Post(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
 }
-func LoadList__Post(ctx context.Context, key int64, field string) ([]map[string]interface{}, error) {
+func LoadList__Post(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "posts", field).LoadList(key)
 }
 func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
 }
-func First__Post(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__Post(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__Post())
   if data == nil {
@@ -134,7 +134,7 @@ func First__Post(ctx context.Context, columns map[string]interface{}, data map[s
   }
   return data, nil
 }
-func List__Post(ctx context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func List__Post(ctx *context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__Post())
   if datas == nil {

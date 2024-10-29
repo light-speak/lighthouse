@@ -1,15 +1,38 @@
 run:
   timeout: 5m
+  tests: true
+  modules-download-mode: readonly
 
 linters:
+  disable-all: true
   enable:
     - errcheck
+    - gosimple
     - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
     - gofmt
-    - golint
+    - goimports
+    - misspell
+    - revive
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/light-speak/lighthouse
 
 issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-rules:
     - path: _test\.go
       linters:
-        - gofmt
+        - errcheck
+    - path: _test\.go
+      linters:
+        - revive
+      text: "package-comments"

@@ -5,16 +5,16 @@ func Provide__{{ $name | ucFirst }}() map[string]*ast.Relation { return map[stri
   {{- if ne .Name "__typename" }}"{{ .Name }}": {{ if .Relation }}{{ buildRelation . }}{{ else }}{}{{ end }},{{ end -}}
   {{- end -}}
 }}
-func Load__{{ $name | ucFirst }}(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).Load(key)
 }
-func LoadList__{{ $name | ucFirst }}(ctx context.Context, key int64, field string) ([]map[string]interface{}, error) {
+func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).LoadList(key)
 }
 func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.{{ $name | ucFirst }}{}).Scopes(scopes...)
 }
-func First__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if data == nil {
@@ -48,7 +48,7 @@ func First__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interf
   }
   return data, nil
 }
-func List__{{ $name | ucFirst }}(ctx context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func List__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
   var err error
   selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if datas == nil {

@@ -1,13 +1,13 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/utils"
+	"github.com/light-speak/lighthouse/context"
 	"gorm.io/gorm"
 )
 
@@ -16,28 +16,28 @@ type SelectRelation struct {
 	SelectColumns map[string]interface{}
 }
 
-var quickListMap = make(map[string]func(ctx context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error))
+var quickListMap = make(map[string]func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error))
 
-var quickFirstMap = make(map[string]func(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
+var quickFirstMap = make(map[string]func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
 
-var quickLoadMap = make(map[string]func(ctx context.Context, key int64, field string) (map[string]interface{}, error))
+var quickLoadMap = make(map[string]func(ctx *context.Context, key int64, field string) (map[string]interface{}, error))
 
-var quickLoadListMap = make(map[string]func(ctx context.Context, key int64, field string) ([]map[string]interface{}, error))
+var quickLoadListMap = make(map[string]func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error))
 
-func AddQuickList(name string, fn func(ctx context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
+func AddQuickList(name string, fn func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
 	quickListMap[name] = fn
 }
-func AddQuickFirst(name string, fn func(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
+func AddQuickFirst(name string, fn func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
 	quickFirstMap[name] = fn
 }
-func AddQuickLoad(name string, fn func(ctx context.Context, key int64, field string) (map[string]interface{}, error)) {
+func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string) (map[string]interface{}, error)) {
 	quickLoadMap[name] = fn
 }
-func AddQuickLoadList(name string, fn func(ctx context.Context, key int64, field string) ([]map[string]interface{}, error)) {
+func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error)) {
 	quickLoadListMap[name] = fn
 }
 
-func GetQuickFirst(name string) func(ctx context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func GetQuickFirst(name string) func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
 	fn, ok := quickFirstMap[name]
 	if !ok {
 		return nil
@@ -45,7 +45,7 @@ func GetQuickFirst(name string) func(ctx context.Context, columns map[string]int
 	return fn
 }
 
-func GetQuickList(name string) func(ctx context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func GetQuickList(name string) func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
 	fn, ok := quickListMap[name]
 	if !ok {
 		return nil
@@ -53,7 +53,7 @@ func GetQuickList(name string) func(ctx context.Context, columns map[string]inte
 	return fn
 }
 
-func GetQuickLoad(name string) func(ctx context.Context, key int64, field string) (map[string]interface{}, error) {
+func GetQuickLoad(name string) func(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
 	fn, ok := quickLoadMap[name]
 	if !ok {
 		return nil
@@ -61,7 +61,7 @@ func GetQuickLoad(name string) func(ctx context.Context, key int64, field string
 	return fn
 }
 
-func GetQuickLoadList(name string) func(ctx context.Context, key int64, field string) ([]map[string]interface{}, error) {
+func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
 	fn, ok := quickLoadListMap[name]
 	if !ok {
 		return nil
@@ -127,7 +127,7 @@ func MapToStruct[T ModelInterface](data map[string]interface{}) (T, error) {
 	return m, nil
 }
 
-func FetchRelation(ctx context.Context, data map[string]interface{}, relation *SelectRelation) (interface{}, error) {
+func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *SelectRelation) (interface{}, error) {
 	switch relation.Relation.RelationType {
 	case ast.RelationTypeBelongsTo:
 		fieldValue, ok := data[relation.Relation.ForeignKey]
@@ -159,7 +159,7 @@ func FetchRelation(ctx context.Context, data map[string]interface{}, relation *S
 	return nil, nil
 }
 
-func fetchHasMany(ctx context.Context, relation *SelectRelation, fieldValue interface{}) ([]map[string]interface{}, error) {
+func fetchHasMany(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) ([]map[string]interface{}, error) {
 	key, ok := fieldValue.(int64)
 	if !ok {
 		return nil, fmt.Errorf("relation %s field %s value is not int64", relation.Relation.Name, relation.Relation.ForeignKey)
@@ -175,7 +175,7 @@ func fetchHasMany(ctx context.Context, relation *SelectRelation, fieldValue inte
 	return datas, nil
 }
 
-func fetchBelongsTo(ctx context.Context, relation *SelectRelation, fieldValue interface{}) (map[string]interface{}, error) {
+func fetchBelongsTo(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) (map[string]interface{}, error) {
 	key, ok := fieldValue.(int64)
 	if !ok {
 		return nil, fmt.Errorf("relation %s field %s value is not int64", relation.Relation.Name, relation.Relation.ForeignKey)
