@@ -2,6 +2,26 @@ run:
   timeout: 5m
   modules-download-mode: readonly
   skip-dirs-use-default: true
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+  build-tags: []
+  allow-parallel-runners: true
+  go: '1.22'
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  skip-dirs:
+    - vendor
+    - third_party
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    - ".*\\.mock\\.go$"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
 
 linters:
   disable-all: true
