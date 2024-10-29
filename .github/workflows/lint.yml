@@ -1,4 +1,4 @@
-name: Go Lint and Style Check
+name: Lint and Style Check
 
 on:
   pull_request:
@@ -8,17 +8,23 @@ on:
 
 jobs:
   lint:
+    name: Lint and Style Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
-      - name: Install dependencies
-        run: go mod tidy
+          go-version: '1.22.x'
+          cache: false
+
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.0
-      - name: Lint
-        run: golangci-lint run
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.0
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run golangci-lint
+        run: golangci-lint run --timeout=5m
