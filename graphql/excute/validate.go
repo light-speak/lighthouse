@@ -7,15 +7,15 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
-func ValidateValue(field *ast.Field, value interface{}, isVariable bool) (interface{}, error) {
+func ValidateValue(field *ast.Field, value interface{}, isVariable bool) (interface{}, errors.GraphqlErrorInterface) {
 	realType := field.Type.GetRealType()
 	if realType.Kind != ast.KindScalar {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s is not a scalar type", field.Name),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
-	value, err := realType.TypeNode.(*ast.ScalarNode).ScalarType.Serialize(value)
+	value, err := realType.TypeNode.(*ast.ScalarNode).ScalarType.Serialize(value, field.GetLocation())
 	if err != nil {
 		return nil, err
 	}

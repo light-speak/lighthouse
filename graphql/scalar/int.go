@@ -3,30 +3,41 @@ package scalar
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/light-speak/lighthouse/errors"
 )
 
 type IntScalar struct{}
 
-func (i *IntScalar) ParseValue(v string) (interface{}, error) {
+func (i *IntScalar) ParseValue(v string, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	intValue, err := strconv.ParseInt(v, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid integer value: %s", v)
+		return nil, &errors.GraphQLError{
+			Message:   fmt.Sprintf("invalid integer value: %s", v),
+			Locations: []*errors.GraphqlLocation{location},
+		}
 	}
 	return intValue, nil
 }
 
-func (i *IntScalar) Serialize(v interface{}) (string, error) {
+func (i *IntScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
 	if intValue, ok := v.(int64); ok {
 		return strconv.FormatInt(intValue, 10), nil
 	}
-	return "", fmt.Errorf("value is not an integer: %v", v)
+	return "", &errors.GraphQLError{
+		Message:   fmt.Sprintf("value is not an integer: %v", v),
+		Locations: []*errors.GraphqlLocation{location},
+	}
 }
 
-func (i *IntScalar) ParseLiteral(v interface{}) (interface{}, error) {
+func (i *IntScalar) ParseLiteral(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	if vt, ok := v.(int64); ok {
 		return vt, nil
 	}
-	return nil, fmt.Errorf("invalid literal for Int: %v", v)
+	return nil, &errors.GraphQLError{
+		Message:   fmt.Sprintf("invalid literal for Int: %v", v),
+		Locations: []*errors.GraphqlLocation{location},
+	}
 }
 
 func (i *IntScalar) GoType() string {

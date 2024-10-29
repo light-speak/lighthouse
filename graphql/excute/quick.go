@@ -9,14 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
-var quickExcuteMap = map[string]func(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, error){
+var quickExcuteMap = map[string]func(ctx context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface){
 	"find":     executeFind,
 	"first":    executeFirst,
 	"paginate": executePaginate,
 	// TODO: create, update, delete,
 }
 
-func QuickExecute(ctx context.Context, field *ast.Field) (interface{}, bool, error) {
+func QuickExecute(ctx context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
 	scopes := make([]func(db *gorm.DB) *gorm.DB, 0)
 	for _, arg := range field.DefinitionArgs {
 		if len(arg.Directives) > 0 {
@@ -42,12 +42,12 @@ func QuickExecute(ctx context.Context, field *ast.Field) (interface{}, bool, err
 
 	return nil, false, nil
 }
-func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, error) {
+func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, errors.GraphqlErrorInterface) {
 	v, ok := datas[field.Name]
 	if !ok {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Name),
-			Locations: []errors.GraphqlLocation{{Line: 1, Column: 1}},
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
 	if v == nil {
@@ -62,7 +62,10 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 	if typeRef.Kind == ast.KindList {
 		vList, ok := v.([]map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("expected list but got %T", v)
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("expected list but got %T", v),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			}
 		}
 
 		result := make([]interface{}, len(vList))
@@ -102,7 +105,7 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 	return v, nil
 }
 
-func getColumns(field *ast.Field) (map[string]interface{}, error) {
+func getColumns(field *ast.Field) (map[string]interface{}, errors.GraphqlErrorInterface) {
 	res := make(map[string]interface{})
 	if len(field.Children) == 0 {
 		return nil, nil

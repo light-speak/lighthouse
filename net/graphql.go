@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/light-speak/lighthouse/context"
+	"github.com/light-speak/lighthouse/env"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/excute"
 	"github.com/light-speak/lighthouse/log"
@@ -49,17 +51,19 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
-	data, err := excute.ExecuteQuery(r.Context(), request.Query, request.Variables)
+	ctx := context.NewContext(r.Context())
+	data := excute.ExecuteQuery(ctx, request.Query, request.Variables)
 	response := GraphQLResponse{
 		Data: data,
 	}
-	if err != nil {
-		log.Error().Msgf("Error executing query: %v", err)
-		response.Errors = []*errors.GraphQLError{
-			{
-				Message: err.Error(),
-			},
+	if len(ctx.Errors) > 0 {
+		response.Errors = make([]*errors.GraphQLError, 0)
+		for _, err := range ctx.Errors {
+			e := err.GraphqlError()
+			if env.LighthouseConfig.App.Environment != env.Development {
+				e.Locations = nil
+			}
+			response.Errors = append(response.Errors, e)
 		}
 	}
 

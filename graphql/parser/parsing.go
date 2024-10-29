@@ -20,13 +20,16 @@ import (
 //	  createdAt: DateTime
 //	}
 func (p *Parser) parseObject() {
-
 	extend := false
 	if p.PreviousToken().Type == lexer.Extend {
 		extend = true
 	}
 
 	object := &ast.ObjectNode{
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 		BaseNode: ast.BaseNode{
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Type),
@@ -112,6 +115,10 @@ func (p *Parser) parseDirectives() []*ast.Directive {
 func (p *Parser) parseDirective() *ast.Directive {
 	directive := &ast.Directive{
 		Name: p.expectAndGetValue(lexer.At),
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 
 	var args map[string]*ast.Argument
@@ -150,6 +157,14 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 				IsUnion: true,
 				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
+					BaseLocation: ast.BaseLocation{
+						Line: p.currToken.Line,
+						Column: p.currToken.LinePosition,
+					},
+				},
+				BaseLocation: ast.BaseLocation{
+					Line: p.currToken.Line,
+					Column: p.currToken.LinePosition,
 				},
 			}
 			p.nextToken()
@@ -171,6 +186,14 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 			IsFragment: true,
 			Type: &ast.TypeRef{
 				Name: p.currToken.Value,
+				BaseLocation: ast.BaseLocation{
+					Line: p.currToken.Line,
+					Column: p.currToken.LinePosition,
+				},
+			},
+			BaseLocation: ast.BaseLocation{
+				Line: p.currToken.Line,
+				Column: p.currToken.LinePosition,
 			},
 		}
 		p.nextToken()
@@ -181,6 +204,10 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 		Name:        p.currToken.Value,
 		Alias:       alias,
 		Description: p.parseDescription(),
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 	p.nextToken()
 
@@ -273,6 +300,10 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 			fieldType = &ast.TypeRef{
 				Kind:   ast.KindList,
 				OfType: innerType,
+				BaseLocation: ast.BaseLocation{
+					Line: p.currToken.Line,
+					Column: p.currToken.LinePosition,
+				},
 			}
 		}
 
@@ -285,6 +316,10 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 			fieldType = &ast.TypeRef{
 				Kind: "",
 				Name: p.currToken.Value,
+				BaseLocation: ast.BaseLocation{
+					Line: p.currToken.Line,
+					Column: p.currToken.LinePosition,
+				},
 			}
 			p.expect(lexer.Letter)
 		default:
@@ -297,6 +332,10 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 		fieldType = &ast.TypeRef{
 			Kind:   ast.KindNonNull,
 			OfType: fieldType,
+			BaseLocation: ast.BaseLocation{
+				Line: p.currToken.Line,
+				Column: p.currToken.LinePosition,
+			},
 		}
 	}
 
@@ -348,6 +387,10 @@ func (p *Parser) parseArgument() *ast.Argument {
 		DefaultValue: defaultValue,
 		IsVariable:   !isReference && isVariable,
 		IsReference:  isReference,
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 }
 
@@ -425,6 +468,10 @@ func (p *Parser) parseDirectiveDefinition() {
 	node := &ast.DirectiveDefinition{
 		Name:        p.expectAndGetValue(lexer.At),
 		Description: description,
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 
 	if p.currToken.Type == lexer.LeftParent {
@@ -476,6 +523,10 @@ func (p *Parser) parseEnum() {
 			Name:        p.expectAndGetValue(lexer.Enum),
 			Directives:  p.parseDirectives(),
 		},
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 
 	if p.currToken.Type != lexer.LeftBrace {
@@ -506,6 +557,10 @@ func (p *Parser) parseEnumValue() *ast.EnumValue {
 		Name:        name,
 		Description: description,
 		Directives:  directives,
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 }
 
@@ -539,6 +594,10 @@ func (p *Parser) parseInput() {
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Input),
 			Directives:  p.parseDirectives(),
+		},
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
 		},
 	}
 
@@ -580,6 +639,10 @@ func (p *Parser) parseInterface() {
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Interface),
 		},
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 
 	node.Directives = p.parseDirectives()
@@ -611,6 +674,10 @@ func (p *Parser) parseScalar() {
 			Name:        p.expectAndGetValue(lexer.Scalar),
 			Directives:  p.parseDirectives(),
 		},
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
+		},
 	}
 
 	p.AddScalar(node)
@@ -629,6 +696,10 @@ func (p *Parser) parseUnion() {
 			Description: p.parseDescription(),
 			Name:        p.expectAndGetValue(lexer.Union),
 			Directives:  p.parseDirectives(),
+		},
+		BaseLocation: ast.BaseLocation{
+			Line: p.currToken.Line,
+			Column: p.currToken.LinePosition,
 		},
 	}
 

@@ -1,8 +1,11 @@
 package directive
 
-import "github.com/light-speak/lighthouse/graphql/ast"
+import (
+	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/graphql/ast"
+)
 
-func handlerModel(o *ast.ObjectNode, d *ast.Directive, store *ast.NodeStore) error {
+func handlerModel(o *ast.ObjectNode, d *ast.Directive, store *ast.NodeStore) errors.GraphqlErrorInterface {
 	o.IsModel = true
 	o.Fields["id"] = &ast.Field{
 		Name: "id",

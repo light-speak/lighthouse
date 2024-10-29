@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
@@ -36,13 +37,16 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 	return lexer.NewLexer([]*lexer.Content{{Path: &path, Content: string(content) + "\n"}}), nil
 }
 
-func ReadGraphQLFiles(paths []string) (*lexer.Lexer, error) {
+func ReadGraphQLFiles(paths []string) (*lexer.Lexer, errors.GraphqlErrorInterface) {
 	contents := make([]*lexer.Content, 0)
 	contents = append(contents, &lexer.Content{Path: nil, Content: baseSchema + "\n"})
 	for _, path := range paths {
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return nil, err
+			return nil, &errors.ParserError{
+				Message:   err.Error(),
+				Locations: &errors.GraphqlLocation{Line: 1, Column: 1},
+			}
 		}
 		contents = append(contents, &lexer.Content{Path: &path, Content: string(content) + "\n"})
 	}

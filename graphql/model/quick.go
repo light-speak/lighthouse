@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
@@ -131,7 +132,10 @@ func FetchRelation(ctx context.Context, data map[string]interface{}, relation *S
 	case ast.RelationTypeBelongsTo:
 		fieldValue, ok := data[relation.Relation.ForeignKey]
 		if !ok {
-			return nil, fmt.Errorf("field %s not found in function %s", relation.Relation.ForeignKey, "FetchRelation")
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Relation.ForeignKey, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
 		}
 		data, err := fetchBelongsTo(ctx, relation, fieldValue)
 		if err != nil {
@@ -141,7 +145,10 @@ func FetchRelation(ctx context.Context, data map[string]interface{}, relation *S
 	case ast.RelationTypeHasMany:
 		fieldValue, ok := data[relation.Relation.Reference]
 		if !ok {
-			return nil, fmt.Errorf("field %s not found in function %s", relation.Relation.Reference, "FetchRelation")
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Relation.Reference, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
 		}
 		datas, err := fetchHasMany(ctx, relation, fieldValue)
 		if err != nil {

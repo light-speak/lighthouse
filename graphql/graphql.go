@@ -6,11 +6,10 @@ import (
 
 	"github.com/light-speak/lighthouse/config"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	_ "github.com/light-speak/lighthouse/graphql/ast/directive"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/validate"
 	"github.com/light-speak/lighthouse/log"
-
-	_ "github.com/light-speak/lighthouse/graphql/ast/directive"
 )
 
 var (

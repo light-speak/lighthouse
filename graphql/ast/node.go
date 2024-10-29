@@ -24,12 +24,28 @@ type Node interface {
 	GetDirectivesByName(name string) []*Directive
 
 	// Validate validates the node.
-	Validate(store *NodeStore) error
+	Validate(store *NodeStore) errors.GraphqlErrorInterface
 
 	// GetDirectives returns the directives of the node.
 	GetDirectives() []*Directive
 	GetFields() map[string]*Field
 	GetPossibleTypes() map[string]*ObjectNode
+}
+
+type Locationable interface {
+	GetLocation() errors.GraphqlLocation
+}
+
+type BaseLocation struct {
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+func (l *BaseLocation) GetLocation() *errors.GraphqlLocation {
+	return &errors.GraphqlLocation{
+		Line:   l.Line,
+		Column: l.Column,
+	}
 }
 
 type Kind string
@@ -72,13 +88,14 @@ func (n *BaseNode) GetDescription() string {
 func (n *BaseNode) GetDirectivesByName(name string) []*Directive {
 	return GetDirective(name, n.Directives)
 }
-func (n *BaseNode) GetDirectives() []*Directive              { return n.Directives }
-func (n *BaseNode) GetFields() map[string]*Field             { return nil }
-func (n *BaseNode) Validate(store *NodeStore) error          { return nil }
-func (n *BaseNode) GetPossibleTypes() map[string]*ObjectNode { return n.PossibleTypes }
+func (n *BaseNode) GetDirectives() []*Directive                            { return n.Directives }
+func (n *BaseNode) GetFields() map[string]*Field                           { return nil }
+func (n *BaseNode) Validate(store *NodeStore) errors.GraphqlErrorInterface { return nil }
+func (n *BaseNode) GetPossibleTypes() map[string]*ObjectNode               { return n.PossibleTypes }
 
 type ObjectNode struct {
 	BaseNode
+	BaseLocation
 	Fields         map[string]*Field `json:"fields"`
 	InterfaceNames []string          `json:"-"`
 	IsModel        bool              `json:"-"`
@@ -87,7 +104,7 @@ type ObjectNode struct {
 }
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }
-func (o *ObjectNode) Validate(store *NodeStore) error {
+func (o *ObjectNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	o.Fields["__typename"] = &Field{
 		Name: "__typename",
 		Type: &TypeRef{
@@ -115,9 +132,9 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 		for _, interfaceName := range o.InterfaceNames {
 			interfaceNode, ok := store.Interfaces[interfaceName]
 			if !ok {
-				return &errors.ValidateError{
-					NodeName: o.GetName(),
-					Message:  fmt.Sprintf("interface %s not found", interfaceName),
+				return &errors.GraphQLError{
+					Message:   fmt.Sprintf("interface %s not found", interfaceName),
+					Locations: []*errors.GraphqlLocation{o.GetLocation()},
 				}
 			}
 			if o.Interfaces == nil {
@@ -135,11 +152,12 @@ func (o *ObjectNode) Validate(store *NodeStore) error {
 
 type InterfaceNode struct {
 	BaseNode
+	BaseLocation
 	Fields map[string]*Field `json:"fields"`
 }
 
 func (o *InterfaceNode) GetFields() map[string]*Field { return o.Fields }
-func (o *InterfaceNode) Validate(store *NodeStore) error {
+func (o *InterfaceNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	for _, field := range o.Fields {
 		if err := field.Validate(store, o.Fields, o, LocationFieldDefinition, nil, nil); err != nil {
 			return err
@@ -153,19 +171,20 @@ func (o *InterfaceNode) Validate(store *NodeStore) error {
 
 type UnionNode struct {
 	BaseNode
+	BaseLocation
 	TypeNames map[string]string `json:"-"`
 }
 
-func (u *UnionNode) Validate(store *NodeStore) error {
+func (u *UnionNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if err := ValidateDirectives(u.GetName(), u.GetDirectives(), store, LocationUnion); err != nil {
 		return err
 	}
 	for _, typeName := range u.TypeNames {
 		typeNode, ok := store.Objects[typeName]
 		if !ok {
-			return &errors.ValidateError{
-				NodeName: u.GetName(),
-				Message:  fmt.Sprintf("type %s not found", typeName),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("type %s not found", typeName),
+				Locations: []*errors.GraphqlLocation{u.GetLocation()},
 			}
 		}
 		if u.PossibleTypes == nil {
@@ -178,10 +197,11 @@ func (u *UnionNode) Validate(store *NodeStore) error {
 
 type EnumNode struct {
 	BaseNode
+	BaseLocation
 	EnumValues map[string]*EnumValue `json:"enumValues"`
 }
 
-func (e *EnumNode) Validate(store *NodeStore) error {
+func (e *EnumNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	for _, enumValue := range e.EnumValues {
 		if err := enumValue.Validate(store); err != nil {
 			return err
@@ -194,6 +214,7 @@ func (e *EnumNode) Validate(store *NodeStore) error {
 }
 
 type EnumValue struct {
+	BaseLocation
 	Name              string       `json:"name"`
 	Description       *string      `json:"description"`
 	Directives        []*Directive `json:"-"`
@@ -202,7 +223,7 @@ type EnumValue struct {
 	DeprecationReason *string      `json:"deprecationReason"`
 }
 
-func (e *EnumValue) Validate(store *NodeStore) error {
+func (e *EnumValue) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if err := ValidateDirectives(e.Name, e.Directives, store, LocationEnumValue); err != nil {
 		return err
 	}
@@ -212,9 +233,9 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 		value := directive.GetArg("value")
 		if value != nil {
 			if value.Value == nil {
-				return &errors.ValidateError{
-					NodeName: e.Name,
-					Message:  "enum value must have value argument",
+				return &errors.GraphQLError{
+					Message:   "enum value must be a number",
+					Locations: []*errors.GraphqlLocation{directive.GetLocation()},
 				}
 			}
 			e.Value = int8(value.Value.(int64))
@@ -237,12 +258,13 @@ func (e *EnumValue) Validate(store *NodeStore) error {
 
 type InputObjectNode struct {
 	BaseNode
+	BaseLocation
 	Fields map[string]*Field `json:"inputFields"`
 }
 
 func (i *InputObjectNode) GetFields() map[string]*Field { return i.Fields }
 
-func (i *InputObjectNode) Validate(store *NodeStore) error {
+func (i *InputObjectNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	for _, field := range i.Fields {
 		if err := field.Validate(store, i.Fields, i, LocationInputFieldDefinition, nil, nil); err != nil {
 			return err
@@ -256,10 +278,11 @@ func (i *InputObjectNode) Validate(store *NodeStore) error {
 
 type ScalarNode struct {
 	BaseNode
+	BaseLocation
 	ScalarType ScalarType `json:"-"`
 }
 
-func (s *ScalarNode) Validate(store *NodeStore) error {
+func (s *ScalarNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if err := ValidateDirectives(s.GetName(), s.GetDirectives(), store, LocationScalar); err != nil {
 		return err
 	}
@@ -267,13 +290,14 @@ func (s *ScalarNode) Validate(store *NodeStore) error {
 }
 
 type ScalarType interface {
-	ParseValue(v string) (interface{}, error)
-	Serialize(v interface{}) (string, error)
-	ParseLiteral(v interface{}) (interface{}, error)
+	ParseValue(v string, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
+	Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface)
+	ParseLiteral(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
 	GoType() string
 }
 
 type Field struct {
+	BaseLocation
 	Alias             string               `json:"-"`
 	Name              string               `json:"name"`
 	Description       *string              `json:"description"`
@@ -308,18 +332,18 @@ type Relation struct {
 	RelationType RelationType `json:"relationType"`
 }
 
-func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) error {
+func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) errors.GraphqlErrorInterface {
 	if f.IsFragment {
 		if fragments == nil {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  "fragments not found",
+			return &errors.GraphQLError{
+				Message:   "fragments not found",
+				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		}
 		if fragments[f.Type.Name] == nil {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  fmt.Sprintf("fragment %s not found", f.Type.Name),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("fragment %s not found", f.Type.Name),
+				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		}
 		frag := fragments[f.Type.Name]
@@ -348,18 +372,18 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 		}
 	} else {
 		if objectNode == nil {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  "field type must be object type, but got nil",
+			return &errors.GraphQLError{
+				Message:   "object node not found",
+				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		} else {
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
 				realType := f.Type.GetRealType()
 				if realType.TypeNode == nil || (realType.TypeNode.GetKind() == KindScalar && realType.TypeNode.(*ScalarNode).ScalarType == nil) {
-					return &errors.ValidateError{
-						NodeName: f.Name,
-						Message:  "field type must be scalar type",
+					return &errors.GraphQLError{
+						Message:   fmt.Sprintf("field %s type not found", f.Name),
+						Locations: []*errors.GraphqlLocation{f.GetLocation()},
 					}
 				}
 				// merge
@@ -375,9 +399,9 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 						}
 					}
 				} else {
-					return &errors.ValidateError{
-						NodeName: f.Name,
-						Message:  "field type must be object type, and the field is not a fragment field",
+					return &errors.GraphQLError{
+						Message:   fmt.Sprintf("field %s not found", f.Name),
+						Locations: []*errors.GraphqlLocation{f.GetLocation()},
 					}
 				}
 			}
@@ -386,16 +410,16 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 
 	if f.IsUnion {
 		if f.Type.TypeNode.GetKind() != KindObject {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  "field type must be object type",
+			return &errors.GraphQLError{
+				Message:   "field type must be a object type",
+				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		}
 		obj := objectNode.GetPossibleTypes()[f.Type.Name]
 		if obj == nil {
-			return &errors.ValidateError{
-				NodeName: f.Name,
-				Message:  "field type must be a possible type of the union or interface",
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("union type %s not found", f.Type.Name),
+				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		}
 		for _, child := range f.Children {
@@ -434,6 +458,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 }
 
 type TypeRef struct {
+	BaseLocation
 	Kind     Kind     `json:"kind"`
 	Name     string   `json:"name"`
 	OfType   *TypeRef `json:"ofType"`
@@ -485,12 +510,12 @@ func (t *TypeRef) GetGoType(NonNull bool) string {
 	return "any"
 }
 
-func (t *TypeRef) Validate(store *NodeStore) error {
+func (t *TypeRef) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if t.Kind == KindNonNull {
 		if t.OfType == nil {
-			return &errors.ValidateError{
-				NodeName: t.Name,
-				Message:  "non-null type cannot be null",
+			return &errors.GraphQLError{
+				Message:   "non-null type cannot be null",
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}
 		if err := t.OfType.Validate(store); err != nil {
@@ -498,9 +523,9 @@ func (t *TypeRef) Validate(store *NodeStore) error {
 		}
 	} else if t.Kind == KindList {
 		if t.OfType == nil {
-			return &errors.ValidateError{
-				NodeName: t.Name,
-				Message:  "list type cannot be null",
+			return &errors.GraphQLError{
+				Message:   "list type cannot be nil",
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}
 		if err := t.OfType.Validate(store); err != nil {
@@ -508,15 +533,15 @@ func (t *TypeRef) Validate(store *NodeStore) error {
 		}
 	} else {
 		if t.Name == "" {
-			return &errors.ValidateError{
-				NodeName: t.Name,
-				Message:  "named type cannot be empty",
+			return &errors.GraphQLError{
+				Message:   "type name cannot be empty",
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}
 		if node, ok := store.Nodes[t.Name]; !ok {
-			return &errors.ValidateError{
-				NodeName: t.Name,
-				Message:  fmt.Sprintf("type %s not found", t.Name),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("type %s not found", t.Name),
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		} else {
 			t.Kind = node.GetKind()
@@ -529,7 +554,7 @@ func (t *TypeRef) Validate(store *NodeStore) error {
 	return nil
 }
 
-func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) error {
+func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
 	switch t.Kind {
 	case KindScalar:
 		return t.validateScalarValue(v, isVariable)
@@ -543,20 +568,26 @@ func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) error {
 		return t.validateListValue(v, isVariable)
 	case KindNonNull:
 		if v == nil {
-			return fmt.Errorf("value cannot be nil for non-null type %s", t.Name)
+			return &errors.GraphQLError{
+				Message:   "non-null type cannot be null",
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
+			}
 		}
 		return t.OfType.ValidateValue(v, isVariable)
 	default:
-		return fmt.Errorf("unsupported type kind: %s", t.Kind)
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("invalid type: %s", t.Name),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 }
 
-func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) error {
-	var err error
+func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
+	var err errors.GraphqlErrorInterface
 	if isVariable {
-		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseValue(v.(string))
+		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseValue(v.(string), t.GetLocation())
 	} else {
-		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseLiteral(v)
+		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseLiteral(v, t.GetLocation())
 	}
 	if err != nil {
 		return err
@@ -564,15 +595,21 @@ func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) error {
 	return nil
 }
 
-func (t *TypeRef) validateEnumValue(v interface{}) error {
+func (t *TypeRef) validateEnumValue(v interface{}) errors.GraphqlErrorInterface {
 	strValue, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("expected enum value to be string, got %T", v)
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("expected string value, got %T", v),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	enumNode, ok := t.TypeNode.(*EnumNode)
 	if !ok {
-		return fmt.Errorf("invalid enum type node")
+		return &errors.GraphQLError{
+			Message:   "invalid enum type node",
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	for _, enumValue := range enumNode.EnumValues {
@@ -581,28 +618,43 @@ func (t *TypeRef) validateEnumValue(v interface{}) error {
 		}
 	}
 
-	return fmt.Errorf("invalid enum value: %s", strValue)
+	return &errors.GraphQLError{
+		Message:   fmt.Sprintf("invalid enum value: %s", strValue),
+		Locations: []*errors.GraphqlLocation{t.GetLocation()},
+	}
 }
 
-func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) error {
+func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
 	objValue, ok := v.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("expected object value to be %v,you need return map[string]interface{}, got %T", t.Name, v)
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("expected object value, got %T", v),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	objNode, ok := t.TypeNode.(*ObjectNode)
 	if !ok {
-		return fmt.Errorf("invalid object type node")
+		return &errors.GraphQLError{
+			Message:   "invalid object type node",
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	for _, field := range objNode.Fields {
 		fieldValue, exists := objValue[field.Name]
 		if !exists && field.Type.Kind == KindNonNull && !isVariable {
-			return fmt.Errorf("required field %s is missing", field.Name)
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("required field %s is missing", field.Name),
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
+			}
 		}
 		if exists {
 			if err := field.Type.ValidateValue(fieldValue, isVariable); err != nil {
-				return fmt.Errorf("invalid value for field %s: %v", field.Name, err)
+				return &errors.GraphQLError{
+					Message:   err.Error(),
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
 			}
 		}
 	}
@@ -610,25 +662,37 @@ func (t *TypeRef) validateObjectValue(v interface{}, isVariable bool) error {
 	return nil
 }
 
-func (t *TypeRef) validateInputObjectValue(v interface{}, isVariable bool) error {
+func (t *TypeRef) validateInputObjectValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
 	inputObjValue, ok := v.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("expected input object value to be map[string]interface{}, got %T", v)
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("expected object value, got %T", v),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	inputObjNode, ok := t.TypeNode.(*InputObjectNode)
 	if !ok {
-		return fmt.Errorf("invalid input object type node")
+		return &errors.GraphQLError{
+			Message:   "invalid input object type node",
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
 	for _, field := range inputObjNode.Fields {
 		fieldValue, exists := inputObjValue[field.Name]
 		if !exists && field.Type.Kind == KindNonNull {
-			return fmt.Errorf("required input field %s is missing", field.Name)
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("required field %s is missing", field.Name),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			}
 		}
 		if exists {
 			if err := field.Type.ValidateValue(fieldValue, isVariable); err != nil {
-				return fmt.Errorf("invalid value for input field %s: %v", field.Name, err)
+				return &errors.GraphQLError{
+					Message:   err.Error(),
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
 			}
 		}
 	}
@@ -636,7 +700,7 @@ func (t *TypeRef) validateInputObjectValue(v interface{}, isVariable bool) error
 	return nil
 }
 
-func (t *TypeRef) validateListValue(v interface{}, isVariable bool) error {
+func (t *TypeRef) validateListValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
 	var list []interface{}
 	switch v := v.(type) {
 	case []interface{}:
@@ -644,12 +708,18 @@ func (t *TypeRef) validateListValue(v interface{}, isVariable bool) error {
 	case map[string]interface{}:
 		list = []interface{}{v}
 	default:
-		return fmt.Errorf("expected list, got %T", v)
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("expected list value, got %T", v),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
 	}
 
-	for i, item := range list {
+	for _, item := range list {
 		if err := t.OfType.ValidateValue(item, isVariable); err != nil {
-			return fmt.Errorf("invalid value for list item at index %d: %v", i, err)
+			return &errors.GraphQLError{
+				Message:   err.Error(),
+				Locations: []*errors.GraphqlLocation{t.GetLocation()},
+			}
 		}
 	}
 
@@ -708,6 +778,7 @@ func IsValidLocation(loc Location) bool {
 }
 
 type Directive struct {
+	BaseLocation
 	Name       string               `json:"name"`
 	Args       map[string]*Argument `json:"args"`
 	Definition *DirectiveDefinition `json:"-"`
@@ -717,12 +788,12 @@ func (d *Directive) GetArg(name string) *Argument {
 	return d.Args[name]
 }
 
-func (d *Directive) Validate(store *NodeStore, location Location) error {
+func (d *Directive) Validate(store *NodeStore, location Location) errors.GraphqlErrorInterface {
 	d.Definition = store.Directives[d.Name]
 	if d.Definition == nil {
-		return &errors.ValidateError{
-			NodeName: d.Name,
-			Message:  fmt.Sprintf("directive %s not found", d.Name),
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("directive %s not found", d.Name),
+			Locations: []*errors.GraphqlLocation{d.GetLocation()},
 		}
 	}
 	match := false
@@ -733,9 +804,9 @@ func (d *Directive) Validate(store *NodeStore, location Location) error {
 		}
 	}
 	if !match {
-		return &errors.ValidateError{
-			NodeName: d.Name,
-			Message:  fmt.Sprintf("directive %s is not valid for location %s", d.Name, location),
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("directive %s is not valid for location %s", d.Name, location),
+			Locations: []*errors.GraphqlLocation{d.GetLocation()},
 		}
 	}
 
@@ -744,6 +815,7 @@ func (d *Directive) Validate(store *NodeStore, location Location) error {
 }
 
 type DirectiveDefinition struct {
+	BaseLocation
 	Name        string               `json:"name"`
 	Description *string              `json:"description"`
 	Args        map[string]*Argument `json:"args"`
@@ -760,23 +832,23 @@ func (d *DirectiveDefinition) GetDescription() string {
 	return *d.Description
 }
 
-func (d *DirectiveDefinition) Validate(store *NodeStore) error {
+func (d *DirectiveDefinition) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	for _, arg := range d.Args {
 		if err := arg.Validate(store, nil, nil); err != nil {
 			return err
 		}
 	}
 	if len(d.Locations) == 0 {
-		return &errors.ValidateError{
-			NodeName: d.Name,
-			Message:  "directive must have at least one location",
+		return &errors.GraphQLError{
+			Message:   "directive locations cannot be empty",
+			Locations: []*errors.GraphqlLocation{d.GetLocation()},
 		}
 	}
 	for _, loc := range d.Locations {
 		if !IsValidLocation(loc) {
-			return &errors.ValidateError{
-				NodeName: d.Name,
-				Message:  fmt.Sprintf("invalid location: %s", loc),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("invalid location: %s", loc),
+				Locations: []*errors.GraphqlLocation{d.GetLocation()},
 			}
 		}
 	}
@@ -784,9 +856,9 @@ func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 		for _, arg := range directive.Args {
 			defArg := d.Args[arg.Name]
 			if defArg == nil {
-				return &errors.ValidateError{
-					NodeName: d.Name,
-					Message:  fmt.Sprintf("required argument %s is missing", arg.Name),
+				return &errors.GraphQLError{
+					Message:   fmt.Sprintf("argument %s not found", arg.Name),
+					Locations: []*errors.GraphqlLocation{directive.GetLocation()},
 				}
 			}
 			kind := defArg.Type.Kind
@@ -807,6 +879,7 @@ func (d *DirectiveDefinition) Validate(store *NodeStore) error {
 }
 
 type Fragment struct {
+	BaseLocation
 	Name       string            `json:"name"`
 	On         string            `json:"on"`
 	Object     *ObjectNode       `json:"-"`
@@ -814,12 +887,12 @@ type Fragment struct {
 	Fields     map[string]*Field `json:"fields"`
 }
 
-func (f *Fragment) Validate(store *NodeStore, fragments map[string]*Fragment) error {
+func (f *Fragment) Validate(store *NodeStore, fragments map[string]*Fragment) errors.GraphqlErrorInterface {
 	objectNode, ok := store.Objects[f.On]
 	if !ok {
-		return &errors.ValidateError{
-			NodeName: f.Name,
-			Message:  fmt.Sprintf("type %s not found", f.On),
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("fragment %s not found", f.On),
+			Locations: []*errors.GraphqlLocation{f.GetLocation()},
 		}
 	}
 	f.Object = objectNode
@@ -835,7 +908,7 @@ func (f *Fragment) Validate(store *NodeStore, fragments map[string]*Fragment) er
 	return nil
 }
 
-func ValidateDirectives(name string, directives []*Directive, store *NodeStore, location Location) error {
+func ValidateDirectives(name string, directives []*Directive, store *NodeStore, location Location) errors.GraphqlErrorInterface {
 	directiveNames := make(map[string]int)
 	for _, directive := range directives {
 		if err := directive.Validate(store, location); err != nil {
@@ -846,15 +919,15 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 	for directiveName, count := range directiveNames {
 		directiveDefinition := store.Directives[directiveName]
 		if directiveDefinition == nil {
-			return &errors.ValidateError{
-				NodeName: name,
-				Message:  fmt.Sprintf("directive %s not found", directiveName),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("directive %s not found", directiveName),
+				Locations: []*errors.GraphqlLocation{directiveDefinition.GetLocation()},
 			}
 		}
 		if !directiveDefinition.Repeatable && count > 1 {
-			return &errors.ValidateError{
-				NodeName: name,
-				Message:  fmt.Sprintf("directive %s is not repeatable but used %d times", directiveName, count),
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("directive %s is not repeatable", directiveName),
+				Locations: []*errors.GraphqlLocation{directiveDefinition.GetLocation()},
 			}
 		}
 	}
@@ -862,6 +935,7 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 }
 
 type Argument struct {
+	BaseLocation
 	Name         string       `json:"name"`
 	Description  *string      `json:"description"`
 	Directives   []*Directive `json:"-"`
@@ -880,31 +954,31 @@ func (a *Argument) GetDefaultValue() *string {
 	return &str
 }
 
-func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *Field) error {
+func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *Field) errors.GraphqlErrorInterface {
 	location := LocationArgumentDefinition
 	if a.IsVariable {
 		location = LocationVariableDefinition
 	}
 	if a.IsReference {
 		if args == nil {
-			return &errors.ValidateError{
-				NodeName: a.Name,
-				Message:  "variable arguments not found",
+			return &errors.GraphQLError{
+				Message:   "variable argument not found",
+				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
 
 		name, ok := a.Value.(string)
 
 		if !ok {
-			return &errors.ValidateError{
-				NodeName: a.Name,
-				Message:  "variable argument must be string",
+			return &errors.GraphQLError{
+				Message:   fmt.Sprintf("expected string value, got %T", a.Value),
+				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
 		if args[name] == nil {
-			return &errors.ValidateError{
-				NodeName: a.Name,
-				Message:  "variable argument not found",
+			return &errors.GraphQLError{
+				Message:   "variable argument not found",
+				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
 		a.Value = args[name].Value
@@ -912,9 +986,9 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 	}
 	if a.Type == nil {
 		if field == nil {
-			return &errors.ValidateError{
-				NodeName: a.Name,
-				Message:  "argument type not found, the field is not a query field",
+			return &errors.GraphQLError{
+				Message:   "argument type not found",
+				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
 		a.Type = field.Args[a.Name].Type

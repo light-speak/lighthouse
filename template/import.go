@@ -61,7 +61,7 @@ var importRegexMap = map[string]Import{
 		Path: "gorm.io/gorm",
 	},
 	`context\.`: {
-		Path: "context",
+		Path: "github.com/light-speak/lighthouse/context",
 	},
 	`sync\.`: {
 		Path: "sync",

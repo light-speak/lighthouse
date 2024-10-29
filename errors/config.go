@@ -7,5 +7,5 @@ type ConfigError struct {
 }
 
 func (e *ConfigError) Error() string {
-	return fmt.Sprintf("read config file error: %s", e.Message)
+	return fmt.Sprintf("[config error]: %s", e.Message)
 }
