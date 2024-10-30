@@ -11,13 +11,23 @@ on:
     branches:
       - main
 
+# 确保同一时间只运行一个工作流
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
 
 jobs:
   verify:
-    if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
+    # 避免在 PR 和 push 时重复运行
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/staging') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
