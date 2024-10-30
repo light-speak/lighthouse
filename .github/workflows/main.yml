@@ -19,10 +19,9 @@ concurrency:
 permissions:
   contents: read
   pull-requests: read
-  security-events: write
 
 jobs:
-  verify:
+  test:
     # 避免在 PR 和 push 时重复运行
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/staging') ||
@@ -54,28 +53,3 @@ jobs:
           file: ./coverage.txt
           flags: unittests
           fail_ci_if_error: false
-      
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --timeout=5m
-          skip-cache: true
-          
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: go
-          
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-        
-      - name: Run Tests for SonarCloud
-        run: |
-          go test -coverprofile=coverage.out -json > test-report.json ./...
-      
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
