@@ -1,4 +1,4 @@
-name: CI
+name: Testing and Code Quality
 
 on:
   push:
