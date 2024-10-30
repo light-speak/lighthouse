@@ -10,6 +10,7 @@ run:
     - internal
     - go/pkg/mod
     - usr/local/go/src
+    - opt/hostedtoolcache/go
 
 # 输出格式配置
 output:
