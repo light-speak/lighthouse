@@ -9,6 +9,11 @@ run:
     - go/pkg/mod
     - /usr/local/go/src 
     - /opt/hostedtoolcache/go 
+  go: "1.23"
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  build-tags:
+    - integration
 
 # 输出格式配置
 output:
@@ -17,13 +22,17 @@ output:
 # 启用的 linters
 linters:
   enable:
+    - errcheck
+    - gosec
     - gofmt
     - govet
-    - errcheck
+    - goimports
     - staticcheck
-    - gosimple
-    - ineffassign
     - unused
+    - ineffassign
+    - gofmt
+    - gosimple
+    - misspell
     - revive
   disable:
     - typecheck
@@ -32,6 +41,8 @@ linters:
 linters-settings:
   gofmt:
     simplify: true
+  goimports:
+    local-prefixes: github.com/light-speak/lighthouse
   govet:
     check-shadowing: false
     enable-all: false
@@ -46,13 +57,23 @@ linters-settings:
     go: "1.23"
     checks: ["all"]
 
-# 问题处理规则
 issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  
   exclude-rules:
     - path: _test\.go
       linters:
         - errcheck
-        - gosec
-
-  max-issues-per-linter: 0
-  max-same-issues: 0
+        - revive
+    
+    # Go 1.23 特定问题
+    - text: "cannot range over"
+      linters: [typecheck]
+    - text: "cannot infer"
+      linters: [typecheck]
+    - text: "undefined"
+      linters: [typecheck]
+    - text: "missing return"
+      linters: [typecheck]
