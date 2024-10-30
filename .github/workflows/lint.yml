@@ -44,7 +44,3 @@ jobs:
             --max-same-issues=0 \
             --max-issues-per-linter=0 \
             ./...
-
-      - name: Run tests
-        run: |
-          go test -v -race ./...

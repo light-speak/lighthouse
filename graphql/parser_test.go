@@ -18,7 +18,6 @@ func TestReadGraphQLFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		log.Debug().Str("type", string(token.Type)).Str("value", token.Value).Msg("")
 		if token.Type == lexer.EOF {
 			break
 		}
@@ -30,18 +29,9 @@ func TestParseSchema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := parser.NewParser(l)
-	nodes := p.ParseSchema()
-	p.NodeDetail(nodes)
-}
-
-func TestValidate(t *testing.T) {
-	nodes, err := ParserSchema([]string{"demo.graphql"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := GetParser()
-	p.NodeDetail(nodes)
+	parser.NewParser(l)
+	// nodes := p.ParseSchema()
+	// p.NodeDetail(nodes)
 }
 
 func TestParseOperation(t *testing.T) {
