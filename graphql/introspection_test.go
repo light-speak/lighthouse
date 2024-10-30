@@ -1,11 +1,9 @@
 package graphql
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/light-speak/lighthouse/graphql/parser"
-	"github.com/light-speak/lighthouse/log"
 )
 
 func TestIntrospectionQuery(t *testing.T) {
@@ -14,23 +12,22 @@ func TestIntrospectionQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Parser.NodeDetail(Parser.NodeStore.Nodes)
+
+	// Parse schema query
 	nl, err := parser.ReadGraphQLFile("schema_query.graphql")
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Create query parser and validate
 	qp := Parser.NewQueryParser(nl)
 	qp = qp.ParseSchema()
 	err = qp.Validate(Parser.NodeStore)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// json, err := json.Marshal(qp.Fragments)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// log.Warn().Msgf("qp.Fragments: %+v", string(json))
 
+	// Resolve fields
 	res := map[string]interface{}{}
 	for _, field := range qp.Fields {
 		res[field.Name], err = ResolveSchemaFields(qp, field)
@@ -38,9 +35,9 @@ func TestIntrospectionQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	json, err := json.Marshal(res)
-	if err != nil {
-		t.Fatal(err)
+
+	// Verify results
+	if len(res) == 0 {
+		t.Error("Expected non-empty result map")
 	}
-	log.Info().Msgf("d: %+v", string(json))
 }

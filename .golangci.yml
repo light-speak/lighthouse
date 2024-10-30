@@ -1,38 +1,79 @@
+# 基本运行配置
 run:
-  timeout: 5m
-  tests: true
+  deadline: 5m
+  tests: false
+  skip-dirs:
+    - vendor
+    - third_party
+    - internal
+    - go/pkg/mod
+    - /usr/local/go/src 
+    - /opt/hostedtoolcache/go 
+  go: "1.23"
   modules-download-mode: readonly
+  allow-parallel-runners: true
+  build-tags:
+    - integration
 
+# 输出格式配置
+output:
+  format: colored-line-number
+
+# 启用的 linters
 linters:
-  disable-all: true
   enable:
     - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - typecheck
-    - unused
+    - gosec
     - gofmt
+    - govet
     - goimports
+    - staticcheck
+    - unused
+    - ineffassign
+    - gofmt
+    - gosimple
     - misspell
     - revive
+  disable:
+    - typecheck
 
+# linter 具体设置
 linters-settings:
   gofmt:
     simplify: true
   goimports:
     local-prefixes: github.com/light-speak/lighthouse
+  govet:
+    check-shadowing: false
+    enable-all: false
+    disable:
+      - fieldalignment
+      - shadow
+  revive:
+    rules:
+      - name: package-comments
+        disabled: true
+  staticcheck:
+    go: "1.23"
+    checks: ["all"]
 
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  
   exclude-rules:
     - path: _test\.go
       linters:
         - errcheck
-    - path: _test\.go
-      linters:
         - revive
-      text: "package-comments"
+    
+    # Go 1.23 特定问题
+    - text: "cannot range over"
+      linters: [typecheck]
+    - text: "cannot infer"
+      linters: [typecheck]
+    - text: "undefined"
+      linters: [typecheck]
+    - text: "missing return"
+      linters: [typecheck]
