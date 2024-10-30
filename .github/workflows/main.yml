@@ -11,8 +11,12 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  verify:
     if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
@@ -40,40 +44,13 @@ jobs:
           file: ./coverage.txt
           flags: unittests
           fail_ci_if_error: false
-        
-  lint:
-    if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-          cache: true
-      
-      - name: golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           args: --timeout=5m
           skip-cache: true
-          
-  security:
-    if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
           
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
@@ -82,20 +59,7 @@ jobs:
           
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
-
-  sonarcloud:
-    if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-          
+        
       - name: Run Tests for SonarCloud
         run: |
           go test -coverprofile=coverage.out -json > test-report.json ./...
