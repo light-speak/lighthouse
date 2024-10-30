@@ -250,7 +250,7 @@ func init() {
 
 	goModel, err := utils.GetModPath(&currentPath) // Fix: Pass pointer to string
 	if err != nil {
-		log.Error().Msgf("Failed to get go module path: %v", err)
+		log.Warn().Msgf("template module init failed to get go module path: %v", err)
 		return
 	}
 

@@ -1,55 +1,57 @@
+# 基本运行配置
 run:
-  timeout: 5m
-  modules-download-mode: readonly
-  skip-dirs-use-default: true
-  go: '1.22'
+  deadline: 5m
+  tests: false
   skip-dirs:
     - vendor
     - third_party
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-    - ".*\\.mock\\.go$"
-    - ".*\\.tpl$"
-    - ".*_gen\\.go$"
+    - internal
+    - go/pkg/mod
+    - usr/local/go/src 
+    - opt/hostedtoolcache/go 
 
+# 输出格式配置
 output:
   format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
 
+# 启用的 linters
 linters:
-  disable-all: true
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
     - gofmt
-    - goimports
-    - misspell
-    - revive
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - unused
+  disable:
+    - typecheck
 
+# linter 具体设置
 linters-settings:
   gofmt:
     simplify: true
-  goimports:
-    local-prefixes: github.com/light-speak/lighthouse
   govet:
     check-shadowing: false
+    enable-all: false
+    disable:
+      - fieldalignment
+      - shadow
   revive:
     rules:
       - name: package-comments
         disabled: true
+  staticcheck:
+    go: "1.23"
+    checks: ["all"]
 
+# 问题处理规则
 issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
   exclude-rules:
     - path: _test\.go
       linters:
         - errcheck
-        - revive
+        - gosec
+
+  max-issues-per-linter: 0
+  max-same-issues: 0

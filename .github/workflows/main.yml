@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - staging
+    tags:
+      - 'v*'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+# 确保同一时间只运行一个工作流
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  verify:
+    # 避免在 PR 和 push 时重复运行
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/staging') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Install dependencies
+        run: go mod download
+          
+      - name: Run Tests
+        run: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          file: ./coverage.txt
+          flags: unittests
+          fail_ci_if_error: false
+      
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
+          skip-cache: true
+          
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: go
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        
+      - name: Run Tests for SonarCloud
+        run: |
+          go test -coverprofile=coverage.out -json > test-report.json ./...
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -3,9 +3,9 @@ package excute
 import (
 	"fmt"
 
+	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/context"
 	"gorm.io/gorm"
 )
 
@@ -76,7 +76,9 @@ func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, err
 				Type:     typeRef.OfType,
 			}
 
-			merged, err := mergeData(listField, map[string]interface{}{field.Name: item})
+			m := make(map[string]interface{})
+			m[field.Name] = item
+			merged, err := mergeData(listField, m)
 			if err != nil {
 				return nil, err
 			}

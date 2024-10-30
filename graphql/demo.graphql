@@ -20,7 +20,7 @@ type User implements Node & Named {
   createdAt: DateTime
   friends: [User!]!
   orders: [Order!]
-  myOrders: [Order!]! @paginate
+  myOrders: [Order!]!
   test(a: ID!): User
   result: SearchResult @testRole(role: ADMIN)
 }

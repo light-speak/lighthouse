@@ -1,4 +1,4 @@
-name: Lint and Style Check
+name: Code Quality Check
 
 on:
   pull_request:
@@ -10,28 +10,37 @@ jobs:
   lint:
     name: Lint and Style Check
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.0'
-          cache: false
+          go-version: '1.23.1'
+          cache: true
+          check-latest: true
 
-      - name: Install dependencies
+      - name: Initialize Go module
         run: |
+          go version
           go mod download
-          go mod tidy
+          go mod verify
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+          sh -s -- -b $(go env GOPATH)/bin v1.55.0
+          golangci-lint version
 
-      - name: Run golangci-lint
+      - name: Run linters
         run: |
-          golangci-lint run --timeout=5m \
-            --skip-dirs=vendor,third_party,node_modules,plugins,config,graphql,net,example,internal \
-            --skip-files=".*\\.pb\\.go$,.*\\.gen\\.go$,.*\\.mock\\.go$,.*\\.tpl$,.*_gen\\.go$" \
-            --modules-download-mode=readonly \
+          golangci-lint run \
+            --timeout=5m \
+            --out-format=colored-line-number \
+            --max-same-issues=0 \
+            --max-issues-per-linter=0 \
             ./...
