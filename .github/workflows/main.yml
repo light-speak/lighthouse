@@ -1,9 +1,9 @@
-name: CI
+name: Testing and Code Quality
 
 on:
   push:
     branches:
-      - staging
+      - dev
     tags:
       - 'v*'
   pull_request:
