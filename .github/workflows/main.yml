@@ -24,13 +24,22 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
+          cache: true
+          
+      - name: Install dependencies
+        run: go mod download
           
       - name: Run Tests
-        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
         
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         if: success()
+        with:
+          file: ./coverage.txt
+          flags: unittests
+          fail_ci_if_error: false
         
   lint:
     if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
@@ -38,24 +47,40 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+      
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
+          args: --timeout=5m
+          skip-cache: true
           
   security:
     if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v3
       
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        if: github.event.pull_request.head.repo.full_name == github.repository
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
           
-      - name: Run CodeQL Analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: go
+          
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
   sonarcloud:
@@ -65,6 +90,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          
+      - name: Run Tests for SonarCloud
+        run: |
+          go test -coverprofile=coverage.out -json > test-report.json ./...
       
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
