@@ -28,6 +28,7 @@ jobs:
         run: |
           go version
           go mod download
+          go mod tidy
           go mod verify
 
       - name: Install golangci-lint
