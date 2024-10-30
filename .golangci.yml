@@ -7,8 +7,8 @@ run:
     - third_party
     - internal
     - go/pkg/mod
-    - usr/local/go/src 
-    - opt/hostedtoolcache/go 
+    - /usr/local/go/src 
+    - /opt/hostedtoolcache/go 
 
 # 输出格式配置
 output:
@@ -24,6 +24,7 @@ linters:
     - gosimple
     - ineffassign
     - unused
+    - revive
   disable:
     - typecheck
 
