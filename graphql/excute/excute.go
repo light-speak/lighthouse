@@ -9,7 +9,6 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
-	"github.com/light-speak/lighthouse/log"
 )
 
 func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) interface{} {
@@ -95,8 +94,11 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 
 		resolverFunc, ok := resolverMap[field.Name]
 		if ok {
-			log.Debug().Msgf("resolverFunc Args: %+v", field.Args)
-			r, e := resolverFunc(ctx, nil)
+			args := make(map[string]any)
+			for _, arg := range field.Args {
+				args[arg.Name] = arg.Value
+			}
+			r, e := resolverFunc(ctx, args)
 			if e != nil {
 				ee := &errors.GraphQLError{
 					Message:   e.Error(),

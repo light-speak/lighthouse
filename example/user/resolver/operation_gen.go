@@ -2,31 +2,32 @@
 package resolver
 
 import (
+  "github.com/light-speak/lighthouse/context"
   "user/models"
   "github.com/light-speak/lighthouse/graphql/excute"
-  "github.com/light-speak/lighthouse/context"
   "fmt"
 )
 
-func init () {
-  excute.AddResolver("GetPostResolver", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+func init() {
+  excute.AddResolver("getPost", func(ctx *context.Context, args map[string]any) (interface{}, error) {
     fuck, ok := args["fuck"].(string)
     if !ok {
-      return nil, fmt.Errorf("argument: 'fuck' is not a string")
+      return nil, fmt.Errorf("argument: 'fuck' is not a string, got %T", args["fuck"])
     }
     return GetPostResolver(ctx, fuck)
   })
-  excute.AddResolver("TestPostEnumResolver", func(ctx *context.Context, args map[string]any) (interface{}, error) {
-    enum, ok := args["enum"].(models.TestEnum)
+  excute.AddResolver("testPostEnum", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+    enumValue, ok := args["enum"].(int8)
     if !ok {
-      return nil, fmt.Errorf("argument: 'enum' is not a models.TestEnum")
+      return nil, fmt.Errorf("argument: 'enum' is not a int8, got %T", args["enum"])
     }
+    enum := models.TestEnum(enumValue)
     return TestPostEnumResolver(ctx, enum)
   })
-  excute.AddResolver("TestPostInputResolver", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+  excute.AddResolver("testPostInput", func(ctx *context.Context, args map[string]any) (interface{}, error) {
     input, ok := args["input"].(models.TestInput)
     if !ok {
-      return nil, fmt.Errorf("argument: 'input' is not a models.TestInput")
+      return nil, fmt.Errorf("argument: 'input' is not a models.TestInput, got %T", args["input"])
     }
     return TestPostInputResolver(ctx, input)
   })

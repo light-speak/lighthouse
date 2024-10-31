@@ -32,6 +32,7 @@ func (p *QueryParser) Validate(store *ast.NodeStore) errors.GraphqlErrorInterfac
 			}
 		}
 		arg.Value = p.Variables[arg.Name]
+		arg.Validate(store, p.Args, nil)
 	}
 	for _, field := range p.Fields {
 		obj := p.Parser.NodeStore.Objects[p.OperationType]

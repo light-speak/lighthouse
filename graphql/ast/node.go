@@ -921,7 +921,7 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 		if directiveDefinition == nil {
 			return &errors.GraphQLError{
 				Message:   fmt.Sprintf("directive %s not found", directiveName),
-				Locations: []*errors.GraphqlLocation{directiveDefinition.GetLocation()},
+				Locations: []*errors.GraphqlLocation{{Column: 1, Line: 1}},
 			}
 		}
 		if !directiveDefinition.Repeatable && count > 1 {
@@ -981,8 +981,8 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
-		a.Value = args[name].Value
 		a.Type = args[name].Type
+		a.Value = args[name].Value
 	}
 	if a.Type == nil {
 		if field == nil {
@@ -1009,6 +1009,10 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 	if a.Value != nil && a.IsReference {
 		if err := a.Type.ValidateValue(a.Value, true); err != nil {
 			return err
+		}
+		realType := a.Type.GetRealType()
+		if realType.Kind == KindEnum {
+			a.Value = store.Enums[realType.Name].EnumValues[a.Value.(string)].Value
 		}
 	}
 
