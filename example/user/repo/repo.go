@@ -2,11 +2,11 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/graphql/ast"
-  "gorm.io/gorm"
-  "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/context"
   "sync"
+  "gorm.io/gorm"
+  "github.com/light-speak/lighthouse/graphql/ast"
+  "github.com/light-speak/lighthouse/graphql/model"
   "user/models"
 )
 

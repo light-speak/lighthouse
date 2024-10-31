@@ -3,9 +3,9 @@ package resolver
 
 import (
   "github.com/light-speak/lighthouse/context"
+  "fmt"
   "user/models"
   "github.com/light-speak/lighthouse/graphql/excute"
-  "fmt"
 )
 
 func init() {
@@ -17,11 +17,10 @@ func init() {
     return GetPostResolver(ctx, fuck)
   })
   excute.AddResolver("testPostEnum", func(ctx *context.Context, args map[string]any) (interface{}, error) {
-    enumValue, ok := args["enum"].(int8)
+    enum, ok := models.TestEnumMap[args["enum"].(string)]
     if !ok {
-      return nil, fmt.Errorf("argument: 'enum' is not a int8, got %T", args["enum"])
+      return nil, fmt.Errorf("argument: 'enum' is not a models.TestEnum, got %T", args["enum"])
     }
-    enum := models.TestEnum(enumValue)
     return TestPostEnumResolver(ctx, enum)
   })
   excute.AddResolver("testPostInput", func(ctx *context.Context, args map[string]any) (interface{}, error) {

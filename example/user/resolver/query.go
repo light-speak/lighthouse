@@ -2,11 +2,11 @@
 package resolver
 
 import (
-  "fmt"
-  "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/log"
-  "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/model"
   "user/models"
+  "fmt"
+  "github.com/light-speak/lighthouse/context"
 )
 
 
@@ -27,6 +27,6 @@ func TestPostEnumResolver(ctx *context.Context, enum models.TestEnum) (string, e
 }
 func TestPostInputResolver(ctx *context.Context, input models.TestInput) (string, error) {
 	// Func:TestPostInput user code start. Do not remove this comment.
-	panic("not implement")
+	return fmt.Sprintf("input: %+v", input), nil
 	// Func:TestPostInput user code end. Do not remove this comment. 
 }

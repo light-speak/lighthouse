@@ -114,7 +114,7 @@ func StructToMap(m ModelInterface) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func MapToStruct[T ModelInterface](data map[string]interface{}) (T, error) {
+func MapToStruct[T any](data map[string]interface{}) (T, error) {
 	var m T
 	jsonData, err := json.Marshal(data)
 	if err != nil {

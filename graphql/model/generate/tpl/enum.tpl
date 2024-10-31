@@ -13,5 +13,11 @@ const (
   {{- end }}
   {{- end }}
 )
+
+var {{ $key }}Map = map[string]{{ $key }}{
+  {{- range $vKey, $enumValue := $node.EnumValues }}
+  "{{ $vKey }}": {{ $vKey }},
+  {{- end }}
+}
 {{- end }}
 {{- end }}

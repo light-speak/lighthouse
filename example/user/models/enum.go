@@ -10,15 +10,30 @@ const (
   ASC SortOrder = 1
   DESC SortOrder = -1
 )
+
+var SortOrderMap = map[string]SortOrder{
+  "ASC": ASC,
+  "DESC": DESC,
+}
 type TestEnum int8
 
 const (
   A TestEnum = 1
   B TestEnum = 2
 )
+
+var TestEnumMap = map[string]TestEnum{
+  "A": A,
+  "B": B,
+}
 type TestEnum2 int8
 
 const (
   A2 TestEnum2 = iota
   B2
 )
+
+var TestEnum2Map = map[string]TestEnum2{
+  "A2": A2,
+  "B2": B2,
+}
