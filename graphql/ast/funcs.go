@@ -104,6 +104,9 @@ func genTag(field *Field) string {
 	if !hasType && field.Type.GetRealType().Name == "String" {
 		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("type:varchar(%s)", "255"))
 	}
+	if field.Description != nil {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("comment:%s", *field.Description))
+	}
 
 	// Build the tag string using strings.Builder
 	var builder strings.Builder

@@ -7,7 +7,7 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index;type:varchar(255)" `
-  Posts []Post `json:"posts" `
+  Posts []Post `json:"posts" gorm:"comment:五二零" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -18,11 +18,11 @@ func (*User) TypeName() string { return "user" }
 
 type Post struct {
   model.ModelSoftDelete
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
+  UserId int64 `json:"user_id" `
   User User `json:"user" `
   Enum TestEnum `json:"enum" `
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
   Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" `
 }
 
 func (*Post) IsModel() bool { return true }
