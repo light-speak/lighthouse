@@ -2,12 +2,12 @@
 package repo
 
 import (
+  "gorm.io/gorm"
+  "sync"
   "github.com/light-speak/lighthouse/context"
   "user/models"
-  "github.com/light-speak/lighthouse/graphql/ast"
-  "sync"
   "github.com/light-speak/lighthouse/graphql/model"
-  "gorm.io/gorm"
+  "github.com/light-speak/lighthouse/graphql/ast"
 )
 
 func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"updated_at": {},}}

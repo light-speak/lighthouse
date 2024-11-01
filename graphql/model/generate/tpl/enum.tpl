@@ -6,9 +6,9 @@ const (
   {{- $index := 0}}
   {{- range $vKey, $enumValue := $node.EnumValues }}
   {{- if $enumValue.Value }}
-  {{ $vKey }} {{ $key }} = {{ $enumValue.Value }}
+  {{ $key }}{{ $vKey }} {{ $key }} = {{ $enumValue.Value }}
   {{- else }}
-  {{ $vKey }}{{ if eq $index 0 }} {{ $key }} = iota{{ end }}
+  {{ $key }}{{ $vKey }}{{ if eq $index 0 }} = iota{{ end }}
   {{- $index = add $index 1 }}
   {{- end }}
   {{- end }}
@@ -17,7 +17,7 @@ const (
 func (e {{ $key }}) ToString() string {
   switch e {
   {{- range $vKey, $enumValue := $node.EnumValues }}
-  case {{ $vKey }}:
+  case {{ $key }}{{ $vKey }}:
     return "{{ $vKey }}"
   {{- end }}
   default:
@@ -27,7 +27,7 @@ func (e {{ $key }}) ToString() string {
 
 var {{ $key }}Map = map[string]{{ $key }}{
   {{- range $vKey, $enumValue := $node.EnumValues }}
-  "{{ $vKey }}": {{ $vKey }},
+  "{{ $vKey }}": {{ $key }}{{ $vKey }},
   {{- end }}
 }
 {{- end }}

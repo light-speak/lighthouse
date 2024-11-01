@@ -7,15 +7,15 @@ package models
 type SortOrder int8
 
 const (
-  ASC SortOrder = 1
-  DESC SortOrder = -1
+  SortOrderASC SortOrder = 1
+  SortOrderDESC SortOrder = -1
 )
 
 func (e SortOrder) ToString() string {
   switch e {
-  case ASC:
+  case SortOrderASC:
     return "ASC"
-  case DESC:
+  case SortOrderDESC:
     return "DESC"
   default:
     return "unknown"
@@ -23,21 +23,21 @@ func (e SortOrder) ToString() string {
 }
 
 var SortOrderMap = map[string]SortOrder{
-  "ASC": ASC,
-  "DESC": DESC,
+  "ASC": SortOrderASC,
+  "DESC": SortOrderDESC,
 }
 type TestEnum int8
 
 const (
-  A TestEnum = 1
-  B TestEnum = 2
+  TestEnumA TestEnum = 1
+  TestEnumB TestEnum = 2
 )
 
 func (e TestEnum) ToString() string {
   switch e {
-  case A:
+  case TestEnumA:
     return "A"
-  case B:
+  case TestEnumB:
     return "B"
   default:
     return "unknown"
@@ -45,21 +45,21 @@ func (e TestEnum) ToString() string {
 }
 
 var TestEnumMap = map[string]TestEnum{
-  "A": A,
-  "B": B,
+  "A": TestEnumA,
+  "B": TestEnumB,
 }
 type TestEnum2 int8
 
 const (
-  A2 TestEnum2 = iota
-  B2
+  TestEnum2A2 = iota
+  TestEnum2B2
 )
 
 func (e TestEnum2) ToString() string {
   switch e {
-  case A2:
+  case TestEnum2A2:
     return "A2"
-  case B2:
+  case TestEnum2B2:
     return "B2"
   default:
     return "unknown"
@@ -67,6 +67,6 @@ func (e TestEnum2) ToString() string {
 }
 
 var TestEnum2Map = map[string]TestEnum2{
-  "A2": A2,
-  "B2": B2,
+  "A2": TestEnum2A2,
+  "B2": TestEnum2B2,
 }
