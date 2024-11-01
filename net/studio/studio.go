@@ -15,5 +15,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, nil)
+	data := map[string]interface{}{
+		"endpoint": r.Host,
+	}
+	tmpl.Execute(w, data)
 }
