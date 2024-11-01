@@ -4,6 +4,7 @@ package initialize
 import (
 	"github.com/light-speak/lighthouse/command"
 	"github.com/light-speak/lighthouse/command/cli/generate/initialize/one"
+	"github.com/light-speak/lighthouse/command/cli/generate/initialize/two"
 )
 
 type Initialize struct{}
@@ -45,6 +46,10 @@ func (c *Initialize) Action() func(flagValues map[string]interface{}) error {
 			return err
 		}
 		err = one.Run(*module)
+		if err != nil {
+			return err
+		}
+		err = two.Run(*module)
 		if err != nil {
 			return err
 		}

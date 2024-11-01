@@ -2,10 +2,10 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/context"
-  "fmt"
   "user/models"
   "github.com/light-speak/lighthouse/graphql/excute"
+  "fmt"
+  "github.com/light-speak/lighthouse/context"
 )
 
 func init() {
@@ -24,10 +24,11 @@ func init() {
     return TestPostEnumResolver(ctx, enum)
   })
   excute.AddResolver("testPostInput", func(ctx *context.Context, args map[string]any) (interface{}, error) {
-    input, ok := args["input"].(models.TestInput)
-    if !ok {
+    inputPtr, err := models.MapToTestInput(args["input"].(map[string]interface{}))
+    if err != nil {
       return nil, fmt.Errorf("argument: 'input' is not a models.TestInput, got %T", args["input"])
     }
+    input := *inputPtr
     return TestPostInputResolver(ctx, input)
   })
 }

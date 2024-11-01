@@ -4,6 +4,19 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
+type Post struct {
+  model.ModelSoftDelete
+  User User `json:"user" `
+  Title string `json:"title" gorm:"index" `
+  Content string `json:"content" `
+  UserId int64 `json:"user_id" `
+  Enum TestEnum `json:"enum" `
+}
+
+func (*Post) IsModel() bool { return true }
+func (*Post) TableName() string { return "posts" }
+func (*Post) TypeName() string { return "post" }
+
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index" `
@@ -16,22 +29,10 @@ func (this *User) GetName() string { return this.Name }
 func (*User) TableName() string { return "users" }
 func (*User) TypeName() string { return "user" }
 
-type Post struct {
-  model.ModelSoftDelete
-  UserId int64 `json:"user_id" `
-  User User `json:"user" `
-  Title string `gorm:"index" json:"title" `
-  Content string `json:"content" `
-}
-
-func (*Post) IsModel() bool { return true }
-func (*Post) TableName() string { return "posts" }
-func (*Post) TypeName() string { return "post" }
-
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &User{},
     &Post{},
+    &User{},
   )
 }

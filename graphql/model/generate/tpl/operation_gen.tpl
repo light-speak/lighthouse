@@ -24,7 +24,7 @@ func init() {
     if !ok {
       return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
     }
-    {{- else if eq $arg.Type.GetRealType.Kind "INPUTOBJECT" }}
+    {{- else if eq $arg.Type.GetRealType.Kind "INPUT_OBJECT" }}
     {{ $arg.Name | lcFirst }}Ptr, err := models.MapTo{{ false | $arg.Type.GetGoType }}(args["{{ $index }}"].(map[string]interface{}))
     if err != nil {
       return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])

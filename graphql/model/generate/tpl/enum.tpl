@@ -14,6 +14,17 @@ const (
   {{- end }}
 )
 
+func (e {{ $key }}) ToString() string {
+  switch e {
+  {{- range $vKey, $enumValue := $node.EnumValues }}
+  case {{ $vKey }}:
+    return "{{ $vKey }}"
+  {{- end }}
+  default:
+    return "unknown"
+  }
+}
+
 var {{ $key }}Map = map[string]{{ $key }}{
   {{- range $vKey, $enumValue := $node.EnumValues }}
   "{{ $vKey }}": {{ $vKey }},

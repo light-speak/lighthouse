@@ -11,6 +11,17 @@ const (
   DESC SortOrder = -1
 )
 
+func (e SortOrder) ToString() string {
+  switch e {
+  case ASC:
+    return "ASC"
+  case DESC:
+    return "DESC"
+  default:
+    return "unknown"
+  }
+}
+
 var SortOrderMap = map[string]SortOrder{
   "ASC": ASC,
   "DESC": DESC,
@@ -22,6 +33,17 @@ const (
   B TestEnum = 2
 )
 
+func (e TestEnum) ToString() string {
+  switch e {
+  case A:
+    return "A"
+  case B:
+    return "B"
+  default:
+    return "unknown"
+  }
+}
+
 var TestEnumMap = map[string]TestEnum{
   "A": A,
   "B": B,
@@ -32,6 +54,17 @@ const (
   A2 TestEnum2 = iota
   B2
 )
+
+func (e TestEnum2) ToString() string {
+  switch e {
+  case A2:
+    return "A2"
+  case B2:
+    return "B2"
+  default:
+    return "unknown"
+  }
+}
 
 var TestEnum2Map = map[string]TestEnum2{
   "A2": A2,
