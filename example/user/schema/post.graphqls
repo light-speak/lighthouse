@@ -19,6 +19,10 @@ extend type Query {
   testPostInput(input: TestInput!): String! 
 }
 
+type Test {
+  test: String!
+}
+
 input TestInput {
   id: String
   e: Boolean

@@ -35,7 +35,12 @@ func Fields(fields map[string]*Field) string {
 		if _, ok := excludeFieldName[field.Name]; ok {
 			continue
 		}
-		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), field.Type.GetGoType(false), genTag(field))
+		goType := field.Type.GetGoType(false)
+		
+		if goType == "PaginateInfo" {
+			goType = "model.PaginateInfo"
+		}
+		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), goType, genTag(field))
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")

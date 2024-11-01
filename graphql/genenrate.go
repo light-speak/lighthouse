@@ -23,6 +23,7 @@ func Generate() error {
 	nodes := p.NodeStore.Nodes
 
 	typeNodes := []*ast.ObjectNode{}
+	resNodes := []*ast.ObjectNode{}
 
 	for _, node := range nodes {
 		if isInternalType(node.GetName()) {
@@ -33,6 +34,8 @@ func Generate() error {
 			objectNode, _ := node.(*ast.ObjectNode)
 			if objectNode.IsModel {
 				typeNodes = append(typeNodes, objectNode)
+			} else {
+				resNodes = append(resNodes, objectNode)
 			}
 		}
 	}
@@ -50,6 +53,9 @@ func Generate() error {
 		return err
 	}
 	if err := generate.GenEnum(p.NodeStore.Enums, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenResponse(resNodes, currentPath); err != nil {
 		return err
 	}
 
