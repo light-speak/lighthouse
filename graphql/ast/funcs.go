@@ -16,6 +16,19 @@ var excludeFieldName = map[string]struct{}{
 	"__typename": {},
 }
 
+func PrefixModels(typeName string) string {
+	if strings.HasPrefix(typeName, "*") {
+		if strings.HasPrefix(strings.TrimPrefix(typeName, "*"), "[]") {
+			return "*[]*models." + strings.TrimPrefix(strings.TrimPrefix(typeName, "*"), "[]")
+		}
+		return "*models." + strings.TrimPrefix(typeName, "*")
+	}
+	if strings.HasPrefix(typeName, "[]") {
+		return "[]*models." + strings.TrimPrefix(typeName, "[]")
+	}
+	return "*models." + typeName
+}
+
 func Fields(fields map[string]*Field) string {
 	var lines []string
 	for _, field := range fields {
@@ -56,25 +69,40 @@ func defaultDirective(tags map[string][]string, directive *Directive) error {
 	return nil
 }
 
+func typeDirective(tags map[string][]string, directive *Directive) error {
+	if arg := directive.GetArg("name"); arg != nil {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("type:%s", arg.Value.(string)))
+	}
+	return nil
+}
+
 var directiveFns = map[string]func(map[string][]string, *Directive) error{
 	"index":   indexDirective,
 	"unique":  uniqueDirective,
 	"tag":     tagDirective,
 	"default": defaultDirective,
+	"type":    typeDirective,
 }
 
 func genTag(field *Field) string {
 	tags := map[string][]string{
 		"json": {field.Name},
 	}
+	hasType := false
 
 	for _, directive := range field.Directives {
 		if fn, ok := directiveFns[directive.Name]; ok {
+			if directive.Name == "type" {
+				hasType = true
+			}
 			if err := fn(tags, directive); err != nil {
 				log.Error().Err(err).Msgf("failed to apply directive %s to field %s", directive.Name, field.Name)
 				return ""
 			}
 		}
+	}
+	if !hasType && field.Type.GetRealType().Name == "String" {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("type:varchar(%s)", "255"))
 	}
 
 	// Build the tag string using strings.Builder

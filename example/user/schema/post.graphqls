@@ -11,6 +11,8 @@ extend type Query {
   posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find
   post(id: ID! @eq): Post! @first
   getPost(fuck: String!): Post! 
+  getPosts(fuck: String!): [Post!]! 
+  getPostIds: [ID!]!
   testPostEnum(enum: TestEnum!): String!
   testPostInput(input: TestInput!): String! 
 }

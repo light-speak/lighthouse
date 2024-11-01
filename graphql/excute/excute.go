@@ -78,45 +78,38 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 			res[field.Name] = nil
 			continue
 		}
-		queryFunc, ok := funMap[field.Name]
-		if ok {
+
+		if queryFunc, ok := funMap[field.Name]; ok {
 			r, e := queryFunc(qp, field)
 			if e != nil {
-				ee := &errors.GraphQLError{
+				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
 					Message:   e.Error(),
 					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				}
-				ctx.Errors = append(ctx.Errors, ee)
-			}
-			res[field.Name] = r
-			continue
-		}
-
-		resolverFunc, ok := resolverMap[field.Name]
-		if ok {
-			args := make(map[string]any)
-			for _, arg := range field.Args {
-				args[arg.Name] = arg.Value
-			}
-			r, e := resolverFunc(ctx, args)
-			if e != nil {
-				ee := &errors.GraphQLError{
-					Message:   e.Error(),
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				}
-				ctx.Errors = append(ctx.Errors, ee)
+				})
 				continue
 			}
 			res[field.Name] = r
 			continue
 		}
 
-		ee := &errors.GraphQLError{
+		r, isResolver, err := executeResolver(ctx, field)
+		if err != nil {
+			ctx.Errors = append(ctx.Errors, err)
+			continue
+		}
+		if r != nil && isResolver {
+			res[field.Name] = r
+			continue
+		}
+		if r == nil && isResolver {
+			res[field.Name] = nil
+			continue
+		}
+
+		ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
 			Message:   fmt.Sprintf("query %s not found", field.Name),
 			Locations: []*errors.GraphqlLocation{field.GetLocation()},
-		}
-		ctx.Errors = append(ctx.Errors, ee)
-		continue
+		})
 	}
 	return res
 }

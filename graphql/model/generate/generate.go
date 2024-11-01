@@ -152,7 +152,7 @@ func GenOperationResolver(node *ast.ObjectNode, path string, name string) error 
 		FileName:     name,
 		FileExt:      "go",
 		Package:      "resolver",
-		Editable:     false,
+		Editable:     true,
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Fields": fields,
@@ -176,7 +176,7 @@ func GenOperationResolverGen(nodes []*ast.ObjectNode, path string) error {
 		FileName:     "operation_gen",
 		FileExt:      "go",
 		Package:      "resolver",
-		Editable:     false,
+		Editable:     true,
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Nodes": nodes,
