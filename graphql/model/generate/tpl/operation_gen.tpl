@@ -9,7 +9,11 @@ func init() {
   {{- range $index, $arg := $args }}
 
     {{- if eq $arg.Type.GetRealType.Kind "SCALAR" }}
-    {{ $arg.Name | lcFirst }}, ok := args["{{ $index }}"].({{ false | $arg.Type.GetGoType }})
+    pv, e := graphql.Parser.NodeStore.Scalars["{{ $arg.Type.GetRealType.Name }}"].ScalarType.ParseValue(args["{{ $index }}"], nil)
+    if e != nil {
+      return nil, e
+    }
+    {{ $arg.Name | lcFirst }}, ok := pv.({{ false | $arg.Type.GetGoType }})
     if !ok {
       return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a {{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
     }

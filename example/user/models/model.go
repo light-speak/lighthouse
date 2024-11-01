@@ -6,7 +6,7 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 
 type User struct {
   model.Model
-  Name string `gorm:"index;type:varchar(255)" json:"name" `
+  Name string `json:"name" gorm:"index;type:varchar(255)" `
   Posts []Post `json:"posts" `
 }
 
