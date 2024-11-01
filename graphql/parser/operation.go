@@ -23,6 +23,19 @@ type QueryParser struct {
 	OperationType string
 }
 
+func (p *QueryParser) GetVariable(name string) any {
+	v := p.Variables[name]
+	switch v := v.(type) {
+	case float64:
+		return int64(v)
+	case int64:
+		return v
+	case string:
+		return v
+	}
+	return v
+}
+
 func (p *QueryParser) Validate(store *ast.NodeStore) errors.GraphqlErrorInterface {
 	for _, arg := range p.Args {
 		if p.Variables[arg.Name] == nil {
@@ -31,8 +44,11 @@ func (p *QueryParser) Validate(store *ast.NodeStore) errors.GraphqlErrorInterfac
 				Locations: []*errors.GraphqlLocation{arg.GetLocation()},
 			}
 		}
-		arg.Value = p.Variables[arg.Name]
-		arg.Validate(store, p.Args, nil)
+		arg.Value = p.GetVariable(arg.Name)
+		err := arg.Validate(store, p.Args, nil)
+		if err != nil {
+			return err
+		}
 	}
 	for _, field := range p.Fields {
 		obj := p.Parser.NodeStore.Objects[p.OperationType]

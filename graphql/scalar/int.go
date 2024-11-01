@@ -14,17 +14,19 @@ func (i *IntScalar) ParseValue(v interface{}, location *errors.GraphqlLocation) 
 	case string:
 		intValue, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("invalid integer value: %s", v),
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("invalid integer value: %s, got %T", v, v),
 				Locations: []*errors.GraphqlLocation{location},
 			}
 		}
 		return intValue, nil
 	case int64:
 		return v, nil
+	case float64:
+		return int64(v), nil
 	default:
 		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("invalid integer value: %v", v),
+			Message:   fmt.Sprintf("invalid integer value: %v, got %T", v, v),
 			Locations: []*errors.GraphqlLocation{location},
 		}
 	}

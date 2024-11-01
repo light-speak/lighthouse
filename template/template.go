@@ -45,6 +45,8 @@ type Options struct {
 	// # Section: user code section start / end. Do not remove this comment.
 	SkipIfExists bool
 
+	Imports []*Import
+
 	Funcs template.FuncMap
 }
 
@@ -69,6 +71,7 @@ func (o *Options) addFunc() {
 	o.Funcs["buildRelation"] = ast.BuildRelation
 	o.Funcs["pluralize"] = utils.Pluralize
 	o.Funcs["isInternalType"] = utils.IsInternalType
+	o.Funcs["prefixModels"] = ast.PrefixModels
 }
 
 func Render(options *Options) error {
@@ -116,7 +119,7 @@ func Render(options *Options) error {
 
 	// Step 6: Detect required imports
 	imports := detectImports(finalContent)
-	importsStr := formatImport(imports)
+	importsStr := formatImport(append(options.Imports, imports...))
 
 	// Step 7: Add imports to the top of the file
 	if options.FileExt == "go" {

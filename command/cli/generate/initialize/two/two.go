@@ -2,6 +2,7 @@ package two
 
 import (
 	"embed"
+	"fmt"
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/template"
@@ -17,6 +18,10 @@ func Run(module string) error {
 	projectModule = module
 	projectName = filepath.Base(module)
 	err := initRepo()
+	if err != nil {
+		return err
+	}
+	err = initResolver()
 	if err != nil {
 		return err
 	}
@@ -56,6 +61,23 @@ func initRepo() error {
 	return template.Render(options)
 }
 
+func initResolver() error {
+	resolverTemplate, err := twoFs.ReadFile("tpl/resolver.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "resolver"),
+		Template:     string(resolverTemplate),
+		FileName:     "resolver",
+		FileExt:      "go",
+		Package:      "resolver",
+		Editable:     true,
+		SkipIfExists: true,
+	}
+	return template.Render(options)
+}
+
 func initService() error {
 	serviceTemplate, err := twoFs.ReadFile("tpl/service.tpl")
 	if err != nil {
@@ -69,6 +91,20 @@ func initService() error {
 		Package:      "service",
 		Editable:     true,
 		SkipIfExists: true,
+		Imports: []*template.Import{
+			{
+				Path:  fmt.Sprintf("%s/resolver", projectModule),
+				Alias: "_",
+			},
+			{
+				Path:  fmt.Sprintf("%s/repo", projectModule),
+				Alias: "_",
+			},
+			{
+				Path:  fmt.Sprintf("%s/models", projectModule),
+				Alias: "_",
+			},
+		},
 	}
 	return template.Render(options)
 }

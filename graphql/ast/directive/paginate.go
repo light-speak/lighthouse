@@ -5,6 +5,7 @@ import (
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	
 )
 
 func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
@@ -81,7 +82,7 @@ func addPaginationArguments(f *ast.Field, store *ast.NodeStore) {
 			Name:     "Int",
 			TypeNode: store.Scalars["Int"],
 		},
-		DefaultValue: int64(1),
+		DefaultValue: 1,
 	}
 	f.Args["size"] = &ast.Argument{
 		Name: "size",
@@ -90,7 +91,7 @@ func addPaginationArguments(f *ast.Field, store *ast.NodeStore) {
 			Name:     "Int",
 			TypeNode: store.Scalars["Int"],
 		},
-		DefaultValue: int64(10),
+		DefaultValue: 10,
 	}
 	f.Args["sort"] = &ast.Argument{
 		Name: "sort",

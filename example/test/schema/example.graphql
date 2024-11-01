@@ -1,0 +1,9 @@
+type Test @model{
+    name:String!
+    email:String!
+}
+
+
+extend type Query{
+  getTest(id:Int!): Test!
+}
