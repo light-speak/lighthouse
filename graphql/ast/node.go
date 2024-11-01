@@ -290,7 +290,7 @@ func (s *ScalarNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 }
 
 type ScalarType interface {
-	ParseValue(v string, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
+	ParseValue(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
 	Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface)
 	ParseLiteral(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
 	GoType() string
@@ -555,6 +555,7 @@ func (t *TypeRef) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 }
 
 func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
+
 	switch t.Kind {
 	case KindScalar:
 		return t.validateScalarValue(v, isVariable)
@@ -585,7 +586,7 @@ func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlEr
 func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {
 	var err errors.GraphqlErrorInterface
 	if isVariable {
-		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseValue(v.(string), t.GetLocation())
+		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseValue(v, t.GetLocation())
 	} else {
 		_, err = t.TypeNode.(*ScalarNode).ScalarType.ParseLiteral(v, t.GetLocation())
 	}
@@ -921,7 +922,7 @@ func ValidateDirectives(name string, directives []*Directive, store *NodeStore, 
 		if directiveDefinition == nil {
 			return &errors.GraphQLError{
 				Message:   fmt.Sprintf("directive %s not found", directiveName),
-				Locations: []*errors.GraphqlLocation{directiveDefinition.GetLocation()},
+				Locations: []*errors.GraphqlLocation{{Column: 1, Line: 1}},
 			}
 		}
 		if !directiveDefinition.Repeatable && count > 1 {
@@ -981,8 +982,8 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 				Locations: []*errors.GraphqlLocation{a.GetLocation()},
 			}
 		}
-		a.Value = args[name].Value
 		a.Type = args[name].Type
+		a.Value = args[name].Value
 	}
 	if a.Type == nil {
 		if field == nil {

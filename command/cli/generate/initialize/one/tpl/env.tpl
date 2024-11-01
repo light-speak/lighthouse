@@ -13,11 +13,11 @@ API_PREFIX=/api
 
 # Database settings
 DB_HOST=localhost
-DB_PORT=5432
-DB_USER=myuser
-DB_PASSWORD=mypassword
-DB_NAME=mydb
-DB_DRIVER=postgres
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=example
+DB_DRIVER=mysql
 DB_ORM=gorm
 
 # Authentication settings
@@ -27,7 +27,7 @@ AUTH_DRIVER=jwt
 LOGGER_LEVEL=info
 LOGGER_PATH=./logs/app.log
 LOGGER_STACK=false
-LOGGER_DRIVER=file
+LOGGER_DRIVER=stdout
 
 # Redis settings
 REDIS_HOST=localhost

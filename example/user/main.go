@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"user/cmd"
+	_ "user/resolver"
 
 	"github.com/light-speak/lighthouse/command"
 )

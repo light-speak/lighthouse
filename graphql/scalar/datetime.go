@@ -9,15 +9,25 @@ import (
 
 type DateTimeScalar struct{}
 
-func (d *DateTimeScalar) ParseValue(v string, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
-	t, err := time.Parse("2006-01-02 15:04:05", v)
-	if err != nil {
+func (d *DateTimeScalar) ParseValue(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
+	switch v := v.(type) {
+	case string:
+		t, err := time.Parse("2006-01-02 15:04:05", v)
+		if err != nil {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("invalid datetime value: %s", v),
+				Locations: []*errors.GraphqlLocation{location},
+			}
+		}
+		return t, nil
+	case time.Time:
+		return v, nil
+	default:
 		return nil, &errors.GraphQLError{
-			Message:   fmt.Sprintf("invalid datetime value: %s", v),
+			Message:   fmt.Sprintf("invalid datetime value: %v", v),
 			Locations: []*errors.GraphqlLocation{location},
 		}
 	}
-	return t, nil
 }
 
 func (d *DateTimeScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
@@ -42,8 +52,9 @@ func (d *DateTimeScalar) Serialize(v interface{}, location *errors.GraphqlLocati
 }
 
 func (d *DateTimeScalar) ParseLiteral(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
-	if vt, ok := v.(string); ok {
-		return d.ParseValue(vt, location)
+	switch v := v.(type) {
+	case string:
+		return d.ParseValue(v, location)
 	}
 	return nil, &errors.GraphQLError{
 		Message:   fmt.Sprintf("invalid literal for DateTime: %v", v),

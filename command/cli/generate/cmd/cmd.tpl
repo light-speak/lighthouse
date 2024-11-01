@@ -41,3 +41,8 @@ func (c *{{ $structName }}) OnExit() func() {
 }
 
 {{ section }}
+
+
+func init() {
+	utils.AddImport("cmd/cmd.go", "{{.Module}}/cmd/{{$structName}}", true)
+}

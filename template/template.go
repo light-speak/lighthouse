@@ -237,7 +237,7 @@ func getCommentPrefixAndSuffix(options *Options) (string, string) {
 	case "xml", "md":
 		return "<!--", "-->"
 	default:
-		return "//", ""
+		return "#", ""
 	}
 }
 

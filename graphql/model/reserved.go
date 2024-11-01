@@ -13,6 +13,10 @@ type PaginateInfo struct {
 	HasNextPage bool `json:"has_next_page"`
 }
 
+type EnumInterface interface {
+	ToString() string
+}
+
 type ModelInterface interface {
 	IsModel() bool
 	GetId() int64
