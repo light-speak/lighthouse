@@ -476,6 +476,36 @@ func (t *TypeRef) GetGoName() string {
 	}
 }
 
+func (t *TypeRef) IsList() bool {
+	if t.Kind == KindList {
+		return true
+	}
+	if t.Kind == KindNonNull {
+		return t.OfType.IsList()
+	}
+	return false
+}
+
+func (t *TypeRef) IsScalar() bool {
+	if t.Kind == KindNonNull {
+		return t.OfType.IsScalar()
+	}
+	if t.Kind == KindList {
+		return t.OfType.IsScalar()
+	}
+	return t.Kind == KindScalar
+}
+
+func (t *TypeRef) IsObject() bool {
+	if t.Kind == KindNonNull {
+		return t.OfType.IsObject()
+	}
+	if t.Kind == KindList {
+		return t.OfType.IsObject()
+	}
+	return t.Kind == KindObject
+}
+
 func (t *TypeRef) GetRealType() *TypeRef {
 	if t.Kind == KindNonNull {
 		return t.OfType.GetRealType()

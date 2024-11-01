@@ -18,7 +18,13 @@ var excludeFieldName = map[string]struct{}{
 
 func PrefixModels(typeName string) string {
 	if strings.HasPrefix(typeName, "*") {
-		return "*" + "models." + strings.TrimPrefix(typeName, "*")
+		if strings.HasPrefix(strings.TrimPrefix(typeName, "*"), "[]") {
+			return "*[]*models." + strings.TrimPrefix(strings.TrimPrefix(typeName, "*"), "[]")
+		}
+		return "*models." + strings.TrimPrefix(typeName, "*")
+	}
+	if strings.HasPrefix(typeName, "[]") {
+		return "[]*models." + strings.TrimPrefix(typeName, "[]")
 	}
 	return "*models." + typeName
 }

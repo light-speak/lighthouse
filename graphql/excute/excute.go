@@ -7,7 +7,6 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/graphql/model"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
@@ -93,45 +92,17 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 			continue
 		}
 
-		if resolverFunc, ok := resolverMap[field.Name]; ok {
-			args := make(map[string]any)
-			for _, arg := range field.Args {
-				args[arg.Name] = arg.Value
-			}
-			r, e := resolverFunc(ctx, args)
-			if e != nil {
-				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-					Message:   e.Error(),
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				})
-				continue
-			}
-
-			if modelData, ok := r.(model.ModelInterface); ok {
-				modelMap, err := model.StructToMap(modelData)
-				if err != nil {
-					ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-						Message:   err.Error(),
-						Locations: []*errors.GraphqlLocation{field.GetLocation()},
-					})
-					continue
-				}
-				data := make(map[string]interface{})
-				for _, child := range field.Children {
-					d, err := mergeData(child, modelMap)
-					if err != nil {
-						ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-							Message:   err.Error(),
-							Locations: []*errors.GraphqlLocation{child.GetLocation()},
-						})
-						continue
-					}
-					data[child.Name] = d
-				}
-				res[field.Name] = data
-				continue
-			}
+		r, isResolver, err := executeResolver(ctx, field)
+		if err != nil {
+			ctx.Errors = append(ctx.Errors, err)
+			continue
+		}
+		if r != nil && isResolver {
 			res[field.Name] = r
+			continue
+		}
+		if r == nil && isResolver {
+			res[field.Name] = nil
 			continue
 		}
 
