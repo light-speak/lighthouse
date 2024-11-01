@@ -2,16 +2,21 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/context"
-  "fmt"
   "github.com/light-speak/lighthouse/graphql/excute"
-  "user/models"
+  "github.com/light-speak/lighthouse/graphql"
   "github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/context"
+  "user/models"
+  "fmt"
 )
 
 func init() {
   excute.AddResolver("getPost", func(ctx *context.Context, args map[string]any) (interface{}, error) {
-    fuck, ok := args["fuck"].(string)
+    pv, e := graphql.Parser.NodeStore.Scalars["String"].ScalarType.ParseValue(args["fuck"], nil)
+    if e != nil {
+      return nil, e
+    }
+    fuck, ok := pv.(string)
     if !ok {
       return nil, fmt.Errorf("argument: 'fuck' is not a string, got %T", args["fuck"])
     }
@@ -29,7 +34,11 @@ func init() {
     return res, nil
   })
   excute.AddResolver("getPosts", func(ctx *context.Context, args map[string]any) (interface{}, error) {
-    fuck, ok := args["fuck"].(string)
+    pv, e := graphql.Parser.NodeStore.Scalars["String"].ScalarType.ParseValue(args["fuck"], nil)
+    if e != nil {
+      return nil, e
+    }
+    fuck, ok := pv.(string)
     if !ok {
       return nil, fmt.Errorf("argument: 'fuck' is not a string, got %T", args["fuck"])
     }
@@ -56,6 +65,21 @@ func init() {
     res, err := TestPostEnumResolver(ctx, enum)
     return res, err
   })
+  excute.AddResolver("testPostId", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+    pv, e := graphql.Parser.NodeStore.Scalars["ID"].ScalarType.ParseValue(args["id"], nil)
+    if e != nil {
+      return nil, e
+    }
+    id, ok := pv.(int64)
+    if !ok {
+      return nil, fmt.Errorf("argument: 'id' is not a int64, got %T", args["id"])
+    }
+    res, err := TestPostIdResolver(ctx, id)
+    if res == nil {
+      return nil, err
+    }
+    return model.StructToMap(res)
+  })
   excute.AddResolver("testPostInput", func(ctx *context.Context, args map[string]any) (interface{}, error) {
     input, err := models.MapToTestInput(args["input"].(map[string]interface{}))
     if err != nil {
@@ -63,5 +87,20 @@ func init() {
     }
     res, err := TestPostInputResolver(ctx, input)
     return res, err
+  })
+  excute.AddResolver("testPostInt", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+    pv, e := graphql.Parser.NodeStore.Scalars["Boolean"].ScalarType.ParseValue(args["id"], nil)
+    if e != nil {
+      return nil, e
+    }
+    id, ok := pv.(bool)
+    if !ok {
+      return nil, fmt.Errorf("argument: 'id' is not a bool, got %T", args["id"])
+    }
+    res, err := TestPostIntResolver(ctx, id)
+    if res == nil {
+      return nil, err
+    }
+    return model.StructToMap(res)
   })
 }

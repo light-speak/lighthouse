@@ -13,6 +13,8 @@ extend type Query {
   getPost(fuck: String!): Post! 
   getPosts(fuck: String!): [Post!]! 
   getPostIds: [ID!]!
+  testPostId(id: ID!): Post
+  testPostInt(id: Boolean!): Post
   testPostEnum(enum: TestEnum!): String!
   testPostInput(input: TestInput!): String! 
 }
