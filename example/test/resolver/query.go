@@ -2,17 +2,24 @@
 package resolver
 
 import (
-	"test/models"
-
-	"github.com/light-speak/lighthouse/context"
-	"github.com/light-speak/lighthouse/graphql/model"
+  "test/models"
+  "time"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/context"
 )
 
-func GetTestResolver(ctx *context.Context, id int64) (models.Test, error) {
+
+func GetTestResolver(ctx *context.Context,id int64) (*models.Test, error) {
 	// Func:GetTest user code start. Do not remove this comment.
-	test := models.Test{}
-	db := model.GetDB()
-	db.Where("id = ?", id).First(&test)
+	test := &models.Test{
+		Model: model.Model{
+			Id:        id,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		Name:  "test",
+		Email: "test@test.com",
+	}
 	return test, nil
-	// Func:GetTest user code end. Do not remove this comment.
+	// Func:GetTest user code end. Do not remove this comment. 
 }

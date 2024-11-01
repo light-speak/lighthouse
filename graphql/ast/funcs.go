@@ -20,7 +20,7 @@ func PrefixModels(typeName string) string {
 	if strings.HasPrefix(typeName, "*") {
 		return "*" + "models." + strings.TrimPrefix(typeName, "*")
 	}
-	return "models." + typeName
+	return "*models." + typeName
 }
 
 func Fields(fields map[string]*Field) string {

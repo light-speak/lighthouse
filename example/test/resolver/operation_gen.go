@@ -2,9 +2,9 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/graphql/excute"
-  "fmt"
   "github.com/light-speak/lighthouse/context"
+  "fmt"
+  "github.com/light-speak/lighthouse/graphql/excute"
 )
 
 func init() {

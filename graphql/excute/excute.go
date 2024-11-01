@@ -7,6 +7,7 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
 )
@@ -78,45 +79,66 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 			res[field.Name] = nil
 			continue
 		}
-		queryFunc, ok := funMap[field.Name]
-		if ok {
+
+		if queryFunc, ok := funMap[field.Name]; ok {
 			r, e := queryFunc(qp, field)
 			if e != nil {
-				ee := &errors.GraphQLError{
+				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
 					Message:   e.Error(),
 					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				}
-				ctx.Errors = append(ctx.Errors, ee)
-			}
-			res[field.Name] = r
-			continue
-		}
-
-		resolverFunc, ok := resolverMap[field.Name]
-		if ok {
-			args := make(map[string]any)
-			for _, arg := range field.Args {
-				args[arg.Name] = arg.Value
-			}
-			r, e := resolverFunc(ctx, args)
-			if e != nil {
-				ee := &errors.GraphQLError{
-					Message:   e.Error(),
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				}
-				ctx.Errors = append(ctx.Errors, ee)
+				})
 				continue
 			}
 			res[field.Name] = r
 			continue
 		}
 
-		ee := &errors.GraphQLError{
+		if resolverFunc, ok := resolverMap[field.Name]; ok {
+			args := make(map[string]any)
+			for _, arg := range field.Args {
+				args[arg.Name] = arg.Value
+			}
+			r, e := resolverFunc(ctx, args)
+			if e != nil {
+				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
+					Message:   e.Error(),
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				})
+				continue
+			}
+
+			if modelData, ok := r.(model.ModelInterface); ok {
+				modelMap, err := model.StructToMap(modelData)
+				if err != nil {
+					ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
+						Message:   err.Error(),
+						Locations: []*errors.GraphqlLocation{field.GetLocation()},
+					})
+					continue
+				}
+				data := make(map[string]interface{})
+				for _, child := range field.Children {
+					d, err := mergeData(child, modelMap)
+					if err != nil {
+						ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
+							Message:   err.Error(),
+							Locations: []*errors.GraphqlLocation{child.GetLocation()},
+						})
+						continue
+					}
+					data[child.Name] = d
+				}
+				res[field.Name] = data
+				continue
+			}
+			res[field.Name] = r
+			continue
+		}
+
+		ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
 			Message:   fmt.Sprintf("query %s not found", field.Name),
 			Locations: []*errors.GraphqlLocation{field.GetLocation()},
-		}
-		ctx.Errors = append(ctx.Errors, ee)
-		continue
+		})
 	}
 	return res
 }

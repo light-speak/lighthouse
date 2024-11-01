@@ -2,12 +2,12 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/graphql/ast"
-  "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/model"
-  "gorm.io/gorm"
+  "github.com/light-speak/lighthouse/context"
   "test/models"
+  "github.com/light-speak/lighthouse/graphql/ast"
   "sync"
+  "gorm.io/gorm"
 )
 
 func Provide__Test() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"email": {},"id": {},"name": {},"updated_at": {},}}

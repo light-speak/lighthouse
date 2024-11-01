@@ -6,7 +6,7 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 
 type Test struct {
   model.Model
-  Email string `gorm:"type:varchar(255)" json:"email" `
+  Email string `json:"email" gorm:"type:varchar(255)" `
   Name string `json:"name" gorm:"type:varchar(255)" `
 }
 
