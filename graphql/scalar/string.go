@@ -12,6 +12,8 @@ func (s *StringScalar) ParseValue(v interface{}, location *errors.GraphqlLocatio
 	switch v := v.(type) {
 	case string:
 		return v, nil
+	case []byte:
+		return string(v), nil
 	default:
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("invalid string value: %v", v),
@@ -24,6 +26,8 @@ func (s *StringScalar) Serialize(v interface{}, location *errors.GraphqlLocation
 	switch v := v.(type) {
 	case string:
 		return v, nil
+	case []byte:
+		return string(v), nil
 	default:
 		return "", &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not a string: %v", v),
@@ -36,7 +40,10 @@ func (s *StringScalar) ParseLiteral(v interface{}, location *errors.GraphqlLocat
 	switch v := v.(type) {
 	case string:
 		return v, nil
+	case []byte:
+		return string(v), nil
 	}
+
 	return nil, &errors.GraphQLError{
 		Message:   fmt.Sprintf("invalid literal for String: %v", v),
 		Locations: []*errors.GraphqlLocation{location},

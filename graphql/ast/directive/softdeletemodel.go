@@ -21,7 +21,7 @@ func handlerSoftDeleteModel(o *ast.ObjectNode, d *ast.Directive, store *ast.Node
 	}
 	o.Fields["deleted_at"] = &ast.Field{
 		Name: "deleted_at",
-		Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "DateTime", TypeNode: store.Scalars["DateTime"]}},
+		Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "DateTime", TypeNode: store.Scalars["DateTime"]},
 	}
 	if arg := d.GetArg("table"); arg != nil {
 		o.Table = arg.Value.(string)
