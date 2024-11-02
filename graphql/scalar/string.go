@@ -25,7 +25,7 @@ func (s *StringScalar) Serialize(v interface{}, location *errors.GraphqlLocation
 	case string:
 		return v, nil
 	default:
-	return "", &errors.GraphQLError{
+		return "", &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not a string: %v", v),
 			Locations: []*errors.GraphqlLocation{location},
 		}

@@ -4,10 +4,25 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
+type Post struct {
+  model.ModelSoftDelete
+  UserId int64 `json:"user_id" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  TagId int64 `json:"tag_id" `
+  BackId int64 `json:"back_id" `
+  User User `json:"user" `
+  Enum TestEnum `json:"enum" `
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
+}
+
+func (*Post) IsModel() bool { return true }
+func (*Post) TableName() string { return "posts" }
+func (*Post) TypeName() string { return "post" }
+
 type User struct {
   model.Model
-  Name string `json:"name" gorm:"index;type:varchar(255)" `
   Posts []Post `json:"posts" gorm:"comment:五二零" `
+  Name string `json:"name" gorm:"index;type:varchar(255)" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -16,23 +31,10 @@ func (this *User) GetName() string { return this.Name }
 func (*User) TableName() string { return "users" }
 func (*User) TypeName() string { return "user" }
 
-type Post struct {
-  model.ModelSoftDelete
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" `
-  User User `json:"user" `
-  Enum TestEnum `json:"enum" `
-}
-
-func (*Post) IsModel() bool { return true }
-func (*Post) TableName() string { return "posts" }
-func (*Post) TypeName() string { return "post" }
-
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &User{},
     &Post{},
+    &User{},
   )
 }

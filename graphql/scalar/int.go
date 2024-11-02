@@ -24,6 +24,8 @@ func (i *IntScalar) ParseValue(v interface{}, location *errors.GraphqlLocation) 
 		return v, nil
 	case float64:
 		return int64(v), nil
+	case int:
+		return int64(v), nil
 	default:
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("invalid integer value: %v, got %T", v, v),

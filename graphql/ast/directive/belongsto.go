@@ -21,9 +21,9 @@ func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore, pare
 		relation.Reference = "id"
 	}
 	if foreignKey := d.GetArg("foreignKey"); foreignKey != nil {
-		relation.ForeignKey = foreignKey.Value.(string)
+		relation.ForeignKey = utils.SnakeCase(foreignKey.Value.(string))
 	} else {
-		relation.ForeignKey = utils.LcFirst(f.Name) + "_id"
+		relation.ForeignKey = utils.SnakeCase(utils.LcFirst(f.Name)) + "_id"
 	}
 	f.Relation = relation
 	return nil

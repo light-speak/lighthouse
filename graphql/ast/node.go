@@ -389,6 +389,18 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				// merge
 				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
 				f.DefinitionArgs = objectNode.GetFields()[f.Name].Args
+				for _, defArg := range f.DefinitionArgs {
+					if defArg.DefaultValue != nil && f.Args[defArg.Name] == nil {
+						if f.Args == nil {
+							f.Args = make(map[string]*Argument)
+						}
+						f.Args[defArg.Name] = &Argument{
+							Name:        defArg.Name,
+							Value:       defArg.DefaultValue,
+							IsReference: defArg.IsReference,
+						}
+					}
+				}
 			} else {
 				// if the field is not found, it means the field is a fragment field
 				// we need to validate the fragment field
@@ -977,6 +989,61 @@ type Argument struct {
 	IsReference  bool         `json:"-"`
 }
 
+func (a *Argument) GetValue() (interface{}, errors.GraphqlErrorInterface) {
+	var err errors.GraphqlErrorInterface
+	if a.Value == nil {
+		return nil, nil
+	}
+
+	// If type is non-null or list, get the inner type
+	t := a.Type
+	for t.Kind == KindNonNull || t.Kind == KindList {
+		t = t.OfType
+	}
+
+	// For scalar and enum types, parse the value directly
+	if t.Kind == KindScalar {
+		val, err := t.TypeNode.(*ScalarNode).ScalarType.ParseValue(a.Value, a.GetLocation())
+		if err != nil {
+			return nil, err
+		}
+		return val, nil
+	}
+	if t.Kind == KindEnum {
+		return a.Value.(string), nil
+	}
+
+	// For object and input object types, recursively get values
+	if t.Kind == KindObject || t.Kind == KindInputObject {
+		if objValue, ok := a.Value.(map[string]interface{}); ok {
+			result := make(map[string]interface{})
+
+			var fields map[string]*Field
+			if t.Kind == KindObject {
+				fields = t.TypeNode.(*ObjectNode).Fields
+			} else {
+				fields = t.TypeNode.(*InputObjectNode).Fields
+			}
+
+			for fieldName, fieldValue := range objValue {
+				if field, exists := fields[fieldName]; exists {
+					arg := &Argument{
+						Type:  field.Type,
+						Value: fieldValue,
+					}
+					result[fieldName], err = arg.GetValue()
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			return result, nil
+		}
+	}
+
+	return a.Value, nil
+}
+
 func (a *Argument) GetDefaultValue() *string {
 	if a.DefaultValue == nil {
 		return nil
@@ -986,6 +1053,7 @@ func (a *Argument) GetDefaultValue() *string {
 }
 
 func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *Field) errors.GraphqlErrorInterface {
+
 	location := LocationArgumentDefinition
 	if a.IsVariable {
 		location = LocationVariableDefinition
@@ -1042,7 +1110,6 @@ func (a *Argument) Validate(store *NodeStore, args map[string]*Argument, field *
 			return err
 		}
 	}
-
 	err := ValidateDirectives(a.Name, a.Directives, store, location)
 	if err != nil {
 		return err

@@ -262,8 +262,6 @@ func init() {
 		return
 	}
 
-	log.Debug().Msgf("goModel: %s", goModel)
-
 	packages := []string{
 		"cmd",
 		"schema",

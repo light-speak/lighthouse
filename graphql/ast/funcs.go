@@ -35,8 +35,8 @@ func Fields(fields map[string]*Field) string {
 		if _, ok := excludeFieldName[field.Name]; ok {
 			continue
 		}
+
 		goType := field.Type.GetGoType(false)
-		
 		if goType == "PaginateInfo" {
 			goType = "model.PaginateInfo"
 		}
@@ -91,7 +91,7 @@ var directiveFns = map[string]func(map[string][]string, *Directive) error{
 
 func genTag(field *Field) string {
 	tags := map[string][]string{
-		"json": {field.Name},
+		"json": {utils.SnakeCase(field.Name)},
 	}
 	hasType := false
 

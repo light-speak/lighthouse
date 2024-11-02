@@ -43,5 +43,6 @@ func (c *Migrate) Action() func(flagValues map[string]interface{}) error {
 func (c *Migrate) OnExit() func() {
 	return func() {}
 }
+
 // Section: user code section start. Do not remove this comment.
 // Section: user code section end. Do not remove this comment.

@@ -3,11 +3,10 @@ package excute
 import (
 	"fmt"
 
+	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/context"
 	"gorm.io/gorm"
-
 )
 
 func executeFilter(ctx *context.Context, arg *ast.Argument, value interface{}) (func(db *gorm.DB) *gorm.DB, errors.GraphqlErrorInterface) {

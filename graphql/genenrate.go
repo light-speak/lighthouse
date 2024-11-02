@@ -73,7 +73,7 @@ func Generate() error {
 			return err
 		}
 	}
-	
+
 	if err := generate.GenOperationResolverGen(operationNodes, currentPath); err != nil {
 		return err
 	}

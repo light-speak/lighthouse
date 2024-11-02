@@ -4,16 +4,16 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
-type UserPaginateResponse struct {
-  Data []any `json:"data" `
-  Paginateinfo model.PaginateInfo `json:"paginateInfo" `
-}
-
 type Test struct {
   Test string `json:"test" gorm:"type:varchar(255)" `
 }
 
 type PostPaginateResponse struct {
-  Data []any `json:"data" `
-  Paginateinfo model.PaginateInfo `json:"paginateInfo" `
+  Data []*Post `json:"data" `
+  PaginateInfo model.PaginateInfo `json:"paginate_info" `
+}
+
+type UserPaginateResponse struct {
+  Data []*User `json:"data" `
+  PaginateInfo model.PaginateInfo `json:"paginate_info" `
 }

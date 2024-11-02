@@ -48,4 +48,3 @@ func TestGetEnvInt(t *testing.T) {
 		}
 	}
 }
-

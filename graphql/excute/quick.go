@@ -6,6 +6,7 @@ import (
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +44,8 @@ func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, er
 	return nil, false, nil
 }
 func mergeData(field *ast.Field, datas map[string]interface{}) (interface{}, errors.GraphqlErrorInterface) {
-	v, ok := datas[field.Name]
+	fieldName := utils.SnakeCase(field.Name)
+	v, ok := datas[fieldName]
 	if !ok {
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("field %s not found", field.Name),

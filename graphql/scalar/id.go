@@ -24,6 +24,8 @@ func (i *IDScalar) ParseValue(v interface{}, location *errors.GraphqlLocation) (
 		return v, nil
 	case float64:
 		return int64(v), nil
+	case int:
+		return int64(v), nil
 	default:
 		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("invalid integer value: %v got %T", v, v),
@@ -39,7 +41,7 @@ func (i *IDScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (s
 	case int:
 		return strconv.FormatInt(int64(v), 10), nil
 	case float64:
-		return strconv.FormatInt(int64(v), 10), nil	
+		return strconv.FormatInt(int64(v), 10), nil
 	default:
 		return "", &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not an integer: %v, got %T", v, v),

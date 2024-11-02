@@ -84,6 +84,11 @@ func List__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interf
   }
   return datas, nil
 }
+func Count__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  var count int64
+  err := Query__{{ $name | ucFirst }}().Scopes(scopes...).Count(&count).Error
+  return count, err
+}
 {{ end }}
 
 func init() {
@@ -92,5 +97,6 @@ func init() {
   model.AddQuickList("{{ .Name | ucFirst }}", List__{{ .Name | ucFirst }})
   model.AddQuickLoad("{{ .Name | ucFirst }}", Load__{{ .Name | ucFirst }})
   model.AddQuickLoadList("{{ .Name | ucFirst }}", LoadList__{{ .Name | ucFirst }})
+  model.AddQuickCount("{{ .Name | ucFirst }}", Count__{{ .Name | ucFirst }})
   {{- end }}
 }

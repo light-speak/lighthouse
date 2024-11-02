@@ -24,6 +24,8 @@ var quickLoadMap = make(map[string]func(ctx *context.Context, key int64, field s
 
 var quickLoadListMap = make(map[string]func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error))
 
+var quickCountMap = make(map[string]func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error))
+
 func AddQuickList(name string, fn func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
 	quickListMap[name] = fn
 }
@@ -35,6 +37,9 @@ func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field st
 }
 func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error)) {
 	quickLoadListMap[name] = fn
+}
+func AddQuickCount(name string, fn func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error)) {
+	quickCountMap[name] = fn
 }
 
 func GetQuickFirst(name string) func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
@@ -63,6 +68,14 @@ func GetQuickLoad(name string) func(ctx *context.Context, key int64, field strin
 
 func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
 	fn, ok := quickLoadListMap[name]
+	if !ok {
+		return nil
+	}
+	return fn
+}
+
+func GetQuickCount(name string) func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+	fn, ok := quickCountMap[name]
 	if !ok {
 		return nil
 	}

@@ -1,7 +1,9 @@
 type Post @key(fields: "id") @softDeleteModel {
   title: String! @index
   content: String!
-  user_id: ID! 
+  userId: ID! 
+  tagId: ID!
+  BackId: ID!
   user: User! @belongsTo
   enum: TestEnum!
 }

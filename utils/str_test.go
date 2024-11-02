@@ -4,7 +4,7 @@ import "testing"
 
 func TestUcFirst(t *testing.T) {
 	tests := []struct {
-		input string
+		input    string
 		expected string
 	}{
 		{"hello", "Hello"},
@@ -27,7 +27,7 @@ func TestUcFirst(t *testing.T) {
 
 func TestLcFirst(t *testing.T) {
 	tests := []struct {
-		input string
+		input    string
 		expected string
 	}{
 		{"Hello", "hello"},
@@ -50,7 +50,7 @@ func TestLcFirst(t *testing.T) {
 
 func TestSnakeCase(t *testing.T) {
 	tests := []struct {
-		input string
+		input    string
 		expected string
 	}{
 		{"helloWorld", "hello_world"},
@@ -79,7 +79,7 @@ func TestSnakeCase(t *testing.T) {
 
 func TestCamelCase(t *testing.T) {
 	tests := []struct {
-		input string
+		input    string
 		expected string
 	}{
 		{"hello_world", "helloWorld"},
@@ -94,6 +94,11 @@ func TestCamelCase(t *testing.T) {
 		{"hello__world", "helloWorld"},
 		{"_hello_world", "helloWorld"},
 		{"hello_world_", "helloWorld"},
+		{"userId", "userId"},
+		{"tagId", "tagId"},
+		{"BackId", "backId"},
+		{"back_id", "backId"},
+		{"Back_Id", "backId"},
 	}
 
 	for _, test := range tests {
@@ -139,20 +144,20 @@ func TestPluralize(t *testing.T) {
 		{"foot", "feet"},
 		{"mouse", "mice"},
 		{"person", "people"},
-		
+
 		// Words ending in s, x, z, ch, sh
 		{"bus", "buses"},
 		{"box", "boxes"},
 		{"buzz", "buzzes"},
 		{"church", "churches"},
 		{"dish", "dishes"},
-		
+
 		// Words ending in y
-		{"baby", "babies"},     // consonant + y
-		{"boy", "boys"},        // vowel + y
+		{"baby", "babies"}, // consonant + y
+		{"boy", "boys"},    // vowel + y
 		{"day", "days"},
 		{"key", "keys"},
-		
+
 		// Regular words
 		{"book", "books"},
 		{"pen", "pens"},
