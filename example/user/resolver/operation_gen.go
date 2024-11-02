@@ -2,12 +2,12 @@
 package resolver
 
 import (
-  "user/models"
-  "fmt"
-  "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/graphql"
+  "fmt"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/excute"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "user/models"
 )
 
 func init() {
@@ -102,5 +102,31 @@ func init() {
       return nil, err
     }
     return model.StructToMap(res)
+  })
+  excute.AddResolver("createPost", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+    input, err := models.MapToTestInput(args["input"].(map[string]interface{}))
+    if err != nil {
+      return nil, fmt.Errorf("argument: 'input' is not a models.TestInput, got %T", args["input"])
+    }
+    res, err := CreatePostResolver(ctx, input)
+    if res == nil {
+      return nil, err
+    }
+    return model.StructToMap(res)
+  })
+  excute.AddResolver("login", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+    pv, e := graphql.Parser.NodeStore.Scalars["String"].ScalarType.ParseValue(args["name"], nil)
+    if e != nil {
+      return nil, e
+    }
+    name, ok := pv.(string)
+    if !ok {
+      return nil, fmt.Errorf("argument: 'name' is not a string, got %T", args["name"])
+    }
+    res, err := LoginResolver(ctx, name)
+    if res == nil {
+      return nil, err
+    }
+    return model.TypeToMap(res)
   })
 }

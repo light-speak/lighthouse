@@ -35,7 +35,7 @@ func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gor
 	}
 	data := make(map[string]interface{})
 	for _, child := range field.Children {
-		v, err := mergeData(child, d)
+		v, err := mergeData(ctx, child, d)
 		data[child.Name] = v
 		if err != nil {
 			return nil, err
@@ -137,7 +137,7 @@ func executeFind(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm
 	for _, item := range datas {
 		d := make(map[string]interface{})
 		for _, child := range field.Children {
-			v, err := mergeData(child, item)
+			v, err := mergeData(ctx, child, item)
 			d[child.Name] = v
 			if err != nil {
 				return nil, err

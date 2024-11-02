@@ -21,6 +21,10 @@ extend type Query {
   testPostInput(input: TestInput!): String! 
 }
 
+extend type Mutation {
+  createPost(input: TestInput!): Post!
+}
+
 type Test {
   test: String!
 }

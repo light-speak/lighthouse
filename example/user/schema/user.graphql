@@ -10,6 +10,15 @@ extend type Query {
   user(id: ID!): User! @first
 }
 
+type LoginResponse {
+  user: User!
+  token: String!
+}
+
+extend type Mutation {
+  login(name: String!): LoginResponse!
+}
+
 interface Userable {
   userId: ID!
   user: User!

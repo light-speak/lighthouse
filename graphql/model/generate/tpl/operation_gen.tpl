@@ -1,6 +1,5 @@
 func init() {
 {{- range .Nodes }}
-{{- if eq .Name "Query" }}
 {{- range .Fields }}
 {{- if not (isInternalType .Name) }}
 {{- if eq (len .Directives) 0 }}
@@ -68,13 +67,16 @@ func init() {
     if res == nil {
       return nil, err
     }
+    {{- if .Type.GetRealType.TypeNode.IsModel }}
     return model.StructToMap(res)
+    {{- else }}
+    return model.TypeToMap(res)
+    {{- end }}
     {{- else }}
     res, err := {{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
     return res, err
     {{- end }}
   })
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

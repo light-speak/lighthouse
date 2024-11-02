@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
@@ -103,6 +104,16 @@ func GetSelectInfo(columns map[string]interface{}, provide map[string]*ast.Relat
 	return selectColumns, selectRelations
 }
 
+func GetRelation(relation *ast.Relation) *SelectRelation {
+	if relation == nil {
+		return nil
+	}
+	return &SelectRelation{
+		Relation:      relation,
+		SelectColumns: make(map[string]interface{}),
+	}
+}
+
 func StructToMap(m ModelInterface) (map[string]interface{}, error) {
 	jsonData, err := json.Marshal(m)
 	if err != nil {
@@ -124,6 +135,29 @@ func StructToMap(m ModelInterface) (map[string]interface{}, error) {
 	}
 
 	result["__typename"] = m.TypeName()
+	return result, nil
+}
+
+func TypeToMap(m interface{}) (map[string]interface{}, error) {
+	jsonData, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(jsonData, &result)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range result {
+		switch v := value.(type) {
+		case float64:
+			if v == float64(int64(v)) {
+				result[key] = int64(v)
+			}
+		}
+	}
+
 	return result, nil
 }
 
@@ -173,9 +207,20 @@ func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *
 }
 
 func fetchHasMany(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) ([]map[string]interface{}, error) {
-	key, ok := fieldValue.(int64)
-	if !ok {
-		return nil, fmt.Errorf("relation %s field %s value is not int64", relation.Relation.Name, relation.Relation.ForeignKey)
+	var err error
+	var key int64
+	switch v := fieldValue.(type) {
+	case int64:
+		key = v
+	case string:
+		key, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	case float64:
+		key = int64(v)
+	default:
+		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Relation.Name, relation.Relation.ForeignKey, fieldValue, fieldValue)
 	}
 	datas, err := GetQuickLoadList(utils.UcFirst(relation.Relation.Name))(ctx, key, relation.Relation.ForeignKey)
 	if err != nil {
@@ -189,9 +234,20 @@ func fetchHasMany(ctx *context.Context, relation *SelectRelation, fieldValue int
 }
 
 func fetchBelongsTo(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) (map[string]interface{}, error) {
-	key, ok := fieldValue.(int64)
-	if !ok {
-		return nil, fmt.Errorf("relation %s field %s value is not int64", relation.Relation.Name, relation.Relation.ForeignKey)
+	var err error
+	var key int64
+	switch v := fieldValue.(type) {
+	case int64:
+		key = v
+	case string:
+		key, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	case float64:
+		key = int64(v)
+	default:
+		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Relation.Name, relation.Relation.ForeignKey, fieldValue, fieldValue)
 	}
 	data, err := GetQuickLoad(utils.UcFirst(relation.Relation.Name))(ctx, key, relation.Relation.Reference)
 	if err != nil {

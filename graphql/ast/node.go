@@ -386,9 +386,11 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 						Locations: []*errors.GraphqlLocation{f.GetLocation()},
 					}
 				}
+				field := objectNode.GetFields()[f.Name]
 				// merge
-				f.DefinitionDirectives = append(f.DefinitionDirectives, objectNode.GetFields()[f.Name].Directives...)
-				f.DefinitionArgs = objectNode.GetFields()[f.Name].Args
+				f.DefinitionDirectives = append(f.DefinitionDirectives, field.Directives...)
+				f.Relation = field.Relation
+				f.DefinitionArgs = field.Args
 				for _, defArg := range f.DefinitionArgs {
 					if defArg.DefaultValue != nil && f.Args[defArg.Name] == nil {
 						if f.Args == nil {
