@@ -30,12 +30,23 @@ func (f *FloatScalar) ParseValue(v interface{}, location *errors.GraphqlLocation
 	}
 }
 
-func (f *FloatScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
+func (f *FloatScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	switch v := v.(type) {
 	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64), nil
+		return v, nil
+	case int64:
+		return float64(v), nil
+	case string:
+		floatValue, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("invalid float value: %s", v),
+				Locations: []*errors.GraphqlLocation{location},
+			}
+		}
+		return floatValue, nil
 	default:
-		return "", &errors.GraphQLError{
+		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not a float: %v", v),
 			Locations: []*errors.GraphqlLocation{location},
 		}

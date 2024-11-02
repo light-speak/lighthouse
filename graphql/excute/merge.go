@@ -8,7 +8,6 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -26,8 +25,6 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 	} else {
 		v = nil
 	}
-
-	log.Info().Msgf("mergeData field: %v, datas: %v", field.Name, datas[fieldName])
 
 	// Handle relation fields
 	if v == nil && field.Relation != nil {

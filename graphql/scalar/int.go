@@ -34,16 +34,25 @@ func (i *IntScalar) ParseValue(v interface{}, location *errors.GraphqlLocation) 
 	}
 }
 
-func (i *IntScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
+func (i *IntScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	switch v := v.(type) {
 	case int64:
-		return strconv.FormatInt(v, 10), nil
+		return v, nil
 	case int:
-		return strconv.FormatInt(int64(v), 10), nil
+		return int64(v), nil
 	case float64:
-		return strconv.FormatInt(int64(v), 10), nil
+		return int64(v), nil
+	case string:
+		intValue, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("invalid integer value: %s, got %T", v, v),
+				Locations: []*errors.GraphqlLocation{location},
+			}
+		}
+		return intValue, nil
 	default:
-		return "", &errors.GraphQLError{
+		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not an integer: %v, got %T", v, v),
 			Locations: []*errors.GraphqlLocation{location},
 		}

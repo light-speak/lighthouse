@@ -4,6 +4,7 @@ type Post @key(fields: "id") @softDeleteModel {
   userId: ID! 
   tagId: ID!
   BackId: ID!
+  IsBool: Boolean! @default(value: "false")
   user: User! @belongsTo
   enum: TestEnum!
 }

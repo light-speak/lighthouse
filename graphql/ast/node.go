@@ -291,7 +291,7 @@ func (s *ScalarNode) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 
 type ScalarType interface {
 	ParseValue(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
-	Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface)
+	Serialize(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
 	ParseLiteral(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface)
 	GoType() string
 }

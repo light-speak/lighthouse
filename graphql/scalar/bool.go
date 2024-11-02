@@ -32,14 +32,14 @@ func (i *BooleanScalar) ParseValue(v interface{}, location *errors.GraphqlLocati
 	}
 }
 
-func (i *BooleanScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
+func (i *BooleanScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	switch v := v.(type) {
 	case bool:
-		return strconv.FormatBool(v), nil
+		return v, nil
 	case int64:
-		return strconv.FormatBool(v != 0), nil
+		return v != 0, nil
 	default:
-		return "", &errors.GraphQLError{
+		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("value is not a boolean: %v", v),
 			Locations: []*errors.GraphqlLocation{location},
 		}

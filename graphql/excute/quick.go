@@ -40,34 +40,3 @@ func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, er
 
 	return nil, false, nil
 }
-
-func getColumns(field *ast.Field) (map[string]interface{}, errors.GraphqlErrorInterface) {
-	res := make(map[string]interface{})
-	if len(field.Children) == 0 {
-		return nil, nil
-	}
-	for _, child := range field.Children {
-		if child.IsFragment || child.IsUnion {
-			for _, c := range child.Children {
-				column, err := getColumns(c)
-				if err != nil {
-					return nil, err
-				}
-				res[c.Name] = column
-			}
-		} else if child.Children != nil {
-			cRes := make(map[string]interface{})
-			for _, c := range child.Children {
-				column, err := getColumns(c)
-				if err != nil {
-					return nil, err
-				}
-				cRes[c.Name] = column
-			}
-			res[child.Name] = cRes
-		} else {
-			res[child.Name] = nil
-		}
-	}
-	return res, nil
-}
