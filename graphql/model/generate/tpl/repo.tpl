@@ -16,7 +16,7 @@ func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB
 }
 func First__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
-  selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
+  selectColumns := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if data == nil {
     data = make(map[string]interface{})
     err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).First(data).Error
@@ -24,63 +24,17 @@ func First__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]inter
       return nil, err
     }
   }
-  var wg sync.WaitGroup
-  errChan := make(chan error, len(selectRelations))
-  var mu sync.Mutex
-  
-  for key, relation := range selectRelations {
-    wg.Add(1)
-    go func(data map[string]interface{}, relation *model.SelectRelation)  {
-      defer wg.Done()
-      cData, err := model.FetchRelation(ctx, data, relation)
-      if err != nil {
-        errChan <- err
-      }
-      mu.Lock()
-      defer mu.Unlock()
-      data[key] = cData
-    }(data, relation) 
-  }
-  wg.Wait()
-  close(errChan)
-  for err := range errChan {
-    return nil, err
-  }
   return data, nil
 }
 func List__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
   var err error
-  selectColumns, selectRelations := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
+  selectColumns := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if datas == nil {
     datas = make([]map[string]interface{}, 0)
     err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
     if err != nil {
       return nil, err
     }
-  }
-  var wg sync.WaitGroup
-  errChan := make(chan error, len(datas)*len(selectRelations))
-  var mu sync.Mutex
-  
-  for _, data := range datas {
-    for key, relation := range selectRelations {
-      wg.Add(1)
-      go func(data map[string]interface{}, relation *model.SelectRelation)  {
-        defer wg.Done()
-        cData, err := model.FetchRelation(ctx, data, relation)
-        if err != nil {
-          errChan <- err
-        }
-        mu.Lock()
-        defer mu.Unlock()
-        data[key] = cData
-      }(data, relation) 
-    }
-  }
-  wg.Wait()
-  close(errChan)
-  for err := range errChan {
-    return nil, err
   }
   return datas, nil
 }

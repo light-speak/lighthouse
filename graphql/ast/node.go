@@ -414,7 +414,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 					}
 				} else {
 					return &errors.GraphQLError{
-						Message:   fmt.Sprintf("field %s not found", f.Name),
+						Message:   fmt.Sprintf("field %s not found in function %s", f.Name, "Validate"),
 						Locations: []*errors.GraphqlLocation{f.GetLocation()},
 					}
 				}

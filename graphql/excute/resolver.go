@@ -5,7 +5,6 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
-	"github.com/light-speak/lighthouse/log"
 )
 
 func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
@@ -42,20 +41,12 @@ func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool,
 }
 
 func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
-	columns, e := getColumns(field)
-	if e != nil {
-		return nil, true, &errors.GraphQLError{
-			Message:   e.Error(),
-			Locations: []*errors.GraphqlLocation{field.GetLocation()},
-		}
-	}
-
 	realType := field.Type.GetRealType()
 	if realType.TypeNode.GetKind() == ast.KindObject && realType.TypeNode.(*ast.ObjectNode).IsModel {
 		if field.Type.IsList() {
-			return processListResult(ctx, field, realType, columns, r)
+			return processListResult(ctx, field, realType, r)
 		}
-		return processSingleResult(ctx, field, realType, columns, r)
+		return processSingleResult(ctx, field, realType, r)
 	}
 
 	data := make(map[string]interface{})
@@ -67,12 +58,11 @@ func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) 
 		data[child.Name] = v
 	}
 
-	log.Info().Msgf("processObjectResult: %v", data)
 	return data, true, nil
 }
 
-func processListResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, columns map[string]interface{}, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
-	result, err := model.GetQuickList(realType.Name)(ctx, columns, r.([]map[string]interface{}))
+func processListResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
+	result, err := model.GetQuickList(realType.Name)(ctx, r.([]map[string]interface{}))
 	if err != nil {
 		return nil, true, &errors.GraphQLError{
 			Message:   err.Error(),
@@ -95,8 +85,8 @@ func processListResult(ctx *context.Context, field *ast.Field, realType *ast.Typ
 	return data, true, nil
 }
 
-func processSingleResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, columns map[string]interface{}, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
-	result, err := model.GetQuickFirst(realType.Name)(ctx, columns, r.(map[string]interface{}))
+func processSingleResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
+	result, err := model.GetQuickFirst(realType.Name)(ctx, r.(map[string]interface{}))
 	if err != nil {
 		return nil, true, &errors.GraphQLError{
 			Message:   err.Error(),

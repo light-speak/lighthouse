@@ -17,9 +17,9 @@ type SelectRelation struct {
 	SelectColumns map[string]interface{}
 }
 
-var quickListMap = make(map[string]func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error))
+var quickListMap = make(map[string]func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error))
 
-var quickFirstMap = make(map[string]func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
+var quickFirstMap = make(map[string]func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
 
 var quickLoadMap = make(map[string]func(ctx *context.Context, key int64, field string) (map[string]interface{}, error))
 
@@ -27,10 +27,10 @@ var quickLoadListMap = make(map[string]func(ctx *context.Context, key int64, fie
 
 var quickCountMap = make(map[string]func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error))
 
-func AddQuickList(name string, fn func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
+func AddQuickList(name string, fn func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
 	quickListMap[name] = fn
 }
-func AddQuickFirst(name string, fn func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
+func AddQuickFirst(name string, fn func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
 	quickFirstMap[name] = fn
 }
 func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string) (map[string]interface{}, error)) {
@@ -43,7 +43,7 @@ func AddQuickCount(name string, fn func(scopes ...func(db *gorm.DB) *gorm.DB) (i
 	quickCountMap[name] = fn
 }
 
-func GetQuickFirst(name string) func(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func GetQuickFirst(name string) func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
 	fn, ok := quickFirstMap[name]
 	if !ok {
 		return nil
@@ -51,7 +51,7 @@ func GetQuickFirst(name string) func(ctx *context.Context, columns map[string]in
 	return fn
 }
 
-func GetQuickList(name string) func(ctx *context.Context, columns map[string]interface{}, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func GetQuickList(name string) func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
 	fn, ok := quickListMap[name]
 	if !ok {
 		return nil
@@ -81,37 +81,6 @@ func GetQuickCount(name string) func(scopes ...func(db *gorm.DB) *gorm.DB) (int6
 		return nil
 	}
 	return fn
-}
-
-func GetSelectInfo(columns map[string]interface{}, provide map[string]*ast.Relation) (selectColumns []string, selectRelations map[string]*SelectRelation) {
-	selectColumns = make([]string, 0)
-	selectRelations = make(map[string]*SelectRelation, 0)
-
-	for key, value := range columns {
-		if value != nil && len(value.(map[string]interface{})) > 0 {
-			relation := provide[key]
-			selectRelations[key] = &SelectRelation{Relation: relation, SelectColumns: value.(map[string]interface{})}
-			switch relation.RelationType {
-			case ast.RelationTypeBelongsTo:
-				selectColumns = append(selectColumns, relation.ForeignKey)
-			case ast.RelationTypeHasMany:
-				selectColumns = append(selectColumns, relation.Reference)
-			}
-		} else {
-			selectColumns = append(selectColumns, key)
-		}
-	}
-	return selectColumns, selectRelations
-}
-
-func GetRelation(relation *ast.Relation) *SelectRelation {
-	if relation == nil {
-		return nil
-	}
-	return &SelectRelation{
-		Relation:      relation,
-		SelectColumns: make(map[string]interface{}),
-	}
 }
 
 func StructToMap(m ModelInterface) (map[string]interface{}, error) {
@@ -174,13 +143,13 @@ func MapToStruct[T any](data map[string]interface{}) (T, error) {
 	return m, nil
 }
 
-func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *SelectRelation) (interface{}, error) {
-	switch relation.Relation.RelationType {
+func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *ast.Relation) (interface{}, error) {
+	switch relation.RelationType {
 	case ast.RelationTypeBelongsTo:
-		fieldValue, ok := data[relation.Relation.ForeignKey]
+		fieldValue, ok := data[relation.ForeignKey]
 		if !ok {
 			return nil, &errors.GraphQLError{
-				Message:   fmt.Sprintf("field %s not found in function %s", relation.Relation.ForeignKey, "FetchRelation"),
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.ForeignKey, "FetchRelation"),
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
@@ -190,10 +159,10 @@ func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *
 		}
 		return data, nil
 	case ast.RelationTypeHasMany:
-		fieldValue, ok := data[relation.Relation.Reference]
+		fieldValue, ok := data[relation.Reference]
 		if !ok {
 			return nil, &errors.GraphQLError{
-				Message:   fmt.Sprintf("field %s not found in function %s", relation.Relation.Reference, "FetchRelation"),
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
@@ -206,7 +175,7 @@ func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *
 	return nil, nil
 }
 
-func fetchHasMany(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) ([]map[string]interface{}, error) {
+func fetchHasMany(ctx *context.Context, relation *ast.Relation, fieldValue interface{}) ([]map[string]interface{}, error) {
 	var err error
 	var key int64
 	switch v := fieldValue.(type) {
@@ -220,20 +189,20 @@ func fetchHasMany(ctx *context.Context, relation *SelectRelation, fieldValue int
 	case float64:
 		key = int64(v)
 	default:
-		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Relation.Name, relation.Relation.ForeignKey, fieldValue, fieldValue)
+		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Name, relation.ForeignKey, fieldValue, fieldValue)
 	}
-	datas, err := GetQuickLoadList(utils.UcFirst(relation.Relation.Name))(ctx, key, relation.Relation.ForeignKey)
+	datas, err := GetQuickLoadList(utils.UcFirst(relation.Name))(ctx, key, relation.ForeignKey)
 	if err != nil {
 		return nil, err
 	}
-	datas, err = GetQuickList(utils.UcFirst(relation.Relation.Name))(ctx, relation.SelectColumns, datas)
+	datas, err = GetQuickList(utils.UcFirst(relation.Name))(ctx, datas)
 	if err != nil {
 		return nil, err
 	}
 	return datas, nil
 }
 
-func fetchBelongsTo(ctx *context.Context, relation *SelectRelation, fieldValue interface{}) (map[string]interface{}, error) {
+func fetchBelongsTo(ctx *context.Context, relation *ast.Relation, fieldValue interface{}) (map[string]interface{}, error) {
 	var err error
 	var key int64
 	switch v := fieldValue.(type) {
@@ -247,13 +216,13 @@ func fetchBelongsTo(ctx *context.Context, relation *SelectRelation, fieldValue i
 	case float64:
 		key = int64(v)
 	default:
-		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Relation.Name, relation.Relation.ForeignKey, fieldValue, fieldValue)
+		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Name, relation.ForeignKey, fieldValue, fieldValue)
 	}
-	data, err := GetQuickLoad(utils.UcFirst(relation.Relation.Name))(ctx, key, relation.Relation.Reference)
+	data, err := GetQuickLoad(utils.UcFirst(relation.Name))(ctx, key, relation.Reference)
 	if err != nil {
 		return nil, err
 	}
-	data, err = GetQuickFirst(utils.UcFirst(relation.Relation.Name))(ctx, relation.SelectColumns, data)
+	data, err = GetQuickFirst(utils.UcFirst(relation.Name))(ctx, data)
 	if err != nil {
 		return nil, err
 	}
