@@ -2,7 +2,7 @@
 type User implements HasName @key(fields: "id") @model {
   name: String! @index
   "五二零"
-  posts: [Post!]! @hasMany(relation: "post", foreignKey: "user_id")
+  myPosts: [Post!]! @hasMany(relation: "post", foreignKey: "user_id")
 }
 
 extend type Query {

@@ -14,24 +14,22 @@ func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field stri
 func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.{{ $name | ucFirst }}{}).Scopes(scopes...)
 }
-func First__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{}, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+func First__{{ $name | ucFirst }}(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
-  selectColumns := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if data == nil {
     data = make(map[string]interface{})
-    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).First(data).Error
+    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).First(data).Error
     if err != nil {
       return nil, err
     }
   }
   return data, nil
 }
-func List__{{ $name | ucFirst }}(ctx *context.Context, columns map[string]interface{},datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+func List__{{ $name | ucFirst }}(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
   var err error
-  selectColumns := model.GetSelectInfo(columns, Provide__{{ $name | ucFirst }}())
   if datas == nil {
     datas = make([]map[string]interface{}, 0)
-    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Select(selectColumns).Find(&datas).Error
+    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Find(&datas).Error
     if err != nil {
       return nil, err
     }

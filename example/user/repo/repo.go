@@ -2,11 +2,11 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/model"
-  "gorm.io/gorm"
   "github.com/light-speak/lighthouse/graphql/ast"
+  "github.com/light-speak/lighthouse/context"
   "user/models"
+  "gorm.io/gorm"
 )
 
 func Provide__Post() map[string]*ast.Relation { return map[string]*ast.Relation{"BackId": {},"content": {},"created_at": {},"deleted_at": {},"enum": {},"id": {},"tagId": {},"title": {},"updated_at": {},"user": {Name: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"},"userId": {},}}
@@ -46,7 +46,7 @@ func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   err := Query__Post().Scopes(scopes...).Count(&count).Error
   return count, err
 }
-func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"name": {},"posts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"updated_at": {},}}
+func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"myPosts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"name": {},"updated_at": {},}}
 func Load__User(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
 }

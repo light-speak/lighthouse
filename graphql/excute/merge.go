@@ -8,12 +8,14 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 )
 
 // mergeData merges the field data with the given data map based on GraphQL field definition
 func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interface{}) (interface{}, errors.GraphqlErrorInterface) {
 	// Convert field name to snake case for database column mapping
+
 	fieldName := utils.SnakeCase(field.Name)
 	var v interface{}
 
@@ -24,6 +26,8 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 	} else {
 		v = nil
 	}
+
+	log.Info().Msgf("mergeData field: %v, datas: %v", field.Name, datas[fieldName])
 
 	// Handle relation fields
 	if v == nil && field.Relation != nil {
@@ -68,13 +72,13 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 			go func(index int, itemData map[string]interface{}) {
 				defer wg.Done()
 				listField := &ast.Field{
-					Name:     field.Name,
+					Name:     fieldName,
 					Children: field.Children,
 					Type:     typeRef.OfType,
 				}
 
 				m := make(map[string]interface{})
-				m[field.Name] = itemData
+				m[fieldName] = itemData
 				merged, err := mergeData(ctx, listField, m)
 				if err != nil {
 					errChan <- err
