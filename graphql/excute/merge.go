@@ -11,10 +11,55 @@ import (
 	"github.com/light-speak/lighthouse/utils"
 )
 
+// countTotalFields recursively counts total fields including nested fragments
+func countTotalFields(fields map[string]*ast.Field) int {
+	total := 0
+	for _, field := range fields {
+		if field.IsFragment {
+			total += countTotalFields(field.Children)
+		} else {
+			total++
+		}
+	}
+	return total
+}
+
+// processFields handles field processing and sends results to channels
+func processFields(
+	ctx *context.Context,
+	fields map[string]*ast.Field,
+	data map[string]interface{},
+	wg *sync.WaitGroup,
+	errChan chan<- errors.GraphqlErrorInterface,
+	resultChan chan<- struct {
+		key   string
+		value interface{}
+	},
+) {
+	for _, field := range fields {
+		if field.IsFragment {
+			// Recursively process fragment fields
+			processFields(ctx, field.Children, data, wg, errChan, resultChan)
+		} else {
+			wg.Add(1)
+			go func(f *ast.Field) {
+				defer wg.Done()
+				c, err := mergeData(ctx, f, data)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				resultChan <- struct {
+					key   string
+					value interface{}
+				}{f.Name, c}
+			}(field)
+		}
+	}
+}
+
 // mergeData merges the field data with the given data map based on GraphQL field definition
 func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interface{}) (interface{}, errors.GraphqlErrorInterface) {
-	// Convert field name to snake case for database column mapping
-
 	fieldName := utils.SnakeCase(field.Name)
 	var v interface{}
 
@@ -105,30 +150,18 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 			}
 		}
 
-		// Process each child field
+		// Calculate total fields including nested fragments
+		totalFields := countTotalFields(field.Children)
+
 		var wg sync.WaitGroup
-		errChan := make(chan errors.GraphqlErrorInterface, len(field.Children))
+		errChan := make(chan errors.GraphqlErrorInterface, totalFields)
 		resultChan := make(chan struct {
 			key   string
 			value interface{}
-		}, len(field.Children))
+		}, totalFields)
 
-		for _, child := range field.Children {
-
-			wg.Add(1)
-			go func(childField *ast.Field) {
-				defer wg.Done()
-				c, err := mergeData(ctx, childField, vMap)
-				if err != nil {
-					errChan <- err
-					return
-				}
-				resultChan <- struct {
-					key   string
-					value interface{}
-				}{childField.Name, c}
-			}(child)
-		}
+		// Process all fields including nested fragments
+		processFields(ctx, field.Children, vMap, &wg, errChan, resultChan)
 
 		go func() {
 			wg.Wait()
