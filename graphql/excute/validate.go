@@ -10,6 +10,7 @@ func ValidateValue(field *ast.Field, value interface{}, isVariable bool) (interf
 	realType := field.Type.GetRealType()
 	var v interface{}
 	var err errors.GraphqlErrorInterface
+
 	switch realType.Kind {
 	case ast.KindScalar:
 		v, err = realType.TypeNode.(*ast.ScalarNode).ScalarType.Serialize(value, field.GetLocation())
