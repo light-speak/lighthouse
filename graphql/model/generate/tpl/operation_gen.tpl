@@ -18,9 +18,9 @@ func init() {
     }
 
     {{- else if eq $arg.Type.GetRealType.Kind "ENUM" }}
-    {{ $arg.Name | lcFirst }}Value, ok := models.{{ false | $arg.Type.GetGoType }}Map[args["{{ $arg.Name | lcFirst }}"].(string)]
+    {{ $arg.Name | lcFirst }}Value, ok := models.{{ $arg.Type.GetRealType.Name }}Map[args["{{ $arg.Name | lcFirst }}"].(string)]
     if !ok {
-      return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
+      return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ $arg.Type.GetRealType.Name }}, got %T", args["{{ $index }}"])
     }
     {{ $arg.Name | lcFirst }} := &{{ $arg.Name | lcFirst }}Value
     {{- else if eq $arg.Type.GetRealType.Kind "OBJECT" }}
