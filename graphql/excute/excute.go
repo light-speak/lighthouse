@@ -42,11 +42,11 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 
 	var funMap map[string]func(qp *parser.QueryParser, field *ast.Field) (interface{}, error)
 	switch qp.OperationType {
-	case "Mutation":
+	case "Mutation", "mutation":
 		funMap = mutationMap
-	case "Subscription":
+	case "Subscription", "subscription":
 		funMap = subscriptionMap
-	case "Query":
+	case "Query", "query":
 		funMap = queryMap
 	default:
 		e := &errors.ParserError{
