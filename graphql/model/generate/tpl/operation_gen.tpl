@@ -4,7 +4,8 @@ func init() {
 {{- if not (isInternalType .Name) }}
 {{- if eq (len .Directives) 0 }}
   {{- $args := .Args }}
-  excute.AddResolver("{{ .Name }}", func(ctx *context.Context, args map[string]any) (interface{}, error) {
+  excute.AddResolver("{{ .Name }}", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
+    r := resolve.(*Resolver)
   {{- range $index, $arg := $args }}
 
     {{- if eq $arg.Type.GetRealType.Kind "SCALAR" }}
@@ -36,7 +37,7 @@ func init() {
   {{- end }}
     {{- if .Type.IsList }}
     {{- if .Type.IsObject }}
-    list, err := {{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
+    list, err := r.{{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
     if list == nil {
       return nil, err
     }
@@ -50,14 +51,14 @@ func init() {
     }
     return res, nil
     {{- else }}
-    res, err := {{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
+    res, err := r.{{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
     if res == nil {
       return nil, err
     }
     return res, nil
     {{- end }}
     {{- else if .Type.IsObject }}
-    res, err := {{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
+    res, err := r.{{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
     if res == nil {
       return nil, err
     }
@@ -67,7 +68,7 @@ func init() {
     return model.TypeToMap(res)
     {{- end }}
     {{- else }}
-    res, err := {{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
+    res, err := r.{{ .Name | ucFirst }}Resolver(ctx{{ range $index, $arg := $args }}, {{ $arg.Name | lcFirst }}{{ end }})
     return res, err
     {{- end }}
   })

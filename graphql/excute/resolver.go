@@ -5,6 +5,7 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/resolve"
 )
 
 func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
@@ -13,7 +14,7 @@ func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool,
 		for _, arg := range field.Args {
 			args[arg.Name] = arg.Value
 		}
-		r, e := resolverFunc(ctx, args)
+		r, e := resolverFunc(ctx, args, resolve.R)
 		if e != nil {
 			return nil, true, &errors.GraphQLError{
 				Message:   e.Error(),

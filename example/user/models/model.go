@@ -4,6 +4,16 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
+type Article struct {
+  model.Model
+  Name string `gorm:"type:varchar(255)" json:"name" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index;type:varchar(255)" `
@@ -18,13 +28,13 @@ func (*User) TypeName() string { return "user" }
 
 type Post struct {
   model.ModelSoftDelete
-  UserId int64 `json:"user_id" gorm:"index" `
   TagId int64 `json:"tag_id" `
-  BackId int64 `json:"back_id" `
-  IsBool bool `json:"is_bool" gorm:"default:false" `
   Enum TestEnum `json:"enum" `
   Title string `json:"title" gorm:"index;type:varchar(255)" `
   Content string `json:"content" gorm:"type:varchar(255)" `
+  UserId int64 `json:"user_id" gorm:"index" `
+  BackId int64 `json:"back_id" `
+  IsBool bool `json:"is_bool" gorm:"default:false" `
   User User `json:"user" `
 }
 
@@ -32,20 +42,10 @@ func (*Post) IsModel() bool { return true }
 func (*Post) TableName() string { return "posts" }
 func (*Post) TypeName() string { return "post" }
 
-type Article struct {
-  model.Model
-  Name string `gorm:"type:varchar(255)" json:"name" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-}
-
-func (*Article) IsModel() bool { return true }
-func (*Article) TableName() string { return "articles" }
-func (*Article) TypeName() string { return "article" }
-
 type Comment struct {
   model.Model
   Content string `json:"content" gorm:"type:varchar(255)" `
-  CommentableId int64 `gorm:"index:commentable" json:"commentable_id" `
+  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
   CommentableType CommentableType `json:"commentable_type" gorm:"index:commentable" `
   Commentable interface{} `json:"commentable" gorm:"-" `
 }
@@ -57,9 +57,9 @@ func (*Comment) TypeName() string { return "comment" }
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
+    &Article{},
     &User{},
     &Post{},
-    &Article{},
     &Comment{},
   )
 }

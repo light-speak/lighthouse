@@ -13,6 +13,7 @@ extend type Query {
 type LoginResponse {
   user: User!
   token: String!
+  authorization: String!
 }
 
 extend type Mutation {

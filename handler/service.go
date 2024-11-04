@@ -8,9 +8,11 @@ import (
 	"github.com/light-speak/lighthouse/graphql"
 	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/net"
+	"github.com/light-speak/lighthouse/resolve"
 )
 
-func StartService() {
+func StartService(resolver resolve.Resolve) {
+	resolve.R = resolver
 	err := graphql.LoadSchema()
 	if err != nil {
 		log.Error().Msgf("Failed to load schema: %v", err)
