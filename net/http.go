@@ -28,6 +28,7 @@ func setMiddlewares(r *chi.Mux) {
 	r.Use(chiMiddleware.Compress(5))
 	r.Use(chiMiddleware.Timeout(60 * time.Second))
 	r.Use(chiMiddleware.Throttle(env.LighthouseConfig.Server.Throttle))
+	r.Use(middleware.ContextMiddleware)
 	r.Use(middleware.AuthMiddleware)
 }
 

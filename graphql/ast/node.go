@@ -621,7 +621,7 @@ func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlEr
 	case KindNonNull:
 		if v == nil {
 			return &errors.GraphQLError{
-				Message:   "non-null type cannot be null, f",
+				Message:   "non-null type cannot be null",
 				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}

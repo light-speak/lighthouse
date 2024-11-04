@@ -51,7 +51,7 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	ctx := context.NewContext(r.Context())
+	ctx := r.Context().(*context.Context)
 	data := excute.ExecuteQuery(ctx, request.Query, request.Variables)
 	response := GraphQLResponse{
 		Data: data,

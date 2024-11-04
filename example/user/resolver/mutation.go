@@ -2,11 +2,13 @@
 package resolver
 
 import (
+	"fmt"
 	"user/models"
 
 	"github.com/light-speak/lighthouse/auth"
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/log"
 )
 
 func (r *Resolver) LoginResolver(ctx *context.Context, name string) (*models.LoginResponse, error) {
@@ -20,10 +22,11 @@ func (r *Resolver) LoginResolver(ctx *context.Context, name string) (*models.Log
 	if err != nil {
 		return nil, err
 	}
+	log.Info().Msgf("currentUser: %v", ctx.UserId)
 	return &models.LoginResponse{
 		User:          *user,
 		Token:         token,
-		Authorization: r.Www,
+		Authorization: fmt.Sprintf("Bearer %s", token),
 	}, nil
 	// Func:Login user code end. Do not remove this comment.
 }
