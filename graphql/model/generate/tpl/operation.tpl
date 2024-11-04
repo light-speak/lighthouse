@@ -1,5 +1,5 @@
 {{- range $key, $field := .Fields }}
-func {{ $field.Name | ucFirst }}Resolver(ctx *context.Context
+func (r *Resolver) {{ $field.Name | ucFirst }}Resolver(ctx *context.Context
 	{{- range $index, $arg := $field.Args -}}, 
 	{{- $arg.Name -}}
 	{{- " " -}} 
@@ -8,7 +8,7 @@ func {{ $field.Name | ucFirst }}Resolver(ctx *context.Context
 	{{- else -}}
 	{{- (false | $arg.Type.GetGoType) | prefixModels -}}
 	{{- end -}}
-	{{- end -}} ) (
+	{{- end -}}) (
 	{{- if eq $field.Type.GetRealType.Kind "SCALAR" -}}
 	{{- false | $field.Type.GetGoType -}}
 	{{- else -}}

@@ -7,7 +7,7 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index;type:varchar(255)" `
-  Posts []Post `json:"posts" `
+  MyPosts *[]Post `json:"my_posts" gorm:"comment:五二零" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -19,20 +19,47 @@ func (*User) TypeName() string { return "user" }
 type Post struct {
   model.ModelSoftDelete
   Title string `json:"title" gorm:"index;type:varchar(255)" `
-  User User `json:"user" `
-  Enum TestEnum `json:"enum" `
   Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" `
+  TagId int64 `json:"tag_id" `
+  BackId int64 `json:"back_id" `
+  Enum TestEnum `json:"enum" `
+  UserId int64 `json:"user_id" gorm:"index" `
+  IsBool bool `json:"is_bool" gorm:"default:false" `
+  User *User `json:"user" `
 }
 
 func (*Post) IsModel() bool { return true }
 func (*Post) TableName() string { return "posts" }
 func (*Post) TypeName() string { return "post" }
 
+type Comment struct {
+  model.Model
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
+  CommentableType CommentableType `gorm:"index:commentable" json:"commentable_type" `
+  Commentable interface{} `gorm:"-" json:"commentable" `
+}
+
+func (*Comment) IsModel() bool { return true }
+func (*Comment) TableName() string { return "comments" }
+func (*Comment) TypeName() string { return "comment" }
+
+type Article struct {
+  model.Model
+  Name string `json:"name" gorm:"type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
     &User{},
     &Post{},
+    &Comment{},
+    &Article{},
   )
 }

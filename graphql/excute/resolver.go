@@ -1,10 +1,13 @@
 package excute
 
 import (
+	"sync"
+
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/resolve"
 )
 
 func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
@@ -13,7 +16,7 @@ func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool,
 		for _, arg := range field.Args {
 			args[arg.Name] = arg.Value
 		}
-		r, e := resolverFunc(ctx, args)
+		r, e := resolverFunc(ctx, args, resolve.R)
 		if e != nil {
 			return nil, true, &errors.GraphQLError{
 				Message:   e.Error(),
@@ -33,136 +36,149 @@ func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool,
 
 		if field.Type.IsScalar() {
 			return r, true, nil
-		} else {
-			columns, e := getColumns(field)
-			if e != nil {
-				return nil, true, &errors.GraphQLError{
-					Message:   e.Error(),
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				}
-			}
-			realType := field.Type.GetRealType()
-			if field.Type.IsList() {
-				r, err := model.GetQuickList(realType.Name)(ctx, columns, r.([]map[string]interface{}))
-				if err != nil {
-					return nil, true, &errors.GraphQLError{
-						Message:   err.Error(),
-						Locations: []*errors.GraphqlLocation{field.GetLocation()},
-					}
-				}
-				data := make([]map[string]interface{}, 0)
-				for _, ri := range r {
-					riData := make(map[string]interface{})
-					for _, child := range field.Children {
-						v, err := mergeData(child, ri)
-						riData[child.Name] = v
-						if err != nil {
-							return nil, true, err
-						}
-					}
-					data = append(data, riData)
-				}
-				return data, true, nil
-			} else {
-				r, err := model.GetQuickFirst(realType.Name)(ctx, columns, r.(map[string]interface{}))
-				if err != nil {
-					return nil, true, &errors.GraphQLError{
-						Message:   err.Error(),
-						Locations: []*errors.GraphqlLocation{field.GetLocation()},
-					}
-				}
-				data := make(map[string]interface{})
-				for _, child := range field.Children {
-					v, err := mergeData(child, r)
-					data[child.Name] = v
-					if err != nil {
-						return nil, true, err
-					}
-				}
-				return data, true, nil
-			}
 		}
 
+		return processObjectResult(ctx, field, r)
 	}
 	return nil, false, nil
 }
 
-// if resolverFunc, ok := resolverMap[field.Name]; ok {
-// 	args := make(map[string]any)
-// 	for _, arg := range field.Args {
-// 		args[arg.Name] = arg.Value
-// 	}
-// 	r, e := resolverFunc(ctx, args)
-// 	if e != nil {
-// 		ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-// 			Message:   e.Error(),
-// 			Locations: []*errors.GraphqlLocation{field.GetLocation()},
-// 		})
-// 		continue
-// 	}
+func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
+	realType := field.Type.GetRealType()
+	if realType.TypeNode.GetKind() == ast.KindObject && realType.TypeNode.(*ast.ObjectNode).IsModel {
+		if field.Type.IsList() {
+			return processListResult(ctx, field, realType, r)
+		}
+		return processSingleResult(ctx, field, realType, r)
+	}
 
-// 	if r == nil {
-// 		if field.Type.Kind == ast.KindNonNull {
-// 			ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-// 				Message:   "field is not nullable",
-// 				Locations: []*errors.GraphqlLocation{field.GetLocation()},
-// 			})
-// 			continue
-// 		}
-// 		res[field.Name] = nil
-// 		continue
-// 	}
+	data := make(map[string]interface{})
+	var wg sync.WaitGroup
+	errChan := make(chan errors.GraphqlErrorInterface, len(field.Children))
+	resultChan := make(chan struct {
+		key   string
+		value interface{}
+	}, len(field.Children))
 
-// 	if modelData, ok := r.(model.ModelInterface); ok {
-// 		columns, e := getColumns(field)
-// 		if e != nil {
-// 			ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-// 				Message:   e.Error(),
-// 				Locations: []*errors.GraphqlLocation{field.GetLocation()},
-// 			})
-// 			continue
-// 		}
-// 		modelMap, err := model.StructToMap(modelData)
-// 		if err != nil {
-// 			ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-// 				Message:   err.Error(),
-// 				Locations: []*errors.GraphqlLocation{field.GetLocation()},
-// 			})
-// 			continue
-// 		}
-// 		isList := false
+	for _, child := range field.Children {
+		wg.Add(1)
+		go func(c *ast.Field) {
+			defer wg.Done()
+			v, err := mergeData(ctx, c, r.(map[string]interface{}))
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resultChan <- struct {
+				key   string
+				value interface{}
+			}{c.Name, v}
+		}(child)
+	}
 
-// 		returnType := field.Type
-// 		if field.Type.Kind == ast.KindNonNull {
-// 			returnType = field.Type.OfType
-// 		}
-// 		if returnType.Kind == ast.KindList {
-// 			isList = true
-// 			returnType = returnType.OfType
-// 		}
+	go func() {
+		wg.Wait()
+		close(errChan)
+		close(resultChan)
+	}()
 
-// 		if returnType.Kind == ast.KindObject {
-// 			if isList {
-// 				model.GetQuickLoadList(returnType.Name)(ctx, modelMap)
-// 			} else {
-// 				model.GetQuickFirst(returnType.Name)(ctx, columns, modelMap)
-// 			}
-// 		}
-// 		data := make(map[string]interface{})
-// 		for _, child := range field.Children {
-// 			d, err := mergeData(child, modelMap)
-// 			if err != nil {
-// 				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-// 					Message:   err.Error(),
-// 					Locations: []*errors.GraphqlLocation{child.GetLocation()},
-// 				})
-// 				continue
-// 			}
-// 			data[child.Name] = d
-// 		}
-// 		res[field.Name] = data
-// 		continue
-// 	}
-// 	res[field.Name] = r
-// 	continue
-// }
+	if err := <-errChan; err != nil {
+		return nil, true, err
+	}
+
+	for result := range resultChan {
+		data[result.key] = result.value
+	}
+
+	return data, true, nil
+}
+
+func processListResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
+	result, err := model.GetQuickList(realType.Name)(ctx, r.([]map[string]interface{}))
+	if err != nil {
+		return nil, true, &errors.GraphQLError{
+			Message:   err.Error(),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
+	}
+
+	data := make([]map[string]interface{}, len(result))
+	var wg sync.WaitGroup
+	errChan := make(chan errors.GraphqlErrorInterface, len(result))
+
+	for i, ri := range result {
+		wg.Add(1)
+		go func(index int, item map[string]interface{}) {
+			defer wg.Done()
+			riData := make(map[string]interface{})
+			for _, child := range field.Children {
+				v, err := mergeData(ctx, child, item)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				riData[child.Name] = v
+			}
+			data[index] = riData
+		}(i, ri)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		return nil, true, <-errChan
+	}
+
+	return data, true, nil
+}
+
+func processSingleResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
+	result, err := model.GetQuickFirst(realType.Name)(ctx, r.(map[string]interface{}))
+	if err != nil {
+		return nil, true, &errors.GraphQLError{
+			Message:   err.Error(),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
+	}
+
+	data := make(map[string]interface{})
+	var wg sync.WaitGroup
+	errChan := make(chan errors.GraphqlErrorInterface, len(field.Children))
+	resultChan := make(chan struct {
+		key   string
+		value interface{}
+	}, len(field.Children))
+
+	for _, child := range field.Children {
+		wg.Add(1)
+		go func(c *ast.Field) {
+			defer wg.Done()
+			v, err := mergeData(ctx, c, result)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resultChan <- struct {
+				key   string
+				value interface{}
+			}{c.Name, v}
+		}(child)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+		close(resultChan)
+	}()
+
+	if err := <-errChan; err != nil {
+		return nil, true, err
+	}
+
+	for result := range resultChan {
+		data[result.key] = result.value
+	}
+
+	return data, true, nil
+}

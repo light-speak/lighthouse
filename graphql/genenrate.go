@@ -23,6 +23,7 @@ func Generate() error {
 	nodes := p.NodeStore.Nodes
 
 	typeNodes := []*ast.ObjectNode{}
+	resNodes := []*ast.ObjectNode{}
 
 	for _, node := range nodes {
 		if isInternalType(node.GetName()) {
@@ -33,14 +34,24 @@ func Generate() error {
 			objectNode, _ := node.(*ast.ObjectNode)
 			if objectNode.IsModel {
 				typeNodes = append(typeNodes, objectNode)
+			} else {
+				resNodes = append(resNodes, objectNode)
 			}
 		}
+	}
+
+	interfaces := []ast.Node{}
+	for _, interfaceNode := range p.NodeStore.Interfaces {
+		interfaces = append(interfaces, interfaceNode)
+	}
+	for _, union := range p.NodeStore.Unions {
+		interfaces = append(interfaces, union)
 	}
 
 	if err := generate.GenObject(typeNodes, currentPath); err != nil {
 		return err
 	}
-	if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+	if err := generate.GenInterface(interfaces, currentPath); err != nil {
 		return err
 	}
 	if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {
@@ -50,6 +61,9 @@ func Generate() error {
 		return err
 	}
 	if err := generate.GenEnum(p.NodeStore.Enums, currentPath); err != nil {
+		return err
+	}
+	if err := generate.GenResponse(resNodes, currentPath); err != nil {
 		return err
 	}
 
@@ -67,7 +81,7 @@ func Generate() error {
 			return err
 		}
 	}
-	
+
 	if err := generate.GenOperationResolverGen(operationNodes, currentPath); err != nil {
 		return err
 	}

@@ -35,7 +35,17 @@ func Fields(fields map[string]*Field) string {
 		if _, ok := excludeFieldName[field.Name]; ok {
 			continue
 		}
-		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), field.Type.GetGoType(false), genTag(field))
+
+		goType := field.Type.GetGoType(false)
+		if goType == "PaginateInfo" {
+			goType = "model.PaginateInfo"
+		}
+		realType := field.Type.GetRealType()
+		if realType.Kind != KindScalar && realType.Kind != KindEnum && goType != "interface{}" {
+			goType = fmt.Sprintf("*%s", goType)
+		}
+
+		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), goType, genTag(field))
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
@@ -86,9 +96,13 @@ var directiveFns = map[string]func(map[string][]string, *Directive) error{
 
 func genTag(field *Field) string {
 	tags := map[string][]string{
-		"json": {field.Name},
+		"json": {utils.SnakeCase(field.Name)},
 	}
 	hasType := false
+
+	if field.Type.GetRealType().Kind == KindUnion {
+		tags["gorm"] = append(tags["gorm"], "-")
+	}
 
 	for _, directive := range field.Directives {
 		if fn, ok := directiveFns[directive.Name]; ok {
@@ -103,6 +117,9 @@ func genTag(field *Field) string {
 	}
 	if !hasType && field.Type.GetRealType().Name == "String" {
 		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("type:varchar(%s)", "255"))
+	}
+	if field.Description != nil {
+		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("comment:%s", *field.Description))
 	}
 
 	// Build the tag string using strings.Builder

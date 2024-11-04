@@ -30,15 +30,12 @@ func SnakeCase(str string) string {
 	for i, char := range str {
 		isUpper := unicode.IsUpper(char)
 
-		// 处理连续的大写字母
 		if isUpper {
 			if !lastIsUpper && i > 0 {
-				// 如果前一个不是大写，当前是大写，添加下划线
 				result = append(result, string(currentWord))
 				currentWord = []rune{}
 			} else if lastIsUpper && i+1 < len(str) {
 				nextChar := rune(str[i+1])
-				// 只有当下一个字符是小写字母时才添加下划线
 				if !unicode.IsUpper(nextChar) && !unicode.IsNumber(nextChar) {
 					result = append(result, string(currentWord))
 					currentWord = []rune{}
@@ -59,14 +56,18 @@ func SnakeCase(str string) string {
 
 // CamelCase 驼峰命名
 func CamelCase(str string) string {
-	// 处理前导下划线
+	// 如果已经是驼峰命名，直接返回
+	if !strings.Contains(str, "_") {
+		// 确保首字母小写
+		return LcFirst(str)
+	}
+
 	str = strings.TrimLeft(str, "_")
-	// 处理尾部下划线
 	str = strings.TrimRight(str, "_")
-	
+
 	parts := strings.Split(str, "_")
 	var result []string
-	
+
 	for i, part := range parts {
 		if part == "" {
 			continue
@@ -77,7 +78,7 @@ func CamelCase(str string) string {
 			result = append(result, UcFirst(strings.ToLower(part)))
 		}
 	}
-	
+
 	return strings.Join(result, "")
 }
 
@@ -87,12 +88,12 @@ func StrPtr(str string) *string {
 
 // Irregular plural forms
 var irregulars = map[string]string{
-	"man":   "men",
-	"woman": "women",
-	"child": "children",
-	"tooth": "teeth",
-	"foot":  "feet",
-	"mouse": "mice",
+	"man":    "men",
+	"woman":  "women",
+	"child":  "children",
+	"tooth":  "teeth",
+	"foot":   "feet",
+	"mouse":  "mice",
 	"person": "people",
 }
 

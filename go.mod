@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/go-chi/chi/v5 v5.1.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.33.0
 	gopkg.in/yaml.v2 v2.4.0

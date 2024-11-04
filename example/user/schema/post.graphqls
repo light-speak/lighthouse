@@ -1,7 +1,10 @@
-type Post @key(fields: "id") @softDeleteModel {
+type Post @softDeleteModel {
   title: String! @index
   content: String!
-  user_id: ID! 
+  userId: ID! @index
+  tagId: ID! 
+  BackId: ID!
+  IsBool: Boolean! @default(value: "false")
   user: User! @belongsTo
   enum: TestEnum!
 }
@@ -17,6 +20,15 @@ extend type Query {
   testPostInt(id: Boolean!): Post
   testPostEnum(enum: TestEnum!): String!
   testPostInput(input: TestInput!): String! 
+  testNullableEnum(enum: TestEnum): String!
+}
+
+extend type Mutation {
+  createPost(input: TestInput!): Post!
+}
+
+type Test {
+  test: String!
 }
 
 input TestInput {

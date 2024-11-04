@@ -19,7 +19,7 @@ var excludeType = map[string]struct{}{
 	"Subscription": {},
 }
 
-func GenInterface(nodes map[string]*ast.InterfaceNode, path string) error {
+func GenInterface(nodes []ast.Node, path string) error {
 	interfaceTemplate, err := modelFs.ReadFile("tpl/interface.tpl")
 	if err != nil {
 		return err

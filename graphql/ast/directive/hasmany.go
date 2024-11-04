@@ -1,8 +1,9 @@
 package directive
 
 import (
-		"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/utils"
 )
 
 func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
@@ -19,7 +20,7 @@ func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent
 		}
 	}
 	if foreignKey := d.GetArg("foreignKey"); foreignKey != nil {
-		relation.ForeignKey = foreignKey.Value.(string)
+		relation.ForeignKey = utils.SnakeCase(foreignKey.Value.(string))
 	} else {
 		return &errors.GraphQLError{
 			Message:   "foreign key is required for hasMany directive",
@@ -27,7 +28,7 @@ func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent
 		}
 	}
 	if reference := d.GetArg("reference"); reference != nil {
-		relation.Reference = reference.Value.(string)
+		relation.Reference = utils.SnakeCase(reference.Value.(string))
 	} else {
 		relation.Reference = "id"
 	}

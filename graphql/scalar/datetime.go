@@ -30,21 +30,21 @@ func (d *DateTimeScalar) ParseValue(v interface{}, location *errors.GraphqlLocat
 	}
 }
 
-func (d *DateTimeScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (string, errors.GraphqlErrorInterface) {
+func (d *DateTimeScalar) Serialize(v interface{}, location *errors.GraphqlLocation) (interface{}, errors.GraphqlErrorInterface) {
 	switch t := v.(type) {
 	case time.Time:
 		return t.Format("2006-01-02 15:04:05"), nil
 	case string:
 		parsedTime, err := time.Parse("2006-01-02T15:04:05Z07:00", t)
 		if err != nil {
-			return "", &errors.GraphQLError{
+			return nil, &errors.GraphQLError{
 				Message:   fmt.Sprintf("invalid datetime string: %s", t),
 				Locations: []*errors.GraphqlLocation{location},
 			}
 		}
 		return parsedTime.Format("2006-01-02 15:04:05"), nil
 	default:
-		return "", &errors.GraphQLError{
+		return nil, &errors.GraphQLError{
 			Message:   fmt.Sprintf("unsupported value type: %v, type is %T", v, v),
 			Locations: []*errors.GraphqlLocation{location},
 		}

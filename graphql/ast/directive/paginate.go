@@ -5,13 +5,12 @@ import (
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	
 )
 
 func handlerPaginate(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
 	if parent.GetName() != "Query" {
 		return &errors.GraphQLError{
-			Message: "paginate directive can only be used on Query type",
+			Message:   "paginate directive can only be used on Query type",
 			Locations: []*errors.GraphqlLocation{d.GetLocation()},
 		}
 	}
@@ -36,6 +35,9 @@ func addPaginationResponseType(f *ast.Field, store *ast.NodeStore) {
 		return
 	}
 	description := fmt.Sprintf("The %sPaginateResponse type represents a paginated list of %s.", typeName, typeName)
+	if curType.TypeNode == nil {
+		f.Type.Validate(store)
+	}
 	store.AddObject(responseName, &ast.ObjectNode{
 		BaseNode: ast.BaseNode{
 			Name:        responseName,
@@ -45,7 +47,13 @@ func addPaginationResponseType(f *ast.Field, store *ast.NodeStore) {
 		Fields: map[string]*ast.Field{
 			"data": {
 				Name: "data",
-				Type: f.Type,
+				Type: &ast.TypeRef{
+					Kind: ast.KindNonNull,
+					OfType: &ast.TypeRef{
+						Kind:   ast.KindList,
+						OfType: curType,
+					},
+				},
 			},
 			"paginateInfo": {
 				Name: "paginateInfo",
@@ -61,7 +69,7 @@ func addPaginationResponseType(f *ast.Field, store *ast.NodeStore) {
 		},
 	})
 	f.Type = &ast.TypeRef{
-		Kind:     ast.KindNonNull,
+		Kind: ast.KindNonNull,
 		OfType: &ast.TypeRef{
 			Kind:     ast.KindObject,
 			Name:     responseName,

@@ -74,43 +74,6 @@ func (p *Parser) addReservedDirective() {
 			},
 		},
 	})
-	// external
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name:      "external",
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-	})
-	// requires
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name:      "requires",
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-	})
-	// provides
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name:      "provides",
-		Locations: []ast.Location{ast.LocationFieldDefinition},
-	})
-	// key
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name:      "key",
-		Locations: []ast.Location{ast.LocationObject, ast.LocationInterface},
-		Args: map[string]*ast.Argument{
-			"fields": {
-				Name: "fields",
-				Type: &ast.TypeRef{
-					Kind: ast.KindList,
-					OfType: &ast.TypeRef{
-						Kind: ast.KindScalar,
-						Name: "String",
-					},
-				},
-			},
-		},
-	})
-	// extends
-	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
-		Name:      "extends",
-		Locations: []ast.Location{ast.LocationObject},
-	})
 
 	p.addFilterDirective()
 	p.addReturnDirective()
@@ -345,6 +308,44 @@ func (p *Parser) addRelationDirective() {
 			"foreignKey": {
 				Name: "foreignKey",
 				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+	// hasOne
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "hasOne", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"foreignKey": {
+				Name: "foreignKey",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+	// morphTo
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "morphTo", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"morphType": {
+				Name: "morphType",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"morphKey": {
+				Name: "morphKey",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"reference": {
 				Name: "reference",

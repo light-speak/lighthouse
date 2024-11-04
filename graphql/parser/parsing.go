@@ -27,7 +27,7 @@ func (p *Parser) parseObject() {
 
 	object := &ast.ObjectNode{
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 		BaseNode: ast.BaseNode{
@@ -116,7 +116,7 @@ func (p *Parser) parseDirective() *ast.Directive {
 	directive := &ast.Directive{
 		Name: p.expectAndGetValue(lexer.At),
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -139,7 +139,7 @@ func (p *Parser) parseDirective() *ast.Directive {
 // createdAt: DateTime
 func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 	// Handle comments
-	if p.currToken.Type == lexer.Comment {
+	if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
 		p.nextToken()
 		return nil
 	}
@@ -158,12 +158,12 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 				Type: &ast.TypeRef{
 					Name: p.currToken.Value,
 					BaseLocation: ast.BaseLocation{
-						Line: p.currToken.Line,
+						Line:   p.currToken.Line,
 						Column: p.currToken.LinePosition,
 					},
 				},
 				BaseLocation: ast.BaseLocation{
-					Line: p.currToken.Line,
+					Line:   p.currToken.Line,
 					Column: p.currToken.LinePosition,
 				},
 			}
@@ -187,12 +187,12 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 			Type: &ast.TypeRef{
 				Name: p.currToken.Value,
 				BaseLocation: ast.BaseLocation{
-					Line: p.currToken.Line,
+					Line:   p.currToken.Line,
 					Column: p.currToken.LinePosition,
 				},
 			},
 			BaseLocation: ast.BaseLocation{
-				Line: p.currToken.Line,
+				Line:   p.currToken.Line,
 				Column: p.currToken.LinePosition,
 			},
 		}
@@ -205,7 +205,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 		Alias:       alias,
 		Description: p.parseDescription(),
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -239,7 +239,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 	}
 
 	// Skip any trailing comments
-	for p.currToken.Type == lexer.Comment {
+	for p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
 		p.nextToken()
 	}
 
@@ -301,7 +301,7 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 				Kind:   ast.KindList,
 				OfType: innerType,
 				BaseLocation: ast.BaseLocation{
-					Line: p.currToken.Line,
+					Line:   p.currToken.Line,
 					Column: p.currToken.LinePosition,
 				},
 			}
@@ -317,7 +317,7 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 				Kind: "",
 				Name: p.currToken.Value,
 				BaseLocation: ast.BaseLocation{
-					Line: p.currToken.Line,
+					Line:   p.currToken.Line,
 					Column: p.currToken.LinePosition,
 				},
 			}
@@ -333,7 +333,7 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 			Kind:   ast.KindNonNull,
 			OfType: fieldType,
 			BaseLocation: ast.BaseLocation{
-				Line: p.currToken.Line,
+				Line:   p.currToken.Line,
 				Column: p.currToken.LinePosition,
 			},
 		}
@@ -388,7 +388,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 		IsVariable:   !isReference && isVariable,
 		IsReference:  isReference,
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -469,7 +469,7 @@ func (p *Parser) parseDirectiveDefinition() {
 		Name:        p.expectAndGetValue(lexer.At),
 		Description: description,
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -524,7 +524,7 @@ func (p *Parser) parseEnum() {
 			Directives:  p.parseDirectives(),
 		},
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -558,7 +558,7 @@ func (p *Parser) parseEnumValue() *ast.EnumValue {
 		Description: description,
 		Directives:  directives,
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -596,7 +596,7 @@ func (p *Parser) parseInput() {
 			Directives:  p.parseDirectives(),
 		},
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -640,7 +640,7 @@ func (p *Parser) parseInterface() {
 			Name:        p.expectAndGetValue(lexer.Interface),
 		},
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -675,7 +675,7 @@ func (p *Parser) parseScalar() {
 			Directives:  p.parseDirectives(),
 		},
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}
@@ -698,7 +698,7 @@ func (p *Parser) parseUnion() {
 			Directives:  p.parseDirectives(),
 		},
 		BaseLocation: ast.BaseLocation{
-			Line: p.currToken.Line,
+			Line:   p.currToken.Line,
 			Column: p.currToken.LinePosition,
 		},
 	}

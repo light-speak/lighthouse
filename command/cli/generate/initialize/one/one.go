@@ -32,6 +32,7 @@ func Run(module string) error {
 		InitMod,
 		InitIdeHelper,
 		InitLighthouseYml,
+		InitResolver,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -162,6 +163,23 @@ func InitLighthouseYml() error {
 		Template:     string(lighthouseTemplate),
 		FileName:     "lighthouse",
 		FileExt:      "yml",
+		Editable:     true,
+		SkipIfExists: true,
+	}
+	return template.Render(options)
+}
+
+func InitResolver() error {
+	resolverTemplate, err := oneFs.ReadFile("tpl/resolver.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "resolver"),
+		Template:     string(resolverTemplate),
+		FileName:     "resolver",
+		FileExt:      "go",
+		Package:      "resolver",
 		Editable:     true,
 		SkipIfExists: true,
 	}

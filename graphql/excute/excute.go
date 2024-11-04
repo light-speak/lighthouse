@@ -9,6 +9,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/parser"
 	"github.com/light-speak/lighthouse/graphql/parser/lexer"
+	"github.com/light-speak/lighthouse/resolve"
 )
 
 func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) interface{} {
@@ -135,8 +136,8 @@ func AddSubscription(name string, fn func(qp *parser.QueryParser, field *ast.Fie
 	subscriptionMap[name] = fn
 }
 
-var resolverMap = make(map[string]func(ctx *context.Context, args map[string]any) (interface{}, error))
+var resolverMap = make(map[string]func(ctx *context.Context, args map[string]any, r resolve.Resolve) (interface{}, error))
 
-func AddResolver(name string, fn func(ctx *context.Context, args map[string]any) (interface{}, error)) {
+func AddResolver(name string, fn func(ctx *context.Context, args map[string]any, r resolve.Resolve) (interface{}, error)) {
 	resolverMap[name] = fn
 }

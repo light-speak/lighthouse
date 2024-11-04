@@ -32,7 +32,7 @@ func (c *Schema) Action() func(flagValues map[string]interface{}) error {
 		// Func:Action user code start. Do not remove this comment.
 		err := graphql.Generate()
 		if err != nil {
-		return err
+			return err
 		}
 		// Func:Action user code end. Do not remove this comment.
 		return nil

@@ -162,18 +162,14 @@ func validateRequiredFlags(cmd Command, flagValues map[string]interface{}) error
 	}
 	return nil
 }
-
 func printLogo() {
-	fmt.Print("\033[33m")
-	fmt.Printf(`
-  _     _        _	 _    _
-   |     )        |       |    |
-   |    _    __   |__  _  |_   |__     _   _   _  ___   __
-   |     |  '   \     \     |      \     \  |   |   __|  _ \
-   |___  | |    | |   |   |_   |   | |    | |_  |  __ \ '__  
-       | |  ' - | |   |     /  |   |  '- /      /     /    |
-                |                 
-            \__ /           %s           by @light-speak
-	`, version.Version)
-	fmt.Print("\033[0m\n")
+	fmt.Printf("\033[38;5;196m  _     _        _	 _    _\n")
+	fmt.Printf("\033[38;5;202m   |     )        |       |    |\n")
+	fmt.Printf("\033[38;5;208m   |    _    __   |__  _  |_   |__     _   _   _  ___   __\n")
+	fmt.Printf("\033[38;5;214m   |     |  '   \\     \\     |      \\     \\  |   |   __|  _ \\\n")
+	fmt.Printf("\033[38;5;220m   |___  | |    | |   |   |_   |   | |    | |_  |  __ \\ '__\n")
+	fmt.Printf("\033[38;5;226m       | |  ' - | |   |     /  |   |  '- /      /     /    |\n")
+	fmt.Printf("\033[38;5;190m                |\n")
+	fmt.Printf("\033[38;5;154m            \\__ /           %s           by @light-speak\n\n", version.Version)
+	fmt.Print("\033[0m")
 }
