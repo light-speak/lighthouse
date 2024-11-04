@@ -24,7 +24,7 @@ func (r *Resolver) LoginResolver(ctx *context.Context, name string) (*models.Log
 	}
 	log.Info().Msgf("currentUser: %v", ctx.UserId)
 	return &models.LoginResponse{
-		User:          *user,
+		User:          user,
 		Token:         token,
 		Authorization: fmt.Sprintf("Bearer %s", token),
 	}, nil

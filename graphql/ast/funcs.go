@@ -40,6 +40,10 @@ func Fields(fields map[string]*Field) string {
 		if goType == "PaginateInfo" {
 			goType = "model.PaginateInfo"
 		}
+		realType := field.Type.GetRealType()
+		if realType.Kind != KindScalar && realType.Kind != KindEnum && goType != "interface{}" {
+			goType = fmt.Sprintf("*%s", goType)
+		}
 
 		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), goType, genTag(field))
 		lines = append(lines, line)

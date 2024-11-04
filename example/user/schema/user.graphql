@@ -1,5 +1,5 @@
 "test user"
-type User implements HasName @key(fields: "id") @model {
+type User implements HasName @model {
   name: String! @index
   "五二零"
   myPosts: [Post!]! @hasMany(relation: "post", foreignKey: "user_id")

@@ -320,16 +320,21 @@ type Field struct {
 type RelationType string
 
 const (
-	RelationTypeBelongsTo RelationType = "RelationTypeBelongsTo"
-	RelationTypeHasMany   RelationType = "RelationTypeHasMany"
-	RelationTypeHasOne    RelationType = "RelationTypeHasOne"
+	RelationTypeBelongsTo     RelationType = "RelationTypeBelongsTo"
+	RelationTypeHasMany       RelationType = "RelationTypeHasMany"
+	RelationTypeHasOne        RelationType = "RelationTypeHasOne"
+	RelationTypeMorphTo       RelationType = "RelationTypeMorphTo"
+	RelationTypeMorphMany     RelationType = "RelationTypeMorphMany"
+	RelationTypeBelongsToMany RelationType = "RelationTypeBelongsToMany"
 )
 
 type Relation struct {
+	RelationType RelationType `json:"relationType"`
 	Name         string       `json:"name"`
 	ForeignKey   string       `json:"foreignKey"`
 	Reference    string       `json:"reference"`
-	RelationType RelationType `json:"relationType"`
+	MorphType    string       `json:"morphType"`
+	MorphKey     string       `json:"morphKey"`
 }
 
 func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) errors.GraphqlErrorInterface {

@@ -1,4 +1,4 @@
-type Post @key(fields: "id") @softDeleteModel {
+type Post @softDeleteModel {
   title: String! @index
   content: String!
   userId: ID! @index

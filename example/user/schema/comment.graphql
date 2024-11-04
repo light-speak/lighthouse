@@ -2,7 +2,7 @@ type Comment @model {
   content: String!
   commentableId: ID! @index(name: "commentable")
   commentableType: CommentableType! @index(name: "commentable")
-  commentable: Commentable!
+  commentable: Commentable! @morphTo
 }
 
 enum CommentableType {
