@@ -1,0 +1,18 @@
+type Comment @model {
+  content: String!
+  commentableId: ID! @index(name: "commentable")
+  commentableType: CommentableType! @index(name: "commentable")
+  commentable: Commentable!
+}
+
+enum CommentableType {
+  ARTICLE 
+  POST
+}
+
+union Commentable = Article | Post
+
+extend type Query {
+  comment(id: ID! @eq): Comment @first
+  comments: [Comment!]! @find
+}

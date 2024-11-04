@@ -40,10 +40,18 @@ func Generate() error {
 		}
 	}
 
+	interfaces := []ast.Node{}
+	for _, interfaceNode := range p.NodeStore.Interfaces {
+		interfaces = append(interfaces, interfaceNode)
+	}
+	for _, union := range p.NodeStore.Unions {
+		interfaces = append(interfaces, union)
+	}
+
 	if err := generate.GenObject(typeNodes, currentPath); err != nil {
 		return err
 	}
-	if err := generate.GenInterface(p.NodeStore.Interfaces, currentPath); err != nil {
+	if err := generate.GenInterface(interfaces, currentPath); err != nil {
 		return err
 	}
 	if err := generate.GenInput(p.NodeStore.Inputs, currentPath); err != nil {

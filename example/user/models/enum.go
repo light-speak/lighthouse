@@ -4,6 +4,28 @@ package models
 
 
 
+type CommentableType int8
+
+const (
+  CommentableTypeARTICLE = iota
+  CommentableTypePOST
+)
+
+func (e CommentableType) ToString() string {
+  switch e {
+  case CommentableTypeARTICLE:
+    return "ARTICLE"
+  case CommentableTypePOST:
+    return "POST"
+  default:
+    return "unknown"
+  }
+}
+
+var CommentableTypeMap = map[string]CommentableType{
+  "ARTICLE": CommentableTypeARTICLE,
+  "POST": CommentableTypePOST,
+}
 type SortOrder int8
 
 const (

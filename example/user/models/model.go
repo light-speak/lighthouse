@@ -4,22 +4,6 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
-type Post struct {
-  model.ModelSoftDelete
-  TagId int64 `json:"tag_id" `
-  User User `json:"user" `
-  Enum TestEnum `json:"enum" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" `
-  BackId int64 `json:"back_id" `
-  IsBool bool `json:"is_bool" gorm:"default:false" `
-  Title string `gorm:"index;type:varchar(255)" json:"title" `
-}
-
-func (*Post) IsModel() bool { return true }
-func (*Post) TableName() string { return "posts" }
-func (*Post) TypeName() string { return "post" }
-
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index;type:varchar(255)" `
@@ -32,10 +16,50 @@ func (this *User) GetName() string { return this.Name }
 func (*User) TableName() string { return "users" }
 func (*User) TypeName() string { return "user" }
 
+type Post struct {
+  model.ModelSoftDelete
+  UserId int64 `json:"user_id" gorm:"index" `
+  TagId int64 `json:"tag_id" `
+  BackId int64 `json:"back_id" `
+  IsBool bool `json:"is_bool" gorm:"default:false" `
+  Enum TestEnum `json:"enum" `
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  User User `json:"user" `
+}
+
+func (*Post) IsModel() bool { return true }
+func (*Post) TableName() string { return "posts" }
+func (*Post) TypeName() string { return "post" }
+
+type Article struct {
+  model.Model
+  Name string `gorm:"type:varchar(255)" json:"name" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+
+type Comment struct {
+  model.Model
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  CommentableId int64 `gorm:"index:commentable" json:"commentable_id" `
+  CommentableType CommentableType `json:"commentable_type" gorm:"index:commentable" `
+  Commentable interface{} `json:"commentable" gorm:"-" `
+}
+
+func (*Comment) IsModel() bool { return true }
+func (*Comment) TableName() string { return "comments" }
+func (*Comment) TypeName() string { return "comment" }
+
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &Post{},
     &User{},
+    &Post{},
+    &Article{},
+    &Comment{},
   )
 }

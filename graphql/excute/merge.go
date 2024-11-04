@@ -70,7 +70,6 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 	} else {
 		v = nil
 	}
-
 	// Handle relation fields
 	if v == nil && field.Relation != nil {
 		cData, err := model.FetchRelation(ctx, datas, field.Relation)

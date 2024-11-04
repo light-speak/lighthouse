@@ -377,6 +377,13 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				Locations: []*errors.GraphqlLocation{f.GetLocation()},
 			}
 		} else {
+			if f.Name == "__typename" {
+				f.Type = &TypeRef{
+					Kind: KindScalar,
+					Name: "String",
+				}
+				return nil
+			}
 			if objectNode.GetFields()[f.Name] != nil {
 				f.Type = objectNode.GetFields()[f.Name].Type
 				realType := f.Type.GetRealType()
@@ -551,7 +558,7 @@ func (t *TypeRef) GetGoType(NonNull bool) string {
 	case KindNonNull:
 		return t.OfType.GetGoType(true)
 	}
-	return "any"
+	return "interface{}"
 }
 
 func (t *TypeRef) Validate(store *NodeStore) errors.GraphqlErrorInterface {
@@ -614,7 +621,7 @@ func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlEr
 	case KindNonNull:
 		if v == nil {
 			return &errors.GraphQLError{
-				Message:   "non-null type cannot be null",
+				Message:   "non-null type cannot be null, f",
 				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}

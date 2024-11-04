@@ -1,8 +1,8 @@
 type Post @key(fields: "id") @softDeleteModel {
   title: String! @index
   content: String!
-  userId: ID! 
-  tagId: ID!
+  userId: ID! @index
+  tagId: ID! 
   BackId: ID!
   IsBool: Boolean! @default(value: "false")
   user: User! @belongsTo

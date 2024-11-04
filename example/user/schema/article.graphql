@@ -1,3 +1,4 @@
-# type Article @model {
-
-# }
+type Article @model {
+  name: String!
+  content: String!
+}

@@ -14,3 +14,7 @@ type Userable interface {
   GetUser() User
   GetUserId() int64
 }
+
+type Commentable interface {
+  IsCommentable()
+}

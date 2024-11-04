@@ -16,22 +16,16 @@ func init() {
     if !ok {
       return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a {{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
     }
-
     {{- else if eq $arg.Type.GetRealType.Kind "ENUM" }}
     {{ $arg.Name | lcFirst }}Value, ok := models.{{ $arg.Type.GetRealType.Name }}Map[args["{{ $arg.Name | lcFirst }}"].(string)]
     if !ok {
       return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ $arg.Type.GetRealType.Name }}, got %T", args["{{ $index }}"])
     }
     {{ $arg.Name | lcFirst }} := &{{ $arg.Name | lcFirst }}Value
-    {{- else if eq $arg.Type.GetRealType.Kind "OBJECT" }}
-    {{ $arg.Name | lcFirst }}, ok := args["{{ $index }}"].(models.{{ false | $arg.Type.GetGoType }})
-    if !ok {
-      return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
-    }
     {{- else if eq $arg.Type.GetRealType.Kind "INPUT_OBJECT" }}
-    {{ $arg.Name | lcFirst }}, err := models.MapTo{{ false | $arg.Type.GetGoType }}(args["{{ $index }}"].(map[string]interface{}))
+    {{ $arg.Name | lcFirst }}, err := models.MapTo{{ $arg.Type.GetRealType.Name }}(args["{{ $index }}"].(map[string]interface{}))
     if err != nil {
-      return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a models.{{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
+      return nil, fmt.Errorf("argument: '{{ $arg.Name }}' can not convert to models.{{ $arg.Type.GetRealType.Name }}, got %T", args["{{ $index }}"])
     }
     {{- else }}
     {{ $arg.Name | lcFirst }}, ok := args["{{ $index }}"].(models.{{ false | $arg.Type.GetGoType }})

@@ -7,5 +7,6 @@ import (
 )
 
 func StartService() {
+
 	handler.StartService()
 }
