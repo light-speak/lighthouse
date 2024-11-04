@@ -51,4 +51,5 @@ func InitLogger() {
 
 	cusLog := zerolog.New(output).With().Timestamp().Logger()
 	log.Log = &cusLog
+	log.Log.Info().Msgf("Logger initialized, level: %s", LighthouseConfig.Logger.Level.String())
 }

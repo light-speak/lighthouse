@@ -164,7 +164,7 @@ func init() {
 			Stack  bool
 			Driver LoggerDriver
 		}{
-			Level:  zerolog.Level(GetEnvInt("LOGGER_LEVEL", 0)),
+			Level:  getLoggerLevel(),
 			Path:   GetEnv("LOGGER_PATH", "logs/app.log"),
 			Stack:  GetEnvBool("LOGGER_STACK", false),
 			Driver: LoggerDriver(GetEnv("LOGGER_DRIVER", "stdout")),
@@ -196,4 +196,24 @@ func init() {
 	}
 
 	InitLogger()
+}
+
+func getLoggerLevel() zerolog.Level {
+	level := GetEnv("LOGGER_LEVEL", "info")
+	switch level {
+	case "trace":
+		return zerolog.TraceLevel
+	case "debug":
+		return zerolog.DebugLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	default:
+		return zerolog.InfoLevel
+	}
 }

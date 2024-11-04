@@ -86,9 +86,7 @@ schema:
 
 ### 接下来步骤
 
-在 `schema` 目录下填入自定义的 `schema` 文件，然后执行以下命令生成对应的代码：
-
-lighthouse generate:schema
+在 `schema` 目录下填入自定义的 `schema` 文件，
 
 ### 使用指令
 
@@ -122,6 +120,24 @@ type User @model(name: "UserModel") {
   age: Int
   posts: [Post] @hasMany(relation: "Post", foreignKey: "user_id")
 }
+```
+
+### 生成代码
+
+```bash
+lighthouse generate:schema
+```
+
+### 数据库迁移
+
+```bash
+go run . app:migrate
+```
+
+### 运行服务
+
+```bash
+go run . app:start
 ```
 
 ## 扩展与自定义
