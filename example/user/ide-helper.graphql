@@ -44,3 +44,4 @@ directive @hasMany(relation: String, foreignKey: String, reference: String) on F
 directive @hasOne(relation: String, foreignKey: String, reference: String) on FIELD_DEFINITION
 directive @morphTo(morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
 directive @morphToMany(relation: String!, morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
+directive @manyToMany(relation: String!, pivot: String, foreignKey: String, reference: String) on FIELD_DEFINITION
