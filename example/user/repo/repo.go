@@ -2,182 +2,189 @@
 package repo
 
 import (
-  "gorm.io/gorm"
-  "user/models"
-  "github.com/light-speak/lighthouse/graphql/ast"
-  "github.com/light-speak/lighthouse/context"
-  "github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/context"
+	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model"
+	"gorm.io/gorm"
+	"user/models"
 )
 
-func Provide__Article() map[string]*ast.Relation { return map[string]*ast.Relation{"content": {},"created_at": {},"id": {},"name": {},"updated_at": {},}}
+func Provide__Article() map[string]*ast.Relation {
+	return map[string]*ast.Relation{"content": {}, "created_at": {}, "id": {}, "name": {}, "updated_at": {}}
+}
 func Load__Article(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "articles", field).Load(key)
+	return model.GetLoader[int64](model.GetDB(), "articles", field).Load(key)
 }
 func LoadList__Article(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "articles", field).LoadList(key)
+	return model.GetLoader[int64](model.GetDB(), "articles", field).LoadList(key)
 }
 func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Article{}).Scopes(scopes...)
+	return model.GetDB().Model(&models.Article{}).Scopes(scopes...)
 }
 func First__Article(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Article().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return data, nil
+	var err error
+	if data == nil {
+		data = make(map[string]interface{})
+		err = Query__Article().Scopes(scopes...).First(data).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 func List__Article(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Article().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
+	var err error
+	if datas == nil {
+		datas = make([]map[string]interface{}, 0)
+		err = Query__Article().Scopes(scopes...).Find(&datas).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return datas, nil
 }
 func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Article().Scopes(scopes...).Count(&count).Error
-  return count, err
+	var count int64
+	err := Query__Article().Scopes(scopes...).Count(&count).Error
+	return count, err
 }
-func Provide__User() map[string]*ast.Relation { return map[string]*ast.Relation{"created_at": {},"id": {},"myPosts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"},"name": {},"updated_at": {},}}
+func Provide__User() map[string]*ast.Relation {
+	return map[string]*ast.Relation{"created_at": {}, "id": {}, "myPosts": {Name: "post", RelationType: ast.RelationTypeHasMany, ForeignKey: "user_id", Reference: "id"}, "name": {}, "updated_at": {}}
+}
 func Load__User(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
+	return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
 }
 func LoadList__User(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "users", field).LoadList(key)
+	return model.GetLoader[int64](model.GetDB(), "users", field).LoadList(key)
 }
 func Query__User(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.User{}).Scopes(scopes...)
+	return model.GetDB().Model(&models.User{}).Scopes(scopes...)
 }
 func First__User(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__User().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return data, nil
+	var err error
+	if data == nil {
+		data = make(map[string]interface{})
+		err = Query__User().Scopes(scopes...).First(data).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 func List__User(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__User().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
+	var err error
+	if datas == nil {
+		datas = make([]map[string]interface{}, 0)
+		err = Query__User().Scopes(scopes...).Find(&datas).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return datas, nil
 }
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__User().Scopes(scopes...).Count(&count).Error
-  return count, err
+	var count int64
+	err := Query__User().Scopes(scopes...).Count(&count).Error
+	return count, err
 }
-func Provide__Post() map[string]*ast.Relation { return map[string]*ast.Relation{"BackId": {},"IsBool": {},"content": {},"created_at": {},"deleted_at": {},"enum": {},"id": {},"tagId": {},"title": {},"updated_at": {},"user": {Name: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"},"userId": {},}}
+func Provide__Post() map[string]*ast.Relation {
+	return map[string]*ast.Relation{"BackId": {}, "IsBool": {}, "content": {}, "created_at": {}, "deleted_at": {}, "enum": {}, "id": {}, "tagId": {}, "title": {}, "updated_at": {}, "user": {Name: "user", RelationType: ast.RelationTypeBelongsTo, ForeignKey: "user_id", Reference: "id"}, "userId": {}}
+}
 func Load__Post(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
+	return model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
 }
 func LoadList__Post(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "posts", field).LoadList(key)
+	return model.GetLoader[int64](model.GetDB(), "posts", field).LoadList(key)
 }
 func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
+	return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
 }
 func First__Post(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Post().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return data, nil
+	var err error
+	if data == nil {
+		data = make(map[string]interface{})
+		err = Query__Post().Scopes(scopes...).First(data).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 func List__Post(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Post().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
+	var err error
+	if datas == nil {
+		datas = make([]map[string]interface{}, 0)
+		err = Query__Post().Scopes(scopes...).Find(&datas).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return datas, nil
 }
 func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Post().Scopes(scopes...).Count(&count).Error
-  return count, err
+	var count int64
+	err := Query__Post().Scopes(scopes...).Count(&count).Error
+	return count, err
 }
-func Provide__Comment() map[string]*ast.Relation { return map[string]*ast.Relation{"commentable": {},"commentableId": {},"commentableType": {},"content": {},"created_at": {},"id": {},"updated_at": {},}}
+func Provide__Comment() map[string]*ast.Relation {
+	return map[string]*ast.Relation{"commentable": {}, "commentableId": {}, "commentableType": {}, "content": {}, "created_at": {}, "id": {}, "updated_at": {}}
+}
 func Load__Comment(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "comments", field).Load(key)
+	return model.GetLoader[int64](model.GetDB(), "comments", field).Load(key)
 }
 func LoadList__Comment(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "comments", field).LoadList(key)
+	return model.GetLoader[int64](model.GetDB(), "comments", field).LoadList(key)
 }
 func Query__Comment(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Comment{}).Scopes(scopes...)
+	return model.GetDB().Model(&models.Comment{}).Scopes(scopes...)
 }
 func First__Comment(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Comment().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return data, nil
+	var err error
+	if data == nil {
+		data = make(map[string]interface{})
+		err = Query__Comment().Scopes(scopes...).First(data).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 func List__Comment(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Comment().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
+	var err error
+	if datas == nil {
+		datas = make([]map[string]interface{}, 0)
+		err = Query__Comment().Scopes(scopes...).Find(&datas).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return datas, nil
 }
 func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Comment().Scopes(scopes...).Count(&count).Error
-  return count, err
+	var count int64
+	err := Query__Comment().Scopes(scopes...).Count(&count).Error
+	return count, err
 }
 
-
 func init() {
-  model.AddQuickFirst("Article", First__Article)
-  model.AddQuickList("Article", List__Article)
-  model.AddQuickLoad("Article", Load__Article)
-  model.AddQuickLoadList("Article", LoadList__Article)
-  model.AddQuickCount("Article", Count__Article)
-  model.AddQuickFirst("User", First__User)
-  model.AddQuickList("User", List__User)
-  model.AddQuickLoad("User", Load__User)
-  model.AddQuickLoadList("User", LoadList__User)
-  model.AddQuickCount("User", Count__User)
-  model.AddQuickFirst("Post", First__Post)
-  model.AddQuickList("Post", List__Post)
-  model.AddQuickLoad("Post", Load__Post)
-  model.AddQuickLoadList("Post", LoadList__Post)
-  model.AddQuickCount("Post", Count__Post)
-  model.AddQuickFirst("Comment", First__Comment)
-  model.AddQuickList("Comment", List__Comment)
-  model.AddQuickLoad("Comment", Load__Comment)
-  model.AddQuickLoadList("Comment", LoadList__Comment)
-  model.AddQuickCount("Comment", Count__Comment)
+	model.AddQuickFirst("Article", First__Article)
+	model.AddQuickList("Article", List__Article)
+	model.AddQuickLoad("Article", Load__Article)
+	model.AddQuickLoadList("Article", LoadList__Article)
+	model.AddQuickCount("Article", Count__Article)
+	model.AddQuickFirst("User", First__User)
+	model.AddQuickList("User", List__User)
+	model.AddQuickLoad("User", Load__User)
+	model.AddQuickLoadList("User", LoadList__User)
+	model.AddQuickCount("User", Count__User)
+	model.AddQuickFirst("Post", First__Post)
+	model.AddQuickList("Post", List__Post)
+	model.AddQuickLoad("Post", Load__Post)
+	model.AddQuickLoadList("Post", LoadList__Post)
+	model.AddQuickCount("Post", Count__Post)
+	model.AddQuickFirst("Comment", First__Comment)
+	model.AddQuickList("Comment", List__Comment)
+	model.AddQuickLoad("Comment", Load__Comment)
+	model.AddQuickLoadList("Comment", LoadList__Comment)
+	model.AddQuickCount("Comment", Count__Comment)
 }
