@@ -4,6 +4,70 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
+type Article struct {
+  model.Model
+  Name string `json:"name" gorm:"type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+var ArticleEnumFields = map[string]func(interface{}) interface{} {
+}
+
+type Post struct {
+  model.ModelSoftDelete
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  BackId int64 `json:"back_id" `
+  IsBool bool `json:"is_bool" gorm:"default:false" `
+  User *User `json:"user" `
+  UserId int64 `json:"user_id" gorm:"index" `
+  TagId int64 `json:"tag_id" `
+  Enum TestEnum `json:"enum" `
+}
+
+func (*Post) IsModel() bool { return true }
+func (*Post) TableName() string { return "posts" }
+func (*Post) TypeName() string { return "post" }
+var PostEnumFields = map[string]func(interface{}) interface{} {
+  "enum": func(value interface{}) interface{} {
+    switch v := value.(type) {
+    case int64:
+      return TestEnum(v)
+    case int8:
+      return TestEnum(v)
+    default:
+      return v
+    }
+  },
+}
+
+type Comment struct {
+  model.Model
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
+  CommentableType CommentableType `gorm:"index:commentable" json:"commentable_type" `
+  Commentable interface{} `json:"commentable" gorm:"-" `
+}
+
+func (*Comment) IsModel() bool { return true }
+func (*Comment) TableName() string { return "comments" }
+func (*Comment) TypeName() string { return "comment" }
+var CommentEnumFields = map[string]func(interface{}) interface{} {
+  "commentableType": func(value interface{}) interface{} {
+    switch v := value.(type) {
+    case int64:
+      return CommentableType(v)
+    case int8:
+      return CommentableType(v)
+    default:
+      return v
+    }
+  },
+}
+
 type User struct {
   model.Model
   Name string `json:"name" gorm:"index;type:varchar(255)" `
@@ -15,51 +79,15 @@ func (*User) IsHasName() bool { return true }
 func (this *User) GetName() string { return this.Name }
 func (*User) TableName() string { return "users" }
 func (*User) TypeName() string { return "user" }
-
-type Post struct {
-  model.ModelSoftDelete
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  TagId int64 `json:"tag_id" `
-  BackId int64 `json:"back_id" `
-  Enum TestEnum `json:"enum" `
-  UserId int64 `json:"user_id" gorm:"index" `
-  IsBool bool `json:"is_bool" gorm:"default:false" `
-  User *User `json:"user" `
+var UserEnumFields = map[string]func(interface{}) interface{} {
 }
-
-func (*Post) IsModel() bool { return true }
-func (*Post) TableName() string { return "posts" }
-func (*Post) TypeName() string { return "post" }
-
-type Comment struct {
-  model.Model
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
-  CommentableType CommentableType `gorm:"index:commentable" json:"commentable_type" `
-  Commentable interface{} `gorm:"-" json:"commentable" `
-}
-
-func (*Comment) IsModel() bool { return true }
-func (*Comment) TableName() string { return "comments" }
-func (*Comment) TypeName() string { return "comment" }
-
-type Article struct {
-  model.Model
-  Name string `json:"name" gorm:"type:varchar(255)" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-}
-
-func (*Article) IsModel() bool { return true }
-func (*Article) TableName() string { return "articles" }
-func (*Article) TypeName() string { return "article" }
 
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &User{},
+    &Article{},
     &Post{},
     &Comment{},
-    &Article{},
+    &User{},
   )
 }
