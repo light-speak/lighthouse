@@ -303,11 +303,11 @@ func (p *Parser) addRelationDirective() {
 		Args: map[string]*ast.Argument{
 			"relation": {
 				Name: "relation",
-				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"foreignKey": {
 				Name: "foreignKey",
-				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"reference": {
 				Name: "reference",
@@ -322,7 +322,7 @@ func (p *Parser) addRelationDirective() {
 		Args: map[string]*ast.Argument{
 			"relation": {
 				Name: "relation",
-				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"foreignKey": {
 				Name: "foreignKey",
@@ -345,6 +345,52 @@ func (p *Parser) addRelationDirective() {
 			},
 			"morphKey": {
 				Name: "morphKey",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+	// morphToMany
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "morphToMany", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"morphType": {
+				Name: "morphType",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"morphKey": {
+				Name: "morphKey",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"reference": {
+				Name: "reference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+		},
+	})
+	// manyToMany
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "manyToMany", Description: utils.StrPtr("The field is a relationship with another model."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"relation": {
+				Name: "relation",
+				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"pivot": {
+				Name: "pivot",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"foreignKey": {
+				Name: "foreignKey",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"reference": {

@@ -20,7 +20,7 @@ extend type Query {
   testPostInt(id: Boolean!): Post
   testPostEnum(enum: TestEnum!): String!
   testPostInput(input: TestInput!): String! 
-  testNullableEnum(enum: TestEnum): String!
+  testNullableEnum(enum: TestEnum): String! 
 }
 
 extend type Mutation {

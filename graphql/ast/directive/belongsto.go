@@ -11,12 +11,12 @@ func handlerBelongsTo(f *ast.Field, d *ast.Directive, store *ast.NodeStore, pare
 		RelationType: ast.RelationTypeBelongsTo,
 	}
 	if relationName := d.GetArg("relation"); relationName != nil {
-		relation.Name = relationName.Value.(string)
+		relation.Name = utils.SnakeCase(relationName.Value.(string))
 	} else {
 		relation.Name = utils.LcFirst(f.Name)
 	}
 	if reference := d.GetArg("reference"); reference != nil {
-		relation.Reference = reference.Value.(string)
+		relation.Reference = utils.SnakeCase(reference.Value.(string))
 	} else {
 		relation.Reference = "id"
 	}

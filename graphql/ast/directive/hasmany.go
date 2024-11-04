@@ -12,20 +12,14 @@ func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent
 		RelationType: ast.RelationTypeHasMany,
 	}
 	if relationName := d.GetArg("relation"); relationName != nil {
-		relation.Name = relationName.Value.(string)
+		relation.Name = utils.SnakeCase(relationName.Value.(string))
 	} else {
-		return &errors.GraphQLError{
-			Message:   "relation name is required for hasMany directive",
-			Locations: []*errors.GraphqlLocation{d.GetLocation()},
-		}
+		relation.Name = utils.SnakeCase(f.Type.GetRealType().Name)
 	}
 	if foreignKey := d.GetArg("foreignKey"); foreignKey != nil {
 		relation.ForeignKey = utils.SnakeCase(foreignKey.Value.(string))
 	} else {
-		return &errors.GraphQLError{
-			Message:   "foreign key is required for hasMany directive",
-			Locations: []*errors.GraphqlLocation{d.GetLocation()},
-		}
+		relation.ForeignKey = utils.SnakeCase(relation.Name) + "_id"
 	}
 	if reference := d.GetArg("reference"); reference != nil {
 		relation.Reference = utils.SnakeCase(reference.Value.(string))

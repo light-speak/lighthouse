@@ -1,10 +1,5 @@
 {{ range .Nodes }}
 {{- $name := .Name -}}
-func Provide__{{ $name | ucFirst }}() map[string]*ast.Relation { return map[string]*ast.Relation{
-  {{- range .Fields }}
-  {{- if ne .Name "__typename" }}"{{ .Name }}": {{ if .Relation }}{{ buildRelation . }}{{ else }}{}{{ end }},{{ end -}}
-  {{- end -}}
-}}
 func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
   return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).Load(key)
 }
@@ -21,6 +16,11 @@ func First__{{ $name | ucFirst }}(ctx *context.Context, data map[string]interfac
     err = Query__{{ $name | ucFirst }}().Scopes(scopes...).First(data).Error
     if err != nil {
       return nil, err
+    }
+  }
+  for key, value := range data {
+    if fn, ok := models.{{ $name | ucFirst }}EnumFields[key]; ok {
+      data[key] = fn(value)
     }
   }
   return data, nil

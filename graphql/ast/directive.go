@@ -4,6 +4,7 @@ import "github.com/light-speak/lighthouse/errors"
 
 var fieldDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
 var objectDirectiveMap = make(map[string]func(o *ObjectNode, d *Directive, store *NodeStore) errors.GraphqlErrorInterface)
+var fieldRuntimeDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
 
 func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
 	fieldDirectiveMap[name] = fn
@@ -11,6 +12,10 @@ func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeS
 
 func AddObjectDirective(name string, fn func(o *ObjectNode, d *Directive, store *NodeStore) errors.GraphqlErrorInterface) {
 	objectDirectiveMap[name] = fn
+}
+
+func AddFieldRuntimeDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
+	fieldRuntimeDirectiveMap[name] = fn
 }
 
 func (f *Field) ParseFieldDirectives(store *NodeStore, parent Node) errors.GraphqlErrorInterface {

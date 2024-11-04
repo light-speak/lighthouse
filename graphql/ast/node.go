@@ -532,6 +532,10 @@ func (t *TypeRef) IsObject() bool {
 	return t.Kind == KindObject
 }
 
+func (t *TypeRef) IsEnum() bool {
+	return t.GetRealType().Kind == KindEnum
+}
+
 func (t *TypeRef) GetRealType() *TypeRef {
 	if t.Kind == KindNonNull {
 		return t.OfType.GetRealType()
