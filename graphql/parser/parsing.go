@@ -255,10 +255,13 @@ func (p *Parser) parseArguments() map[string]*ast.Argument {
 	}
 	p.expect(lexer.LeftParent)
 	for p.currToken.Type != lexer.RightParent {
+		if p.currToken.Type == lexer.Comma {
+			p.expect(lexer.Comma)
+		}
 		arg := p.parseArgument()
 		args[arg.Name] = arg
-		if p.currToken.Type != lexer.RightParent {
-			p.expect(lexer.Comma)
+		if p.currToken.Type == lexer.RightParent {
+			break
 		}
 	}
 
