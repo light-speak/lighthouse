@@ -63,10 +63,7 @@ func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) 
 		value interface{}
 	}, totalFields)
 
-	err := processFields(ctx, field.Children, dataMap, &wg, errChan, resultChan)
-	if err != nil {
-		return nil, true, err
-	}
+	processFields(ctx, field.Children, dataMap, &wg, errChan, resultChan)
 
 	go func() {
 		wg.Wait()

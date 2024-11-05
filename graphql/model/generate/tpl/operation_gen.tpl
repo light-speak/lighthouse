@@ -41,7 +41,7 @@ func init() {
     if list == nil {
       return nil, err
     }
-    res := []map[string]interface{}{}
+    res := []*sync.Map{}
     for _, item := range list {
       itemMap, err := model.StructToMap(item)
       if err != nil {

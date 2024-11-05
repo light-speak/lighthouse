@@ -9,6 +9,10 @@ type UserPaginateResponse struct {
   PaginateInfo *model.PaginateInfo `json:"paginate_info" `
 }
 
+type Test struct {
+  Test string `json:"test" gorm:"type:varchar(255)" `
+}
+
 type PostPaginateResponse struct {
   Data *[]*Post `json:"data" `
   PaginateInfo *model.PaginateInfo `json:"paginate_info" `
@@ -17,9 +21,5 @@ type PostPaginateResponse struct {
 type LoginResponse struct {
   User *User `json:"user" `
   Token string `json:"token" gorm:"type:varchar(255)" `
-  Authorization string `gorm:"type:varchar(255)" json:"authorization" `
-}
-
-type Test struct {
-  Test string `json:"test" gorm:"type:varchar(255)" `
+  Authorization string `json:"authorization" gorm:"type:varchar(255)" `
 }

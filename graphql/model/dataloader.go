@@ -47,7 +47,7 @@ func GetLoader[K comparable](db *gorm.DB, table string, field string, config ...
 	if len(config) > 0 {
 		field = config[0].Field
 	}
-	loaderKey := fmt.Sprintf("%T-%v", table, field)
+	loaderKey := fmt.Sprintf("%v-%v", table, field)
 	loaderMutex.Lock()
 	defer loaderMutex.Unlock()
 	if loader, ok := loaderCache[loaderKey]; ok {

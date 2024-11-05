@@ -2,12 +2,12 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/graphql/model"
-  "user/models"
-  "github.com/light-speak/lighthouse/context"
-  "github.com/light-speak/lighthouse/auth"
   "github.com/light-speak/lighthouse/log"
+  "user/models"
+  "github.com/light-speak/lighthouse/auth"
+  "github.com/light-speak/lighthouse/graphql/model"
   "fmt"
+  "github.com/light-speak/lighthouse/context"
 )
 
 

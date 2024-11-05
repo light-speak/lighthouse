@@ -1,48 +1,102 @@
-{{ range .Nodes }}
-{{- $name := .Name -}}
-func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).Load(key)
+// Generic loader function
+func loadEntity[T any](ctx *context.Context, key int64, table string, field string) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), table, field).Load(key)
+  if err != nil {
+    return nil, err
+  }
+  return utils.MapToSyncMap(data), nil
 }
-func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field).LoadList(key)
+
+// Generic list loader function  
+func loadEntityList[T any](ctx *context.Context, key int64, table string, field string) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), table, field).LoadList(key)
+  if err != nil {
+    return nil, err
+  }
+  return utils.MapSliceToSyncMapSlice(datas), nil
 }
-func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.{{ $name | ucFirst }}{}).Scopes(scopes...)
+
+// Generic query function
+func queryEntity[T any](m interface{}, scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return model.GetDB().Model(m).Scopes(scopes...)
 }
-func First__{{ $name | ucFirst }}(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+
+// Generic first function
+func firstEntity[T any](ctx *context.Context, data *sync.Map, enumFieldsFn func(string) func(interface{}) interface{}, 
+  model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  
   var err error
   var mu sync.Mutex
+  
   if data == nil {
-    data = make(map[string]interface{})
-    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).First(data).Error
+    mapData := make(map[string]interface{})
+    err = queryEntity[T](model).Scopes(scopes...).First(&mapData).Error
     if err != nil {
       return nil, err
     }
+    data = utils.MapToSyncMap(mapData)
   }
-  for key, value := range data {
-    if fn := models.{{ $name | ucFirst }}EnumFields(key); fn != nil {
+
+  result := &sync.Map{}
+  data.Range(func(key, value interface{}) bool {
+    k := key.(string)
+    if fn := enumFieldsFn(k); fn != nil {
       mu.Lock()
-      data[key] = fn(value)
+      result.Store(k, fn(value))
       mu.Unlock()
+    } else {
+      result.Store(k, value)
     }
-  }
-  return data, nil
+    return true
+  })
+  return result, nil
 }
-func List__{{ $name | ucFirst }}(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
+
+// Generic list function
+func listEntity[T any](ctx *context.Context, datas []*sync.Map, model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
   if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__{{ $name | ucFirst }}().Scopes(scopes...).Find(&datas).Error
+    mapDatas := make([]map[string]interface{}, 0)
+    err := queryEntity[T](model).Scopes(scopes...).Find(&mapDatas).Error
     if err != nil {
       return nil, err
     }
+    return utils.MapSliceToSyncMapSlice(mapDatas), nil
   }
   return datas, nil
 }
-func Count__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+
+// Generic count function
+func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   var count int64
-  err := Query__{{ $name | ucFirst }}().Scopes(scopes...).Count(&count).Error
+  err := queryEntity[T](model).Scopes(scopes...).Count(&count).Error
   return count, err
+}
+
+{{ range .Nodes }}
+{{- $name := .Name -}}
+// {{ $name | ucFirst }} functions
+func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field)
+}
+
+func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field)
+}
+
+func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.{{ $name | ucFirst }}](&models.{{ $name | ucFirst }}{}, scopes...)
+}
+
+func First__{{ $name | ucFirst }}(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.{{ $name | ucFirst }}](ctx, data, models.{{ $name | ucFirst }}EnumFields, &models.{{ $name | ucFirst }}{}, scopes...)
+}
+
+func List__{{ $name | ucFirst }}(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.{{ $name | ucFirst }}](ctx, datas, &models.{{ $name | ucFirst }}{}, scopes...)
+}
+
+func Count__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.{{ $name | ucFirst }}](&models.{{ $name | ucFirst }}{}, scopes...)
 }
 {{ end }}
 

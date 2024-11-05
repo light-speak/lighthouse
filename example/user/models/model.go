@@ -4,21 +4,6 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
-type User struct {
-  model.Model
-  MyPosts *[]Post `json:"my_posts" gorm:"comment:五二零" `
-  Name string `json:"name" gorm:"index;type:varchar(255)" `
-}
-
-func (*User) IsModel() bool { return true }
-func (*User) IsHasName() bool { return true }
-func (this *User) GetName() string { return this.Name }
-func (*User) TableName() string { return "users" }
-func (*User) TypeName() string { return "user" }
-func UserEnumFields(key string) func(interface{}) interface{} {
-  return nil
-}
-
 type Article struct {
   model.Model
   Name string `json:"name" gorm:"type:varchar(255)" `
@@ -34,14 +19,14 @@ func ArticleEnumFields(key string) func(interface{}) interface{} {
 
 type Post struct {
   model.ModelSoftDelete
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" gorm:"index" `
-  TagId int64 `json:"tag_id" `
-  Enum TestEnum `json:"enum" `
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
-  BackId int64 `json:"back_id" `
   IsBool bool `json:"is_bool" gorm:"default:false" `
   User *User `json:"user" `
+  UserId int64 `json:"user_id" gorm:"index" `
+  TagId int64 `json:"tag_id" `
+  BackId int64 `json:"back_id" `
+  Enum TestEnum `json:"enum" `
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
+  Content string `gorm:"type:varchar(255)" json:"content" `
 }
 
 func (*Post) IsModel() bool { return true }
@@ -64,12 +49,27 @@ func PostEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
+type User struct {
+  model.Model
+  Name string `gorm:"index;type:varchar(255)" json:"name" `
+  MyPosts *[]Post `json:"my_posts" gorm:"comment:五二零" `
+}
+
+func (*User) IsModel() bool { return true }
+func (*User) IsHasName() bool { return true }
+func (this *User) GetName() string { return this.Name }
+func (*User) TableName() string { return "users" }
+func (*User) TypeName() string { return "user" }
+func UserEnumFields(key string) func(interface{}) interface{} {
+  return nil
+}
+
 type Comment struct {
   model.Model
-  CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
-  Commentable interface{} `json:"commentable" gorm:"-" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
   CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
+  CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
+  Commentable interface{} `gorm:"-" json:"commentable" `
+  Content string `gorm:"type:varchar(255)" json:"content" `
 }
 
 func (*Comment) IsModel() bool { return true }
@@ -82,9 +82,9 @@ func CommentEnumFields(key string) func(interface{}) interface{} {
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &User{},
     &Article{},
     &Post{},
+    &User{},
     &Comment{},
   )
 }

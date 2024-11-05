@@ -9,7 +9,6 @@ import (
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
-	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
 )
@@ -241,7 +240,6 @@ func fetchBelongsTo(ctx *context.Context, relationName string, foreignKey string
 	if firstFn == nil {
 		return nil, fmt.Errorf("relation %s not found", relationName)
 	}
-	log.Warn().Msgf("data: %+v, %v", data, utils.UcFirst(utils.CamelCase(relationName)))
 
 	data, err = firstFn(ctx, data)
 	if err != nil {
