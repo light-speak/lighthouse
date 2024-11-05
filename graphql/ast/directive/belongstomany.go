@@ -6,9 +6,9 @@ import (
 	"github.com/light-speak/lighthouse/utils"
 )
 
-func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
+func handlerBelongsToMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
 	relation := &ast.Relation{
-		RelationType: ast.RelationTypeHasMany,
+		RelationType: ast.RelationTypeBelongsToMany,
 	}
 
 	if relationName := d.GetArg("relation"); relationName != nil {
@@ -34,5 +34,5 @@ func handlerHasMany(f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent
 }
 
 func init() {
-	ast.AddFieldDirective("hasMany", handlerHasMany)
+	ast.AddFieldDirective("belongsToMany", handlerBelongsToMany)
 }

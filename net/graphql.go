@@ -59,6 +59,7 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	if len(ctx.Errors) > 0 {
 		response.Errors = make([]*errors.GraphQLError, 0)
 		for _, err := range ctx.Errors {
+			log.Error().Interface("ctx", ctx).Msgf("error: %v", err)
 			e := err.GraphqlError()
 			if env.LighthouseConfig.App.Environment != env.Development {
 				e.Locations = nil

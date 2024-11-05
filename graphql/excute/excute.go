@@ -80,7 +80,7 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 			if isQuick {
 				if field.Type.Kind == ast.KindNonNull {
 					e := &errors.GraphQLError{
-						Message:   "field is not nullable",
+						Message:   fmt.Sprintf("field %s is not nullable", field.Name),
 						Locations: []*errors.GraphqlLocation{field.GetLocation()},
 					}
 					errChan <- e

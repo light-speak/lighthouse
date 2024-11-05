@@ -79,6 +79,8 @@ func (p *Parser) addReservedDirective() {
 	p.addReturnDirective()
 	p.addRelationDirective()
 	p.addObjectDirective()
+
+	p.addRuntimeFieldDirective()
 }
 
 func (p *Parser) addReturnDirective() {
@@ -387,14 +389,22 @@ func (p *Parser) addRelationDirective() {
 			},
 			"pivot": {
 				Name: "pivot",
+				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"pivotForeignKey": {
+				Name: "pivotForeignKey",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 			"foreignKey": {
 				Name: "foreignKey",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
-			"reference": {
-				Name: "reference",
+			"pivotReference": {
+				Name: "pivotReference",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
+			"relationForeignKey": {
+				Name: "relationForeignKey",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 		},
@@ -476,6 +486,61 @@ func (p *Parser) addObjectDirective() {
 					Kind: ast.KindScalar,
 					Name: "String",
 				},
+			},
+		},
+	})
+}
+
+func (p *Parser) addRuntimeFieldDirective() {
+	// auth
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "auth", Description: utils.StrPtr("The field is runtime auth."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"msg": {
+				Name:         "msg",
+				Description:  utils.StrPtr("The message of the auth."),
+				Type:         &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+				DefaultValue: "Unauthorized! please login",
+			},
+		},
+	})
+	// cache
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "cache", Description: utils.StrPtr("The field is cached."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"auth": {
+				Name:        "auth",
+				Description: utils.StrPtr("Cache with auth info. if true, the cache will be valid for the current user."),
+				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "Boolean"},
+			},
+			"ttl": {
+				Name:        "ttl",
+				Description: utils.StrPtr("Cache ttl."),
+				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "Int"},
+			},
+			"tags": {
+				Name:        "tags",
+				Description: utils.StrPtr("Cache tags."),
+				Type:        &ast.TypeRef{Kind: ast.KindList, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+		},
+	})
+	// cacheClear
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "cacheClear", Description: utils.StrPtr("Clear the cache."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"tags": {
+				Name:        "tags",
+				Description: utils.StrPtr("Cache tags."),
+				Type:        &ast.TypeRef{Kind: ast.KindList, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+			"auth": {
+				Name:        "auth",
+				Description: utils.StrPtr("Clear the cache with auth info. if true, the cache will be cleared only for the current user."),
+				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "Boolean"},
 			},
 		},
 	})

@@ -145,7 +145,6 @@ func MapToStruct[T any](data *sync.Map) (T, error) {
 	}
 	return m, nil
 }
-
 func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation) (interface{}, error) {
 	switch relation.RelationType {
 	case ast.RelationTypeBelongsTo:
@@ -156,7 +155,7 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		return fetchBelongsTo(ctx, relation.Name, relation.Reference, fieldValue)
+		return fetchSingleRelation(ctx, relation.Name, relation.Reference, fieldValue)
 
 	case ast.RelationTypeHasMany:
 		fieldValue, ok := data.Load(relation.Reference)
@@ -166,7 +165,18 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		return fetchHasMany(ctx, relation.Name, relation.ForeignKey, fieldValue)
+		return fetchMultipleRelations(ctx, relation.Name, relation.ForeignKey, fieldValue)
+
+	case ast.RelationTypeHasOne:
+		fieldValue, ok := data.Load(relation.Reference)
+		if !ok {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
+		}
+		return fetchSingleRelation(ctx, relation.Name, relation.ForeignKey, fieldValue)
+
 	case ast.RelationTypeMorphTo:
 		fieldValue, ok := data.Load(relation.MorphKey)
 		if !ok {
@@ -183,12 +193,32 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 		if !ok {
 			return nil, fmt.Errorf("field %s is not a string", relation.MorphType)
 		}
-		return fetchBelongsTo(ctx, relationNameStr, relation.Reference, fieldValue)
+		return fetchSingleRelation(ctx, relationNameStr, relation.Reference, fieldValue)
+
+	case ast.RelationTypeMorphMany:
+		fieldValue, ok := data.Load(relation.Reference)
+		if !ok {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
+		}
+		return fetchMultipleRelations(ctx, relation.Name, relation.MorphKey, fieldValue)
+
+	case ast.RelationTypeBelongsToMany:
+		fieldValue, ok := data.Load(relation.Reference)
+		if !ok {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
+		}
+		return fetchMultipleRelations(ctx, relation.Name, relation.ForeignKey, fieldValue)
 	}
 	return nil, nil
 }
 
-func fetchHasMany(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) ([]*sync.Map, error) {
+func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) ([]*sync.Map, error) {
 	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err
@@ -220,7 +250,7 @@ func fetchHasMany(ctx *context.Context, relationName string, foreignKey string, 
 	return datas, nil
 }
 
-func fetchBelongsTo(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) (*sync.Map, error) {
+func fetchSingleRelation(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) (*sync.Map, error) {
 	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err

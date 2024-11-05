@@ -4,29 +4,16 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
-type Article struct {
-  model.Model
-  Name string `json:"name" gorm:"type:varchar(255)" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-}
-
-func (*Article) IsModel() bool { return true }
-func (*Article) TableName() string { return "articles" }
-func (*Article) TypeName() string { return "article" }
-func ArticleEnumFields(key string) func(interface{}) interface{} {
-  return nil
-}
-
 type Post struct {
   model.ModelSoftDelete
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
   IsBool bool `json:"is_bool" gorm:"default:false" `
   User *User `json:"user" `
+  Enum TestEnum `json:"enum" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
   UserId int64 `json:"user_id" gorm:"index" `
   TagId int64 `json:"tag_id" `
   BackId int64 `json:"back_id" `
-  Enum TestEnum `json:"enum" `
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
-  Content string `gorm:"type:varchar(255)" json:"content" `
 }
 
 func (*Post) IsModel() bool { return true }
@@ -49,10 +36,23 @@ func PostEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
+type Article struct {
+  model.Model
+  Name string `json:"name" gorm:"type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+func ArticleEnumFields(key string) func(interface{}) interface{} {
+  return nil
+}
+
 type User struct {
   model.Model
-  Name string `gorm:"index;type:varchar(255)" json:"name" `
   MyPosts *[]Post `json:"my_posts" gorm:"comment:五二零" `
+  Name string `json:"name" gorm:"index;type:varchar(255)" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -66,10 +66,10 @@ func UserEnumFields(key string) func(interface{}) interface{} {
 
 type Comment struct {
   model.Model
+  Content string `json:"content" gorm:"type:varchar(255)" `
   CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
   CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
-  Commentable interface{} `gorm:"-" json:"commentable" `
-  Content string `gorm:"type:varchar(255)" json:"content" `
+  Commentable interface{} `json:"commentable" gorm:"-" `
 }
 
 func (*Comment) IsModel() bool { return true }
@@ -82,8 +82,8 @@ func CommentEnumFields(key string) func(interface{}) interface{} {
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &Article{},
     &Post{},
+    &Article{},
     &User{},
     &Comment{},
   )

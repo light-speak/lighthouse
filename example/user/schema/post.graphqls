@@ -24,7 +24,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  createPost(input: TestInput!): Post!
+  createPost(input: TestInput): Post!
 }
 
 type Test {

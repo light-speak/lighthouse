@@ -43,6 +43,8 @@ func Fields(fields map[string]*Field) string {
 		realType := field.Type.GetRealType()
 		if realType.Kind != KindScalar && realType.Kind != KindEnum && goType != "interface{}" {
 			goType = fmt.Sprintf("*%s", goType)
+		} else {
+			goType = field.Type.GetGoType(false)
 		}
 
 		line := fmt.Sprintf("  %s %s %s", utils.UcFirst(utils.CamelCase(field.Name)), goType, genTag(field))

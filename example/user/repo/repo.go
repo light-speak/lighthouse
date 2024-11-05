@@ -2,12 +2,12 @@
 package repo
 
 import (
+  "github.com/light-speak/lighthouse/utils"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "gorm.io/gorm"
   "github.com/light-speak/lighthouse/context"
   "sync"
-  "gorm.io/gorm"
-  "github.com/light-speak/lighthouse/utils"
   "user/models"
-  "github.com/light-speak/lighthouse/graphql/model"
 )
 
 // Generic loader function
@@ -84,30 +84,6 @@ func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB)
   return count, err
 }
 
-// Article functions
-func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.Article](ctx, key, "articles", field)
-}
-
-func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.Article](ctx, key, "articles", field)
-}
-
-func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Article](&models.Article{}, scopes...)
-}
-
-func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
-}
-
-func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
-}
-
-func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Article](&models.Article{}, scopes...)
-}
 // Post functions
 func Load__Post(ctx *context.Context, key int64, field string) (*sync.Map, error) {
   return loadEntity[models.Post](ctx, key, "posts", field)
@@ -131,6 +107,30 @@ func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm
 
 func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.Post](&models.Post{}, scopes...)
+}
+// Article functions
+func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Article](ctx, key, "articles", field)
+}
+
+func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Article](ctx, key, "articles", field)
+}
+
+func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Article](&models.Article{}, scopes...)
+}
+
+func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
+}
+
+func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
+}
+
+func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Article](&models.Article{}, scopes...)
 }
 // User functions
 func Load__User(ctx *context.Context, key int64, field string) (*sync.Map, error) {
@@ -183,16 +183,16 @@ func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
 
 
 func init() {
-  model.AddQuickFirst("Article", First__Article)
-  model.AddQuickList("Article", List__Article)
-  model.AddQuickLoad("Article", Load__Article)
-  model.AddQuickLoadList("Article", LoadList__Article)
-  model.AddQuickCount("Article", Count__Article)
   model.AddQuickFirst("Post", First__Post)
   model.AddQuickList("Post", List__Post)
   model.AddQuickLoad("Post", Load__Post)
   model.AddQuickLoadList("Post", LoadList__Post)
   model.AddQuickCount("Post", Count__Post)
+  model.AddQuickFirst("Article", First__Article)
+  model.AddQuickList("Article", List__Article)
+  model.AddQuickLoad("Article", Load__Article)
+  model.AddQuickLoadList("Article", LoadList__Article)
+  model.AddQuickCount("Article", Count__Article)
   model.AddQuickFirst("User", First__User)
   model.AddQuickList("User", List__User)
   model.AddQuickLoad("User", Load__User)

@@ -13,17 +13,36 @@ import (
 //go:embed base.graphql
 var baseSchema string
 
+type ParserInterface interface {
+	GetLexer() *lexer.Lexer
+	NextToken() error
+}
+
+type BaseParser struct {
+	// lexer is the Lexer instance used for lexical analysis, converting the input GraphQL text into a stream of tokens.
+	lexer *lexer.Lexer
+	// currToken is the current token being processed, which helps the parser determine its state.
+	currToken *lexer.Token
+}
+
+func (p *BaseParser) GetLexer() *lexer.Lexer {
+	return p.lexer
+}
+
+func (p *BaseParser) NextToken() error {
+	var err error
+	p.currToken, err = p.lexer.NextToken()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Parser is responsible for parsing the GraphQL schema.
 // It contains a lexer for tokenizing the input and the current token being processed.
 // The various maps are used to store different types of AST nodes for quick lookup and management during parsing.
 type Parser struct {
-	QueryParser *QueryParser
-	// lexer is the Lexer instance used for lexical analysis, converting the input GraphQL text into a stream of tokens.
-	lexer *lexer.Lexer
-
-	// currToken is the current token being processed, which helps the parser determine its state.
-	currToken *lexer.Token
-
+	BaseParser
 	// NodeStore is a store of all parsed nodes
 	NodeStore *ast.NodeStore
 }
@@ -55,7 +74,7 @@ func ReadGraphQLFiles(paths []string) (*lexer.Lexer, errors.GraphqlErrorInterfac
 
 // NewParser create a new parser
 func NewParser(lexer *lexer.Lexer) *Parser {
-	p := &Parser{lexer: lexer}
+	p := &Parser{BaseParser: BaseParser{lexer: lexer}}
 	p.nextToken() // Initialize currToken
 	return p
 }
@@ -64,10 +83,9 @@ func NewParser(lexer *lexer.Lexer) *Parser {
 // it will parse the operation and fragments
 // and store them in the QueryParser
 func (p *Parser) NewQueryParser(queryLexer *lexer.Lexer) *QueryParser {
-	p.lexer = queryLexer
-	p.QueryParser = &QueryParser{Parser: p}
-	p.nextToken()
-	return p.QueryParser.ParseSchema()
+	qp := &QueryParser{BaseParser: BaseParser{lexer: queryLexer}, Parser: p}
+	qp.NextToken()
+	return qp
 }
 
 // nextToken move to next token
@@ -118,19 +136,19 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 }
 
 // PreviousToken return Previous Token
-func (p *Parser) PreviousToken() *lexer.Token {
+func (p *BaseParser) PreviousToken() *lexer.Token {
 	return p.lexer.PreviousToken()
 }
 
 // expect check if the current token is the expected token
 // if not, panic
-func (p *Parser) expect(t lexer.TokenType, options ...bool) {
+func (p *BaseParser) expect(t lexer.TokenType, options ...bool) {
 	if p.currToken.Type != t {
 		panic(fmt.Sprintf("expect: %s but got: %s at line %d position %d", t, p.currToken.Value, p.currToken.Line, p.currToken.LinePosition))
 	}
 
 	if len(options) == 0 || options[0] {
-		p.nextToken()
+		p.NextToken()
 	}
 }
 func (p *Parser) AddInput(node *ast.InputObjectNode, extend bool) {

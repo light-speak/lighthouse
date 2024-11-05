@@ -10,6 +10,7 @@ import (
 )
 
 type QueryParser struct {
+	BaseParser
 	Parser  *Parser
 	QueryId string
 
@@ -39,9 +40,13 @@ func (p *QueryParser) GetVariable(name string) any {
 func (p *QueryParser) Validate(store *ast.NodeStore) errors.GraphqlErrorInterface {
 	for _, arg := range p.Args {
 		if p.Variables[arg.Name] == nil {
-			return &errors.GraphQLError{
-				Message:   fmt.Sprintf("variable %s not found", arg.Name),
-				Locations: []*errors.GraphqlLocation{arg.GetLocation()},
+			if arg.Type.Kind == ast.KindNonNull {
+				return &errors.GraphQLError{
+					Message:   fmt.Sprintf("variable %s not found", arg.Name),
+					Locations: []*errors.GraphqlLocation{arg.GetLocation()},
+				}
+			} else {
+				p.Variables[arg.Name] = nil
 			}
 		}
 		arg.Value = p.GetVariable(arg.Name)
@@ -82,11 +87,11 @@ func (p *QueryParser) ParseSchema() *QueryParser {
 		lexer.Fragment:          func() { p.parseFragment() },
 	}
 
-	for p.Parser.currToken.Type != lexer.EOF {
-		if parseFunc, ok := tokenTypeToParseFunc[p.Parser.currToken.Type]; ok {
+	for p.currToken.Type != lexer.EOF {
+		if parseFunc, ok := tokenTypeToParseFunc[p.currToken.Type]; ok {
 			parseFunc()
 		}
-		p.Parser.nextToken()
+		p.NextToken()
 	}
 
 	return p
@@ -101,21 +106,21 @@ func (p *QueryParser) AddFragment(node *ast.Fragment) {
 
 func (p *QueryParser) parseFragment() {
 	node := &ast.Fragment{
-		Name: p.Parser.expectAndGetValue(lexer.Fragment),
-		On:   p.Parser.expectAndGetValue(lexer.On),
+		Name: p.expectAndGetValue(lexer.Fragment),
+		On:   p.expectAndGetValue(lexer.On),
 	}
 
-	node.Directives = p.Parser.parseDirectives()
+	node.Directives = p.parseDirectives()
 
-	p.Parser.expect(lexer.LeftBrace)
+	p.expect(lexer.LeftBrace)
 	node.Fields = make(map[string]*ast.Field)
 	for {
-		field := p.Parser.parseField(false, "")
+		field := p.parseField(false, "")
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
 		node.Fields[field.Name] = field
-		if p.Parser.currToken.Type == lexer.RightBrace {
+		if p.currToken.Type == lexer.RightBrace {
 			break
 		}
 	}
@@ -124,7 +129,7 @@ func (p *QueryParser) parseFragment() {
 }
 
 func (p *QueryParser) parseOperation() error {
-	operationType := utils.UcFirst(string(p.Parser.currToken.Type))
+	operationType := utils.UcFirst(string(p.currToken.Type))
 	location := ast.LocationQuery
 	if operationType == "Query" {
 		location = ast.LocationQuery
@@ -136,21 +141,21 @@ func (p *QueryParser) parseOperation() error {
 	p.Location = location
 	p.OperationType = operationType
 
-	p.Parser.nextToken()
-	if p.Parser.currToken.Type == lexer.Letter {
-		p.Name = p.Parser.currToken.Value
-		p.Parser.nextToken()
+	p.NextToken()
+	if p.currToken.Type == lexer.Letter {
+		p.Name = p.currToken.Value
+		p.NextToken()
 	}
 
-	if p.Parser.currToken.Type == lexer.LeftParent {
-		p.Args = p.Parser.parseArguments()
+	if p.currToken.Type == lexer.LeftParent {
+		p.Args = p.parseArguments()
 	}
-	p.Directives = p.Parser.parseDirectives()
+	p.Directives = p.parseDirectives()
 
-	p.Parser.expect(lexer.LeftBrace)
+	p.expect(lexer.LeftBrace)
 	fields := make(map[string]*ast.Field)
-	for p.Parser.currToken.Type != lexer.RightBrace {
-		field := p.Parser.parseField(true, "")
+	for p.currToken.Type != lexer.RightBrace {
+		field := p.parseField(true, "")
 		if field == nil {
 			continue
 		}

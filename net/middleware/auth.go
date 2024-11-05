@@ -25,7 +25,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 				return
 			}
 			ctx := r.Context().(*context.Context)
-			ctx.UserId = userId
+			ctx.UserId = &userId
 		} else {
 			//TODO: 从router获取
 		}

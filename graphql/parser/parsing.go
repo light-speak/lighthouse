@@ -65,7 +65,7 @@ func (p *Parser) parseObject() {
 }
 
 // parseDescription parses a description if present
-func (p *Parser) parseDescription() *string {
+func (p *BaseParser) parseDescription() *string {
 	if p.PreviousToken().Type == lexer.Message {
 		description := strings.Split(p.PreviousToken().Value, "\"")[1]
 		return &description
@@ -86,7 +86,7 @@ func (p *Parser) parseImplements() []string {
 			panic("duplicate implement: " + implementName)
 		}
 		implements = append(implements, implementName)
-		p.nextToken()
+		p.NextToken()
 		if p.currToken.Type != lexer.And {
 			break
 		}
@@ -96,7 +96,7 @@ func (p *Parser) parseImplements() []string {
 }
 
 // parseDirectives parses directives if present
-func (p *Parser) parseDirectives() []*ast.Directive {
+func (p *BaseParser) parseDirectives() []*ast.Directive {
 	var directives []*ast.Directive
 	if p.currToken.Type != lexer.At {
 		return directives
@@ -112,7 +112,7 @@ func (p *Parser) parseDirectives() []*ast.Directive {
 }
 
 // parseDirective parses a directive if present
-func (p *Parser) parseDirective() *ast.Directive {
+func (p *BaseParser) parseDirective() *ast.Directive {
 	directive := &ast.Directive{
 		Name: p.expectAndGetValue(lexer.At),
 		BaseLocation: ast.BaseLocation{
@@ -137,10 +137,10 @@ func (p *Parser) parseDirective() *ast.Directive {
 // age: Int
 // email: String
 // createdAt: DateTime
-func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
+func (p *BaseParser) parseField(isOperation bool, alias string) *ast.Field {
 	// Handle comments
 	if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
-		p.nextToken()
+		p.NextToken()
 		return nil
 	}
 
@@ -167,7 +167,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 					Column: p.currToken.LinePosition,
 				},
 			}
-			p.nextToken()
+			p.NextToken()
 			p.expect(lexer.LeftBrace)
 			field.Children = make(map[string]*ast.Field)
 			for p.currToken.Type != lexer.RightBrace {
@@ -196,7 +196,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 				Column: p.currToken.LinePosition,
 			},
 		}
-		p.nextToken()
+		p.NextToken()
 		return fragmentField
 	}
 
@@ -209,7 +209,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 			Column: p.currToken.LinePosition,
 		},
 	}
-	p.nextToken()
+	p.NextToken()
 
 	if isOperation && p.currToken.Type == lexer.Colon {
 		alias = field.Name
@@ -240,7 +240,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 
 	// Skip any trailing comments
 	for p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
-		p.nextToken()
+		p.NextToken()
 	}
 
 	return field
@@ -248,7 +248,7 @@ func (p *Parser) parseField(isOperation bool, alias string) *ast.Field {
 
 // parseArguments parse arguments
 // (id: ID!, name: String!)
-func (p *Parser) parseArguments() map[string]*ast.Argument {
+func (p *BaseParser) parseArguments() map[string]*ast.Argument {
 	args := make(map[string]*ast.Argument)
 	if p.currToken.Type != lexer.LeftParent {
 		return args
@@ -269,7 +269,7 @@ func (p *Parser) parseArguments() map[string]*ast.Argument {
 	return args
 }
 
-func (p *Parser) parseDefaultValue() any {
+func (p *BaseParser) parseDefaultValue() any {
 	if p.currToken.Type == lexer.Equal {
 		p.expect(lexer.Equal) // skip =
 		return p.parseValue()
@@ -279,7 +279,7 @@ func (p *Parser) parseDefaultValue() any {
 
 // parseTypeReference parses a type reference
 // Examples: ID, String, [Int], [[Int]], [User], [[User]], [User!], [1,2,3], [[1,2,3],[4,6]]
-func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
+func (p *BaseParser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 	var fieldType *ast.TypeRef
 	var value any
 
@@ -346,7 +346,7 @@ func (p *Parser) parseTypeReferenceAndValue() (*ast.TypeRef, any) {
 }
 
 // parseArgument parse an argument node
-func (p *Parser) parseArgument() *ast.Argument {
+func (p *BaseParser) parseArgument() *ast.Argument {
 	description := p.parseDescription()
 	isVariable := false
 	isReference := false
@@ -355,7 +355,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 	}
 	name := p.currToken.Value
 
-	p.nextToken()         // skip name
+	p.NextToken()         // skip name
 	p.expect(lexer.Colon) // skip :
 
 	var typeRef *ast.TypeRef
@@ -397,7 +397,7 @@ func (p *Parser) parseArgument() *ast.Argument {
 	}
 }
 
-func (p *Parser) parseValue() any {
+func (p *BaseParser) parseValue() any {
 	if p.currToken.Type == lexer.Null {
 		p.expect(lexer.Null)
 		return nil
@@ -731,9 +731,9 @@ func (p *Parser) parseUnionTypes() map[string]string {
 }
 
 // expectAndGetValue expects a token type and returns its value
-func (p *Parser) expectAndGetValue(tokenType lexer.TokenType) string {
+func (p *BaseParser) expectAndGetValue(tokenType lexer.TokenType) string {
 	p.expect(tokenType)
 	value := p.currToken.Value
-	p.nextToken()
+	p.NextToken()
 	return value
 }

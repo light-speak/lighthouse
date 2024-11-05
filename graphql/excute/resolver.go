@@ -1,6 +1,7 @@
 package excute
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/light-speak/lighthouse/context"
@@ -12,6 +13,14 @@ import (
 )
 
 func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
+	defer func() {
+		if r := recover(); r != nil {
+			ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
+				Message:   fmt.Sprintf("panic: %v", r),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			})
+		}
+	}()
 	if resolverFunc, ok := resolverMap[field.Name]; ok {
 		args := make(map[string]any)
 		for _, arg := range field.Args {
@@ -28,7 +37,7 @@ func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool,
 		if r == nil {
 			if field.Type.Kind == ast.KindNonNull {
 				return nil, true, &errors.GraphQLError{
-					Message:   "field is not nullable",
+					Message:   fmt.Sprintf("field %s is not nullable", field.Name),
 					Locations: []*errors.GraphqlLocation{field.GetLocation()},
 				}
 			}

@@ -7,9 +7,10 @@ import (
 )
 
 type Context struct {
-	context.Context
-	UserId int64
-	Errors []errors.GraphqlErrorInterface
+	context.Context `json:"-"`
+	UserId          *int64                         `json:"userId"`
+	RemoteAddr      *string                        `json:"remoteAddr"`
+	Errors          []errors.GraphqlErrorInterface `json:"-"`
 }
 
 func NewContext(ctx context.Context) *Context {
