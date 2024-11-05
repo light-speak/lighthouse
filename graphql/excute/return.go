@@ -9,9 +9,11 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
 )
 
+// Execute first record query
 func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
 	fn := model.GetQuickFirst(field.Type.GetGoName())
 	if fn == nil {
@@ -20,6 +22,7 @@ func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gor
 			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
+
 	d, e := fn(ctx, nil, scopes...)
 	if e != nil {
 		return nil, &errors.GraphQLError{
@@ -30,25 +33,25 @@ func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gor
 	if d == nil {
 		return nil, nil
 	}
-	data := make(map[string]interface{})
+
+	resultMap := &sync.Map{}
 	var wg sync.WaitGroup
-	var mu sync.Mutex
 	var lastErr errors.GraphqlErrorInterface
 
 	for _, child := range field.Children {
 		wg.Add(1)
 		go func(child *ast.Field) {
 			defer wg.Done()
-			v, err := mergeData(ctx, child, d)
-			if err != nil {
-				mu.Lock()
-				lastErr = err
-				mu.Unlock()
+			if child.Name == "__typename" {
+				resultMap.Store("__typename", utils.SnakeCase(field.Type.GetGoName()))
 				return
 			}
-			mu.Lock()
-			data[child.Name] = v
-			mu.Unlock()
+			v, err := mergeData(ctx, child, d)
+			if err != nil {
+				lastErr = err
+				return
+			}
+			resultMap.Store(child.Name, v)
 		}(child)
 	}
 	wg.Wait()
@@ -56,27 +59,34 @@ func executeFirst(ctx *context.Context, field *ast.Field, scopes ...func(db *gor
 	if lastErr != nil {
 		return nil, lastErr
 	}
+
+	data := make(map[string]interface{})
+	resultMap.Range(func(key, value interface{}) bool {
+		data[key.(string)] = value
+		return true
+	})
+
 	return data, nil
 }
 
+// Execute paginated query
 func executePaginate(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm.DB) *gorm.DB) (interface{}, errors.GraphqlErrorInterface) {
-	pageArg := field.Args["page"]
-	sizeArg := field.Args["size"]
-	sortArg := field.Args["sort"]
-	page, err := pageArg.GetValue()
+	page, err := field.Args["page"].GetValue()
 	if err != nil {
 		return nil, err
 	}
-	size, err := sizeArg.GetValue()
+	size, err := field.Args["size"].GetValue()
 	if err != nil {
 		return nil, err
 	}
-	sort, err := sortArg.GetValue()
+	sort, err := field.Args["sort"].GetValue()
 	if err != nil {
 		return nil, err
 	}
+
 	scope := func(db *gorm.DB) *gorm.DB {
-		return db.Offset((int(page.(int64)) - 1) * int(size.(int64))).Limit(int(size.(int64))).Order(fmt.Sprintf("%s %s", "id", sort.(string)))
+		offset := (int(page.(int64)) - 1) * int(size.(int64))
+		return db.Offset(offset).Limit(int(size.(int64))).Order(fmt.Sprintf("id %s", sort.(string)))
 	}
 
 	var wg sync.WaitGroup
@@ -92,10 +102,15 @@ func executePaginate(ctx *context.Context, field *ast.Field, scopes ...func(db *
 	}()
 
 	if field.Children["paginateInfo"] != nil {
-		if field.Children["paginateInfo"].Children["totalPage"] != nil ||
-			field.Children["paginateInfo"].Children["hasNextPage"] != nil ||
-			field.Children["paginateInfo"].Children["totalCount"] != nil {
+		needCount := false
+		for _, child := range field.Children["paginateInfo"].Children {
+			if child.Name == "totalPage" || child.Name == "hasNextPage" || child.Name == "totalCount" {
+				needCount = true
+				break
+			}
+		}
 
+		if needCount {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -124,27 +139,32 @@ func executePaginate(ctx *context.Context, field *ast.Field, scopes ...func(db *
 		}
 	}
 
-	res := make(map[string]interface{})
-	res["data"] = data
+	res := map[string]interface{}{
+		"data": data,
+	}
 
 	if field.Children["paginateInfo"] != nil {
-		paginateInfo := make(map[string]interface{})
+		paginateInfoMap := &sync.Map{}
 		var wg sync.WaitGroup
-		var mu sync.Mutex
 
 		for _, child := range field.Children["paginateInfo"].Children {
 			wg.Add(1)
 			go func(child *ast.Field) {
 				defer wg.Done()
 				value := mergePaginateInfo(child, count, page.(int64), size.(int64))
-				mu.Lock()
-				paginateInfo[child.Name] = value
-				mu.Unlock()
+				paginateInfoMap.Store(child.Name, value)
 			}(child)
 		}
 		wg.Wait()
+
+		paginateInfo := make(map[string]interface{})
+		paginateInfoMap.Range(func(key, value interface{}) bool {
+			paginateInfo[key.(string)] = value
+			return true
+		})
 		res["paginateInfo"] = paginateInfo
 	}
+
 	return res, nil
 }
 
@@ -155,8 +175,7 @@ func mergePaginateInfo(field *ast.Field, count int64, page int64, size int64) in
 	case "currentPage":
 		return page
 	case "hasNextPage":
-		totalPage := int64(math.Ceil(float64(count) / float64(size)))
-		return page < totalPage
+		return page < int64(math.Ceil(float64(count)/float64(size)))
 	case "totalPage":
 		return int64(math.Ceil(float64(count) / float64(size)))
 	}
@@ -171,6 +190,7 @@ func executeFind(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm
 			Locations: []*errors.GraphqlLocation{field.GetLocation()},
 		}
 	}
+
 	datas, e := fn(ctx, nil, scopes...)
 	if e != nil {
 		return nil, &errors.GraphQLError{
@@ -181,27 +201,34 @@ func executeFind(ctx *context.Context, field *ast.Field, scopes ...func(db *gorm
 
 	data := make([]interface{}, len(datas))
 	var wg sync.WaitGroup
-	var mu sync.Mutex
 	var lastErr errors.GraphqlErrorInterface
 
 	for i, item := range datas {
 		wg.Add(1)
-		go func(i int, item interface{}) {
+		go func(i int, item *sync.Map) {
 			defer wg.Done()
-			d := make(map[string]interface{})
+
+			resultMap := &sync.Map{}
 			for _, child := range field.Children {
-				v, err := mergeData(ctx, child, item.(map[string]interface{}))
+				if child.Name == "__typename" {
+					resultMap.Store("__typename", utils.SnakeCase(field.Type.GetGoName()))
+					continue
+				}
+				v, err := mergeData(ctx, child, item)
 				if err != nil {
-					mu.Lock()
 					lastErr = err
-					mu.Unlock()
 					return
 				}
-				d[child.Name] = v
+				resultMap.Store(child.Name, v)
 			}
-			mu.Lock()
+
+			d := make(map[string]interface{})
+			resultMap.Range(func(key, value interface{}) bool {
+				d[key.(string)] = value
+				return true
+			})
+
 			data[i] = d
-			mu.Unlock()
 		}(i, item)
 	}
 	wg.Wait()

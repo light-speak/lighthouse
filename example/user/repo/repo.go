@@ -2,179 +2,371 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/context"
+  "sync"
   "github.com/light-speak/lighthouse/graphql/model"
-  "user/models"
   "gorm.io/gorm"
+  "user/models"
+  "github.com/light-speak/lighthouse/context"
 )
 
-func Load__Article(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "articles", field).Load(key)
-}
-func LoadList__Article(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "articles", field).LoadList(key)
-}
-func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Article{}).Scopes(scopes...)
-}
-func First__Article(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Article().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
+func Load__User(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
+  if err != nil {
+    return nil, err
   }
-  for key, value := range data {
-    if fn, ok := models.ArticleEnumFields[key]; ok {
-      data[key] = fn(value)
-    }
+  syncMap := &sync.Map{}
+  for k, v := range data {
+    syncMap.Store(k, v)
   }
-  return data, nil
+  return syncMap, nil
 }
-func List__Article(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Article().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
+
+func LoadList__User(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), "users", field).LoadList(key)
+  if err != nil {
+    return nil, err
   }
-  return datas, nil
-}
-func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Article().Scopes(scopes...).Count(&count).Error
-  return count, err
-}
-func Load__Post(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
-}
-func LoadList__Post(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "posts", field).LoadList(key)
-}
-func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
-}
-func First__Post(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Post().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
+  result := make([]*sync.Map, len(datas))
+  for i, data := range datas {
+    syncMap := &sync.Map{}
+    for k, v := range data {
+      syncMap.Store(k, v)
     }
+    result[i] = syncMap
   }
-  for key, value := range data {
-    if fn, ok := models.PostEnumFields[key]; ok {
-      data[key] = fn(value)
-    }
-  }
-  return data, nil
+  return result, nil
 }
-func List__Post(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Post().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
-}
-func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Post().Scopes(scopes...).Count(&count).Error
-  return count, err
-}
-func Load__Comment(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "comments", field).Load(key)
-}
-func LoadList__Comment(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "comments", field).LoadList(key)
-}
-func Query__Comment(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return model.GetDB().Model(&models.Comment{}).Scopes(scopes...)
-}
-func First__Comment(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-  var err error
-  if data == nil {
-    data = make(map[string]interface{})
-    err = Query__Comment().Scopes(scopes...).First(data).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  for key, value := range data {
-    if fn, ok := models.CommentEnumFields[key]; ok {
-      data[key] = fn(value)
-    }
-  }
-  return data, nil
-}
-func List__Comment(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-  var err error
-  if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__Comment().Scopes(scopes...).Find(&datas).Error
-    if err != nil {
-      return nil, err
-    }
-  }
-  return datas, nil
-}
-func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  var count int64
-  err := Query__Comment().Scopes(scopes...).Count(&count).Error
-  return count, err
-}
-func Load__User(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "users", field).Load(key)
-}
-func LoadList__User(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-  return model.GetLoader[int64](model.GetDB(), "users", field).LoadList(key)
-}
+
 func Query__User(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
   return model.GetDB().Model(&models.User{}).Scopes(scopes...)
 }
-func First__User(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
+
+func First__User(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
   var err error
+  var mu sync.Mutex
   if data == nil {
-    data = make(map[string]interface{})
-    err = Query__User().Scopes(scopes...).First(data).Error
+    mapData := make(map[string]interface{})
+    err = Query__User().Scopes(scopes...).First(&mapData).Error
     if err != nil {
       return nil, err
     }
-  }
-  for key, value := range data {
-    if fn, ok := models.UserEnumFields[key]; ok {
-      data[key] = fn(value)
+    data = &sync.Map{}
+    for k, v := range mapData {
+      data.Store(k, v)
     }
   }
-  return data, nil
+  
+  result := &sync.Map{}
+  data.Range(func(key, value interface{}) bool {
+    k := key.(string)
+    if fn := models.UserEnumFields(k); fn != nil {
+      mu.Lock()
+      result.Store(k, fn(value))
+      mu.Unlock()
+    } else {
+      result.Store(k, value)
+    }
+    return true
+  })
+  return result, nil
 }
-func List__User(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
+
+func List__User(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
   var err error
   if datas == nil {
-    datas = make([]map[string]interface{}, 0)
-    err = Query__User().Scopes(scopes...).Find(&datas).Error
+    mapDatas := make([]map[string]interface{}, 0)
+    err = Query__User().Scopes(scopes...).Find(&mapDatas).Error
     if err != nil {
       return nil, err
+    }
+    datas = make([]*sync.Map, len(mapDatas))
+    for i, mapData := range mapDatas {
+      syncMap := &sync.Map{}
+      for k, v := range mapData {
+        syncMap.Store(k, v)
+      }
+      datas[i] = syncMap
     }
   }
   return datas, nil
 }
+
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   var count int64
   err := Query__User().Scopes(scopes...).Count(&count).Error
   return count, err
 }
 
+func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), "articles", field).Load(key)
+  if err != nil {
+    return nil, err
+  }
+  syncMap := &sync.Map{}
+  for k, v := range data {
+    syncMap.Store(k, v)
+  }
+  return syncMap, nil
+}
+
+func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), "articles", field).LoadList(key)
+  if err != nil {
+    return nil, err
+  }
+  result := make([]*sync.Map, len(datas))
+  for i, data := range datas {
+    syncMap := &sync.Map{}
+    for k, v := range data {
+      syncMap.Store(k, v)
+    }
+    result[i] = syncMap
+  }
+  return result, nil
+}
+
+func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return model.GetDB().Model(&models.Article{}).Scopes(scopes...)
+}
+
+func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  var err error
+  var mu sync.Mutex
+  if data == nil {
+    mapData := make(map[string]interface{})
+    err = Query__Article().Scopes(scopes...).First(&mapData).Error
+    if err != nil {
+      return nil, err
+    }
+    data = &sync.Map{}
+    for k, v := range mapData {
+      data.Store(k, v)
+    }
+  }
+
+  result := &sync.Map{}
+  data.Range(func(key, value interface{}) bool {
+    k := key.(string)
+    if fn := models.ArticleEnumFields(k); fn != nil {
+      mu.Lock()
+      result.Store(k, fn(value))
+      mu.Unlock()
+    } else {
+      result.Store(k, value)
+    }
+    return true
+  })
+  return result, nil
+}
+
+func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  var err error
+  if datas == nil {
+    mapDatas := make([]map[string]interface{}, 0)
+    err = Query__Article().Scopes(scopes...).Find(&mapDatas).Error
+    if err != nil {
+      return nil, err
+    }
+    datas = make([]*sync.Map, len(mapDatas))
+    for i, mapData := range mapDatas {
+      syncMap := &sync.Map{}
+      for k, v := range mapData {
+        syncMap.Store(k, v)
+      }
+      datas[i] = syncMap
+    }
+  }
+  return datas, nil
+}
+
+func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  var count int64
+  err := Query__Article().Scopes(scopes...).Count(&count).Error
+  return count, err
+}
+
+func Load__Post(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), "posts", field).Load(key)
+  if err != nil {
+    return nil, err
+  }
+  syncMap := &sync.Map{}
+  for k, v := range data {
+    syncMap.Store(k, v)
+  }
+  return syncMap, nil
+}
+
+func LoadList__Post(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), "posts", field).LoadList(key)
+  if err != nil {
+    return nil, err
+  }
+  result := make([]*sync.Map, len(datas))
+  for i, data := range datas {
+    syncMap := &sync.Map{}
+    for k, v := range data {
+      syncMap.Store(k, v)
+    }
+    result[i] = syncMap
+  }
+  return result, nil
+}
+
+func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return model.GetDB().Model(&models.Post{}).Scopes(scopes...)
+}
+
+func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  var err error
+  var mu sync.Mutex
+  if data == nil {
+    mapData := make(map[string]interface{})
+    err = Query__Post().Scopes(scopes...).First(&mapData).Error
+    if err != nil {
+      return nil, err
+    }
+    data = &sync.Map{}
+    for k, v := range mapData {
+      data.Store(k, v)
+    }
+  }
+
+  result := &sync.Map{}
+  data.Range(func(key, value interface{}) bool {
+    k := key.(string)
+    if fn := models.PostEnumFields(k); fn != nil {
+      mu.Lock()
+      result.Store(k, fn(value))
+      mu.Unlock()
+    } else {
+      result.Store(k, value)
+    }
+    return true
+  })
+  return result, nil
+}
+
+func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  var err error
+  if datas == nil {
+    mapDatas := make([]map[string]interface{}, 0)
+    err = Query__Post().Scopes(scopes...).Find(&mapDatas).Error
+    if err != nil {
+      return nil, err
+    }
+    datas = make([]*sync.Map, len(mapDatas))
+    for i, mapData := range mapDatas {
+      syncMap := &sync.Map{}
+      for k, v := range mapData {
+        syncMap.Store(k, v)
+      }
+      datas[i] = syncMap
+    }
+  }
+  return datas, nil
+}
+
+func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  var count int64
+  err := Query__Post().Scopes(scopes...).Count(&count).Error
+  return count, err
+}
+
+func Load__Comment(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), "comments", field).Load(key)
+  if err != nil {
+    return nil, err
+  }
+  syncMap := &sync.Map{}
+  for k, v := range data {
+    syncMap.Store(k, v)
+  }
+  return syncMap, nil
+}
+
+func LoadList__Comment(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), "comments", field).LoadList(key)
+  if err != nil {
+    return nil, err
+  }
+  result := make([]*sync.Map, len(datas))
+  for i, data := range datas {
+    syncMap := &sync.Map{}
+    for k, v := range data {
+      syncMap.Store(k, v)
+    }
+    result[i] = syncMap
+  }
+  return result, nil
+}
+
+func Query__Comment(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return model.GetDB().Model(&models.Comment{}).Scopes(scopes...)
+}
+
+func First__Comment(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  var err error
+  var mu sync.Mutex
+  if data == nil {
+    mapData := make(map[string]interface{})
+    err = Query__Comment().Scopes(scopes...).First(&mapData).Error
+    if err != nil {
+      return nil, err
+    }
+    data = &sync.Map{}
+    for k, v := range mapData {
+      data.Store(k, v)
+    }
+  }
+
+  result := &sync.Map{}
+  data.Range(func(key, value interface{}) bool {
+    k := key.(string)
+    if fn := models.CommentEnumFields(k); fn != nil {
+      mu.Lock()
+      result.Store(k, fn(value))
+      mu.Unlock()
+    } else {
+      result.Store(k, value)
+    }
+    return true
+  })
+  return result, nil
+}
+
+func List__Comment(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  var err error
+  if datas == nil {
+    mapDatas := make([]map[string]interface{}, 0)
+    err = Query__Comment().Scopes(scopes...).Find(&mapDatas).Error
+    if err != nil {
+      return nil, err
+    }
+    datas = make([]*sync.Map, len(mapDatas))
+    for i, mapData := range mapDatas {
+      syncMap := &sync.Map{}
+      for k, v := range mapData {
+        syncMap.Store(k, v)
+      }
+      datas[i] = syncMap
+    }
+  }
+  return datas, nil
+}
+
+func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  var count int64
+  err := Query__Comment().Scopes(scopes...).Count(&count).Error
+  return count, err
+}
 
 func init() {
+  model.AddQuickFirst("User", First__User)
+  model.AddQuickList("User", List__User)
+  model.AddQuickLoad("User", Load__User)
+  model.AddQuickLoadList("User", LoadList__User)
+  model.AddQuickCount("User", Count__User)
   model.AddQuickFirst("Article", First__Article)
   model.AddQuickList("Article", List__Article)
   model.AddQuickLoad("Article", Load__Article)
@@ -190,9 +382,4 @@ func init() {
   model.AddQuickLoad("Comment", Load__Comment)
   model.AddQuickLoadList("Comment", LoadList__Comment)
   model.AddQuickCount("Comment", Count__Comment)
-  model.AddQuickFirst("User", First__User)
-  model.AddQuickList("User", List__User)
-  model.AddQuickLoad("User", Load__User)
-  model.AddQuickLoadList("User", LoadList__User)
-  model.AddQuickCount("User", Count__User)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
 	"github.com/light-speak/lighthouse/resolve"
+	"github.com/light-speak/lighthouse/utils"
 )
 
 func executeResolver(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {
@@ -52,28 +53,19 @@ func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) 
 		return processSingleResult(ctx, field, realType, r)
 	}
 
-	data := make(map[string]interface{})
+	dataMap := r.(*sync.Map)
+
+	totalFields := countTotalFields(field.Children)
 	var wg sync.WaitGroup
-	errChan := make(chan errors.GraphqlErrorInterface, len(field.Children))
+	errChan := make(chan errors.GraphqlErrorInterface, totalFields)
 	resultChan := make(chan struct {
 		key   string
 		value interface{}
-	}, len(field.Children))
+	}, totalFields)
 
-	for _, child := range field.Children {
-		wg.Add(1)
-		go func(c *ast.Field) {
-			defer wg.Done()
-			v, err := mergeData(ctx, c, r.(map[string]interface{}))
-			if err != nil {
-				errChan <- err
-				return
-			}
-			resultChan <- struct {
-				key   string
-				value interface{}
-			}{c.Name, v}
-		}(child)
+	err := processFields(ctx, field.Children, dataMap, &wg, errChan, resultChan)
+	if err != nil {
+		return nil, true, err
 	}
 
 	go func() {
@@ -86,6 +78,7 @@ func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) 
 		return nil, true, err
 	}
 
+	data := make(map[string]interface{})
 	for result := range resultChan {
 		data[result.key] = result.value
 	}
@@ -94,7 +87,15 @@ func processObjectResult(ctx *context.Context, field *ast.Field, r interface{}) 
 }
 
 func processListResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
-	result, err := model.GetQuickList(realType.Name)(ctx, r.([]map[string]interface{}))
+	rSlice, ok := r.([]*sync.Map)
+	if !ok {
+		return nil, true, &errors.GraphQLError{
+			Message:   "invalid input type for list result",
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
+	}
+
+	result, err := model.GetQuickList(realType.Name)(ctx, rSlice)
 	if err != nil {
 		return nil, true, &errors.GraphQLError{
 			Message:   err.Error(),
@@ -104,37 +105,65 @@ func processListResult(ctx *context.Context, field *ast.Field, realType *ast.Typ
 
 	data := make([]map[string]interface{}, len(result))
 	var wg sync.WaitGroup
-	errChan := make(chan errors.GraphqlErrorInterface, len(result))
+	var lastErr errors.GraphqlErrorInterface
+	resultMapSlice := make([]*sync.Map, len(result))
 
-	for i, ri := range result {
+	// Process each item concurrently
+	for i, item := range result {
 		wg.Add(1)
-		go func(index int, item map[string]interface{}) {
+		go func(i int, item *sync.Map) {
 			defer wg.Done()
-			riData := make(map[string]interface{})
+			resultMap := &sync.Map{}
+
 			for _, child := range field.Children {
-				v, err := mergeData(ctx, child, item)
-				if err != nil {
-					errChan <- err
-					return
+				if child.Name == "__typename" {
+					resultMap.Store(child.Name, realType.Name)
+					continue
 				}
-				riData[child.Name] = v
+
+				value := getValueFromSyncMap(item, child.Name)
+				if value == nil {
+					var err errors.GraphqlErrorInterface
+					value, err = mergeData(ctx, child, item)
+					if err != nil {
+						lastErr = err
+						return
+					}
+				}
+				resultMap.Store(child.Name, value)
 			}
-			data[index] = riData
-		}(i, ri)
+			resultMapSlice[i] = resultMap
+		}(i, item)
+	}
+	wg.Wait()
+
+	if lastErr != nil {
+		return nil, true, lastErr
 	}
 
-	wg.Wait()
-	close(errChan)
-
-	if len(errChan) > 0 {
-		return nil, true, <-errChan
+	// Convert sync.Map to regular map
+	for i, resultMap := range resultMapSlice {
+		m := make(map[string]interface{})
+		resultMap.Range(func(key, value interface{}) bool {
+			m[key.(string)] = value
+			return true
+		})
+		data[i] = m
 	}
 
 	return data, true, nil
 }
 
 func processSingleResult(ctx *context.Context, field *ast.Field, realType *ast.TypeRef, r interface{}) (interface{}, bool, errors.GraphqlErrorInterface) {
-	result, err := model.GetQuickFirst(realType.Name)(ctx, r.(map[string]interface{}))
+	syncMap, ok := r.(*sync.Map)
+	if !ok {
+		return nil, true, &errors.GraphQLError{
+			Message:   "invalid input type for single result",
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
+	}
+
+	result, err := model.GetQuickFirst(realType.Name)(ctx, syncMap)
 	if err != nil {
 		return nil, true, &errors.GraphQLError{
 			Message:   err.Error(),
@@ -142,43 +171,58 @@ func processSingleResult(ctx *context.Context, field *ast.Field, realType *ast.T
 		}
 	}
 
-	data := make(map[string]interface{})
+	resultMap := &sync.Map{}
 	var wg sync.WaitGroup
-	errChan := make(chan errors.GraphqlErrorInterface, len(field.Children))
-	resultChan := make(chan struct {
-		key   string
-		value interface{}
-	}, len(field.Children))
+	var lastErr errors.GraphqlErrorInterface
 
+	// Process each field concurrently
 	for _, child := range field.Children {
 		wg.Add(1)
-		go func(c *ast.Field) {
+		go func(child *ast.Field) {
 			defer wg.Done()
-			v, err := mergeData(ctx, c, result)
-			if err != nil {
-				errChan <- err
+			if child.Name == "__typename" {
+				resultMap.Store(child.Name, realType.Name)
 				return
 			}
-			resultChan <- struct {
-				key   string
-				value interface{}
-			}{c.Name, v}
+
+			value := getValueFromSyncMap(result, child.Name)
+			if value == nil {
+				var err errors.GraphqlErrorInterface
+				value, err = mergeData(ctx, child, result)
+				if err != nil {
+					lastErr = err
+					return
+				}
+			}
+			resultMap.Store(child.Name, value)
 		}(child)
 	}
+	wg.Wait()
 
-	go func() {
-		wg.Wait()
-		close(errChan)
-		close(resultChan)
-	}()
-
-	if err := <-errChan; err != nil {
-		return nil, true, err
+	if lastErr != nil {
+		return nil, true, lastErr
 	}
 
-	for result := range resultChan {
-		data[result.key] = result.value
-	}
+	// Convert sync.Map to regular map
+	data := make(map[string]interface{})
+	resultMap.Range(func(key, value interface{}) bool {
+		data[key.(string)] = value
+		return true
+	})
 
 	return data, true, nil
+}
+
+// Helper function to get value from sync.Map using snake case key
+func getValueFromSyncMap(m *sync.Map, key string) interface{} {
+	var value interface{}
+	snakeName := utils.SnakeCase(key)
+	m.Range(func(k, v interface{}) bool {
+		if k.(string) == snakeName {
+			value = v
+			return false
+		}
+		return true
+	})
+	return value
 }

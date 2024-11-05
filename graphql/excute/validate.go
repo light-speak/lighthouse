@@ -12,6 +12,9 @@ func ValidateValue(field *ast.Field, value interface{}, isVariable bool) (interf
 	realType := field.Type.GetRealType()
 	var v interface{}
 	var err errors.GraphqlErrorInterface
+	if field.Name == "__typename" {
+		return value, nil
+	}
 
 	switch realType.Kind {
 	case ast.KindScalar:

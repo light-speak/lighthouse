@@ -4,15 +4,15 @@ package models
 
 
 
+type HasName interface {
+  IsHasName()
+  GetName() string
+}
+
 type Userable interface {
   IsUserable()
   GetUser() User
   GetUserId() int64
-}
-
-type HasName interface {
-  IsHasName()
-  GetName() string
 }
 
 type Commentable interface {

@@ -574,7 +574,7 @@ func (t *TypeRef) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if t.Kind == KindNonNull {
 		if t.OfType == nil {
 			return &errors.GraphQLError{
-				Message:   "non-null type cannot be null",
+				Message:   "non-null type cannot be null, function: Validate",
 				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}
@@ -630,17 +630,63 @@ func (t *TypeRef) ValidateValue(v interface{}, isVariable bool) errors.GraphqlEr
 	case KindNonNull:
 		if v == nil {
 			return &errors.GraphQLError{
-				Message:   "non-null type cannot be null",
+				Message:   "non-null type cannot be null, function: ValidateValue " + t.GetGoName(),
 				Locations: []*errors.GraphqlLocation{t.GetLocation()},
 			}
 		}
 		return t.OfType.ValidateValue(v, isVariable)
+	case KindUnion:
+		return t.validateUnionValue(v)
 	default:
 		return &errors.GraphQLError{
 			Message:   fmt.Sprintf("invalid type: %s", t.Name),
 			Locations: []*errors.GraphqlLocation{t.GetLocation()},
 		}
 	}
+}
+
+func (t *TypeRef) validateUnionValue(v interface{}) errors.GraphqlErrorInterface {
+	objValue, ok := v.(map[string]interface{})
+	if !ok {
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("expected object value, got %T", v),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
+	}
+	typename, ok := objValue["__typename"].(string)
+	if !ok {
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("union type must have __typename field, object value %+v， %+v", objValue, t),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
+	}
+
+	unionNode, ok := t.TypeNode.(*UnionNode)
+	if !ok {
+		return &errors.GraphQLError{
+			Message:   "invalid union type node",
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
+	}
+	memberName := utils.UcFirst(utils.CamelCase(typename))
+	// Check if typename is a valid union member
+	var memberType *ObjectNode
+	for _, member := range unionNode.PossibleTypes {
+		if member.Name == memberName {
+			memberType = member
+			break
+		}
+	}
+
+	if memberType == nil {
+		return &errors.GraphQLError{
+			Message:   fmt.Sprintf("invalid union member type: %s", typename),
+			Locations: []*errors.GraphqlLocation{t.GetLocation()},
+		}
+	}
+
+	// Validate the value against the member type
+	return nil
 }
 
 func (t *TypeRef) validateScalarValue(v interface{}, isVariable bool) errors.GraphqlErrorInterface {

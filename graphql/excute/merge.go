@@ -15,7 +15,7 @@ import (
 func countTotalFields(fields map[string]*ast.Field) int {
 	total := 0
 	for _, field := range fields {
-		if field.IsFragment {
+		if field.IsFragment || field.IsUnion {
 			total += countTotalFields(field.Children)
 		} else {
 			total++
@@ -28,18 +28,35 @@ func countTotalFields(fields map[string]*ast.Field) int {
 func processFields(
 	ctx *context.Context,
 	fields map[string]*ast.Field,
-	data map[string]interface{},
+	data *sync.Map,
 	wg *sync.WaitGroup,
 	errChan chan<- errors.GraphqlErrorInterface,
 	resultChan chan<- struct {
 		key   string
 		value interface{}
 	},
-) {
+) errors.GraphqlErrorInterface {
 	for _, field := range fields {
-		if field.IsFragment {
+		if field.IsFragment || field.IsUnion {
+			typeName, ok := data.Load("__typename")
+			if !ok {
+				return &errors.GraphQLError{
+					Message:   "__typename not found",
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
+			}
+			typeNameStr, ok := typeName.(string)
+			if !ok {
+				return &errors.GraphQLError{
+					Message:   "__typename is not a string",
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
+			}
+			if field.Name != utils.UcFirst(typeNameStr) {
+				continue
+			}
 			// Recursively process fragment fields
-			processFields(ctx, field.Children, data, wg, errChan, resultChan)
+			return processFields(ctx, field.Children, data, wg, errChan, resultChan)
 		} else {
 			wg.Add(1)
 			go func(f *ast.Field) {
@@ -56,20 +73,28 @@ func processFields(
 			}(field)
 		}
 	}
+	return nil
 }
 
 // mergeData merges the field data with the given data map based on GraphQL field definition
-func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interface{}) (interface{}, errors.GraphqlErrorInterface) {
+func mergeData(ctx *context.Context, field *ast.Field, datas *sync.Map) (interface{}, errors.GraphqlErrorInterface) {
+	defer func() {
+		if r := recover(); r != nil {
+			ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
+				Message:   fmt.Sprintf("mergeData panic: %v", r),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			})
+		}
+	}()
+
 	fieldName := utils.SnakeCase(field.Name)
 	var v interface{}
 
-	// Get value from data map
-	ev, exists := datas[fieldName]
-	if exists && ev != nil {
+	// Get value from sync.Map
+	if ev, exists := datas.Load(fieldName); exists && ev != nil {
 		v = ev
-	} else {
-		v = nil
 	}
+
 	// Handle relation fields
 	if v == nil && field.Relation != nil {
 		cData, err := model.FetchRelation(ctx, datas, field.Relation)
@@ -79,15 +104,16 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 				Locations: []*errors.GraphqlLocation{field.GetLocation()},
 			}
 		}
+		// t, _ := cData.(*sync.Map).Load("__typename")
+		// id, _ := cData.(*sync.Map).Load("id")
+		// log.Warn().Msgf("cData: %v, %v, %+v", t, id, cData)
 		v = cData
 	}
 
-	// Return nil if value is nil
 	if v == nil {
 		return nil, nil
 	}
 
-	// Get real type by unwrapping NonNull
 	typeRef := field.Type
 	if typeRef.Kind == ast.KindNonNull {
 		typeRef = typeRef.OfType
@@ -95,7 +121,7 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 
 	// Handle list type
 	if typeRef.Kind == ast.KindList {
-		vList, ok := v.([]map[string]interface{})
+		vList, ok := v.([]*sync.Map)
 		if !ok {
 			return nil, &errors.GraphQLError{
 				Message:   fmt.Sprintf("Expected list type but got %T", v),
@@ -103,55 +129,103 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 			}
 		}
 
-		// Process each item in list
 		result := make([]interface{}, len(vList))
+		errChan := make(chan error, len(vList))
 		var wg sync.WaitGroup
-		errChan := make(chan errors.GraphqlErrorInterface, len(vList))
 
 		for i, item := range vList {
 			wg.Add(1)
-			go func(index int, itemData map[string]interface{}) {
+			go func(index int, itemData *sync.Map) {
 				defer wg.Done()
-				listField := &ast.Field{
-					Name:     fieldName,
-					Children: field.Children,
-					Type:     typeRef.OfType,
-				}
 
-				m := make(map[string]interface{})
-				m[fieldName] = itemData
-				merged, err := mergeData(ctx, listField, m)
-				if err != nil {
-					errChan <- err
+				if itemData == nil {
+					errChan <- fmt.Errorf("nil item data at index %d", index)
 					return
 				}
-				result[index] = merged
+
+				if field.Children != nil {
+					totalFields := countTotalFields(field.Children)
+					childErrChan := make(chan errors.GraphqlErrorInterface, totalFields)
+					childResultChan := make(chan struct {
+						key   string
+						value interface{}
+					}, totalFields)
+					var childWg sync.WaitGroup
+
+					err := processFields(ctx, field.Children, itemData, &childWg, childErrChan, childResultChan)
+					if err != nil {
+						errChan <- err
+						return
+					}
+
+					go func() {
+						childWg.Wait()
+						close(childErrChan)
+						close(childResultChan)
+					}()
+
+					if err := <-childErrChan; err != nil {
+						errChan <- err
+						return
+					}
+
+					merged := make(map[string]interface{})
+					for result := range childResultChan {
+						merged[result.key] = result.value
+					}
+
+					result[index] = merged
+				}
 			}(i, item)
 		}
 
 		wg.Wait()
 		close(errChan)
 
-		if len(errChan) > 0 {
-			return nil, <-errChan
+		if err := <-errChan; err != nil {
+			return nil, &errors.GraphQLError{
+				Message:   err.Error(),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			}
 		}
+
 		return result, nil
 	}
 
 	// Handle object type with children
 	if field.Children != nil {
-		cv := make(map[string]interface{})
 		vMap, ok := v.(map[string]interface{})
 		if !ok {
-			return nil, &errors.GraphQLError{
-				Message:   fmt.Sprintf("Expected map type but got %T", v),
-				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			vSyncMap, ok := v.(*sync.Map)
+			if !ok {
+				return nil, &errors.GraphQLError{
+					Message:   fmt.Sprintf("Expected map or sync.Map type but got %T", v),
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
+			}
+			vMap = make(map[string]interface{})
+			vSyncMap.Range(func(key, value interface{}) bool {
+				vMap[key.(string)] = value
+				return true
+			})
+		}
+
+		// Add __typename for union types
+		if typeRef.Kind == ast.KindUnion {
+			if _, ok := vMap["__typename"]; !ok {
+				return nil, &errors.GraphQLError{
+					Message:   "Union type must have __typename field",
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
 			}
 		}
 
-		// Calculate total fields including nested fragments
-		totalFields := countTotalFields(field.Children)
+		sMap := &sync.Map{}
+		for k, v := range vMap {
+			sMap.Store(k, v)
+		}
 
+		totalFields := countTotalFields(field.Children)
 		var wg sync.WaitGroup
 		errChan := make(chan errors.GraphqlErrorInterface, totalFields)
 		resultChan := make(chan struct {
@@ -159,8 +233,10 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 			value interface{}
 		}, totalFields)
 
-		// Process all fields including nested fragments
-		processFields(ctx, field.Children, vMap, &wg, errChan, resultChan)
+		err := processFields(ctx, field.Children, sMap, &wg, errChan, resultChan)
+		if err != nil {
+			return nil, err
+		}
 
 		go func() {
 			wg.Wait()
@@ -172,11 +248,12 @@ func mergeData(ctx *context.Context, field *ast.Field, datas map[string]interfac
 			return nil, err
 		}
 
+		finalResult := make(map[string]interface{})
 		for result := range resultChan {
-			cv[result.key] = result.value
+			finalResult[result.key] = result.value
 		}
 
-		return cv, nil
+		return finalResult, nil
 	}
 
 	// Validate scalar value

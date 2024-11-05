@@ -20,7 +20,7 @@ func StartService(resolver resolve.Resolve) {
 		// Initialize progress bar
 		fmt.Print("\033[?25l")       // Hide cursor
 		defer fmt.Print("\033[?25h") // Show cursor when done
-		smoothProgress(0, 20, "Initializing resolver", time.Millisecond*500)
+		smoothProgress(0, 20, "Initializing resolver", time.Millisecond*100)
 	}
 
 	err := graphql.LoadSchema()
@@ -30,20 +30,20 @@ func StartService(resolver resolve.Resolve) {
 	}
 
 	if env.LighthouseConfig.App.Environment == env.Development {
-		smoothProgress(20, 40, "Loading GraphQL schema", time.Millisecond*300)
+		smoothProgress(20, 40, "Loading GraphQL schema", time.Millisecond*100)
 	}
 
 	port := env.LighthouseConfig.Server.Port
 
 	if env.LighthouseConfig.App.Environment == env.Development {
-		smoothProgress(40, 60, "Configuring server port", time.Millisecond*300)
+		smoothProgress(40, 60, "Configuring server port", time.Millisecond*100)
 	}
 
 	r := net.New()
 
 	if env.LighthouseConfig.App.Environment == env.Development {
-		smoothProgress(60, 80, "Setting up router", time.Millisecond*300)
-		smoothProgress(80, 100, "Starting server", time.Millisecond*300)
+		smoothProgress(60, 80, "Setting up router", time.Millisecond*100)
+		smoothProgress(80, 100, "Starting server", time.Millisecond*100)
 
 		// Clear the progress bar
 		fmt.Print("\033[2K\r") // Clear current line and return cursor to start

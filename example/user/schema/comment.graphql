@@ -1,13 +1,8 @@
 type Comment @model {
   content: String!
   commentableId: ID! @index(name: "commentable")
-  commentableType: CommentableType! @index(name: "commentable")
+  commentableType: String! @index(name: "commentable")
   commentable: Commentable! @morphTo
-}
-
-enum CommentableType {
-  ARTICLE 
-  POST
 }
 
 union Commentable = Article | Post

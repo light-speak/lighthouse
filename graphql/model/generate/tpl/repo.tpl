@@ -11,6 +11,7 @@ func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB
 }
 func First__{{ $name | ucFirst }}(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
   var err error
+  var mu sync.Mutex
   if data == nil {
     data = make(map[string]interface{})
     err = Query__{{ $name | ucFirst }}().Scopes(scopes...).First(data).Error
@@ -19,8 +20,10 @@ func First__{{ $name | ucFirst }}(ctx *context.Context, data map[string]interfac
     }
   }
   for key, value := range data {
-    if fn, ok := models.{{ $name | ucFirst }}EnumFields[key]; ok {
+    if fn := models.{{ $name | ucFirst }}EnumFields(key); fn != nil {
+      mu.Lock()
       data[key] = fn(value)
+      mu.Unlock()
     }
   }
   return data, nil

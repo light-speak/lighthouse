@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/log"
 	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
 )
@@ -17,214 +19,252 @@ type SelectRelation struct {
 	SelectColumns map[string]interface{}
 }
 
-var quickListMap = make(map[string]func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error))
+var (
+	quickListMap     sync.Map
+	quickFirstMap    sync.Map
+	quickLoadMap     sync.Map
+	quickLoadListMap sync.Map
+	quickCountMap    sync.Map
+)
 
-var quickFirstMap = make(map[string]func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error))
-
-var quickLoadMap = make(map[string]func(ctx *context.Context, key int64, field string) (map[string]interface{}, error))
-
-var quickLoadListMap = make(map[string]func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error))
-
-var quickCountMap = make(map[string]func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error))
-
-func AddQuickList(name string, fn func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error)) {
-	quickListMap[name] = fn
+func AddQuickList(name string, fn func(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error)) {
+	quickListMap.Store(name, fn)
 }
-func AddQuickFirst(name string, fn func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error)) {
-	quickFirstMap[name] = fn
+
+func AddQuickFirst(name string, fn func(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error)) {
+	quickFirstMap.Store(name, fn)
 }
-func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string) (map[string]interface{}, error)) {
-	quickLoadMap[name] = fn
+
+func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string) (*sync.Map, error)) {
+	quickLoadMap.Store(name, fn)
 }
-func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error)) {
-	quickLoadListMap[name] = fn
+
+func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string) ([]*sync.Map, error)) {
+	quickLoadListMap.Store(name, fn)
 }
+
 func AddQuickCount(name string, fn func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error)) {
-	quickCountMap[name] = fn
+	quickCountMap.Store(name, fn)
 }
 
-func GetQuickFirst(name string) func(ctx *context.Context, data map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) (map[string]interface{}, error) {
-	fn, ok := quickFirstMap[name]
-	if !ok {
-		return nil
+func GetQuickFirst(name string) func(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+	if fn, ok := quickFirstMap.Load(name); ok {
+		return fn.(func(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error))
 	}
-	return fn
+	return nil
 }
 
-func GetQuickList(name string) func(ctx *context.Context, datas []map[string]interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]map[string]interface{}, error) {
-	fn, ok := quickListMap[name]
-	if !ok {
-		return nil
+func GetQuickList(name string) func(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+	if fn, ok := quickListMap.Load(name); ok {
+		return fn.(func(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error))
 	}
-	return fn
+	return nil
 }
 
-func GetQuickLoad(name string) func(ctx *context.Context, key int64, field string) (map[string]interface{}, error) {
-	fn, ok := quickLoadMap[name]
-	if !ok {
-		return nil
+func GetQuickLoad(name string) func(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+	if fn, ok := quickLoadMap.Load(name); ok {
+		return fn.(func(ctx *context.Context, key int64, field string) (*sync.Map, error))
 	}
-	return fn
+	return nil
 }
 
-func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string) ([]map[string]interface{}, error) {
-	fn, ok := quickLoadListMap[name]
-	if !ok {
-		return nil
+func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+	if fn, ok := quickLoadListMap.Load(name); ok {
+		return fn.(func(ctx *context.Context, key int64, field string) ([]*sync.Map, error))
 	}
-	return fn
+	return nil
 }
 
 func GetQuickCount(name string) func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-	fn, ok := quickCountMap[name]
-	if !ok {
-		return nil
+	if fn, ok := quickCountMap.Load(name); ok {
+		return fn.(func(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error))
 	}
-	return fn
+	return nil
 }
 
-func StructToMap(m ModelInterface) (map[string]interface{}, error) {
+func StructToMap(m ModelInterface) (*sync.Map, error) {
 	jsonData, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]interface{}
-	err = json.Unmarshal(jsonData, &result)
-	if err != nil {
+	result := make(map[string]interface{})
+	if err = json.Unmarshal(jsonData, &result); err != nil {
 		return nil, err
 	}
+
+	syncMap := &sync.Map{}
 	for key, value := range result {
-		switch v := value.(type) {
-		case float64:
-			if v == float64(int64(v)) {
-				result[key] = int64(v)
-			}
+		if v, ok := value.(float64); ok && v == float64(int64(v)) {
+			syncMap.Store(key, int64(v))
+		} else {
+			syncMap.Store(key, value)
 		}
 	}
 
-	result["__typename"] = m.TypeName()
-	return result, nil
+	syncMap.Store("__typename", m.TypeName())
+	return syncMap, nil
 }
 
-func TypeToMap(m interface{}) (map[string]interface{}, error) {
+func TypeToMap(m interface{}) (*sync.Map, error) {
 	jsonData, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]interface{}
-	err = json.Unmarshal(jsonData, &result)
-	if err != nil {
+	result := make(map[string]interface{})
+	if err = json.Unmarshal(jsonData, &result); err != nil {
 		return nil, err
 	}
+
+	syncMap := &sync.Map{}
 	for key, value := range result {
-		switch v := value.(type) {
-		case float64:
-			if v == float64(int64(v)) {
-				result[key] = int64(v)
-			}
+		if v, ok := value.(float64); ok && v == float64(int64(v)) {
+			syncMap.Store(key, int64(v))
+		} else {
+			syncMap.Store(key, value)
 		}
 	}
 
-	return result, nil
+	return syncMap, nil
 }
 
-func MapToStruct[T any](data map[string]interface{}) (T, error) {
+func MapToStruct[T any](data *sync.Map) (T, error) {
 	var m T
-	jsonData, err := json.Marshal(data)
+	tempMap := make(map[string]interface{})
+	data.Range(func(key, value interface{}) bool {
+		tempMap[key.(string)] = value
+		return true
+	})
+
+	jsonData, err := json.Marshal(tempMap)
 	if err != nil {
 		return m, err
 	}
-	err = json.Unmarshal(jsonData, &m)
-	if err != nil {
+	if err = json.Unmarshal(jsonData, &m); err != nil {
 		return m, err
 	}
 	return m, nil
 }
 
-func FetchRelation(ctx *context.Context, data map[string]interface{}, relation *ast.Relation) (interface{}, error) {
+func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation) (interface{}, error) {
 	switch relation.RelationType {
 	case ast.RelationTypeBelongsTo:
-		fieldValue, ok := data[relation.ForeignKey]
+		fieldValue, ok := data.Load(relation.ForeignKey)
 		if !ok {
 			return nil, &errors.GraphQLError{
 				Message:   fmt.Sprintf("field %s not found in function %s", relation.ForeignKey, "FetchRelation"),
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		data, err := fetchBelongsTo(ctx, relation, fieldValue)
-		if err != nil {
-			return nil, err
-		}
-		return data, nil
+		return fetchBelongsTo(ctx, relation.Name, relation.Reference, fieldValue)
+
 	case ast.RelationTypeHasMany:
-		fieldValue, ok := data[relation.Reference]
+		fieldValue, ok := data.Load(relation.Reference)
 		if !ok {
 			return nil, &errors.GraphQLError{
 				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		datas, err := fetchHasMany(ctx, relation, fieldValue)
-		if err != nil {
-			return nil, err
+		return fetchHasMany(ctx, relation.Name, relation.ForeignKey, fieldValue)
+	case ast.RelationTypeMorphTo:
+		fieldValue, ok := data.Load(relation.MorphKey)
+		if !ok {
+			return nil, &errors.GraphQLError{
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.MorphKey, "FetchRelation"),
+				Locations: []*errors.GraphqlLocation{},
+			}
 		}
-		return datas, nil
+		relationName, ok := data.Load(relation.MorphType)
+		if !ok {
+			return nil, fmt.Errorf("field %s is not found", relation.MorphType)
+		}
+		relationNameStr, ok := relationName.(string)
+		if !ok {
+			return nil, fmt.Errorf("field %s is not a string", relation.MorphType)
+		}
+		return fetchBelongsTo(ctx, relationNameStr, relation.Reference, fieldValue)
 	}
 	return nil, nil
 }
 
-func fetchHasMany(ctx *context.Context, relation *ast.Relation, fieldValue interface{}) ([]map[string]interface{}, error) {
-	var err error
-	var key int64
-	switch v := fieldValue.(type) {
-	case int64:
-		key = v
-	case string:
-		key, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-	case float64:
-		key = int64(v)
-	default:
-		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Name, relation.ForeignKey, fieldValue, fieldValue)
-	}
-	datas, err := GetQuickLoadList(utils.UcFirst(relation.Name))(ctx, key, relation.ForeignKey)
+func fetchHasMany(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) ([]*sync.Map, error) {
+	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err
 	}
-	datas, err = GetQuickList(utils.UcFirst(relation.Name))(ctx, datas)
+
+	loadListFn := GetQuickLoadList(utils.UcFirst(utils.CamelCase(relationName)))
+	if loadListFn == nil {
+		return nil, fmt.Errorf("relation %s not found", relationName)
+	}
+
+	datas, err := loadListFn(ctx, key, foreignKey)
 	if err != nil {
 		return nil, err
+	}
+
+	listFn := GetQuickList(utils.UcFirst(utils.CamelCase(relationName)))
+	if listFn == nil {
+		return nil, fmt.Errorf("relation %s not found", relationName)
+	}
+
+	datas, err = listFn(ctx, datas)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, data := range datas {
+		data.Store("__typename", relationName)
 	}
 	return datas, nil
 }
 
-func fetchBelongsTo(ctx *context.Context, relation *ast.Relation, fieldValue interface{}) (map[string]interface{}, error) {
-	var err error
-	var key int64
-	switch v := fieldValue.(type) {
-	case int64:
-		key = v
-	case string:
-		key, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-	case float64:
-		key = int64(v)
-	default:
-		return nil, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relation.Name, relation.ForeignKey, fieldValue, fieldValue)
-	}
-	data, err := GetQuickLoad(utils.UcFirst(relation.Name))(ctx, key, relation.Reference)
+func fetchBelongsTo(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) (*sync.Map, error) {
+	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err
 	}
-	data, err = GetQuickFirst(utils.UcFirst(relation.Name))(ctx, data)
+
+	loadFn := GetQuickLoad(utils.UcFirst(utils.CamelCase(relationName)))
+	if loadFn == nil {
+		return nil, fmt.Errorf("relation %s not found", relationName)
+	}
+
+	data, err := loadFn(ctx, key, foreignKey)
 	if err != nil {
 		return nil, err
 	}
+
+	firstFn := GetQuickFirst(utils.UcFirst(utils.CamelCase(relationName)))
+	if firstFn == nil {
+		return nil, fmt.Errorf("relation %s not found", relationName)
+	}
+	log.Warn().Msgf("data: %+v, %v", data, utils.UcFirst(utils.CamelCase(relationName)))
+
+	data, err = firstFn(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+
+	data.Store("__typename", relationName)
 	return data, nil
+}
+
+func convertToInt64(relationName string, fieldName string, value interface{}) (int64, error) {
+	switch v := value.(type) {
+	case int64:
+		return v, nil
+	case string:
+		key, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return key, nil
+	case float64:
+		return int64(v), nil
+	default:
+		return 0, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relationName, fieldName, value, value)
+	}
 }

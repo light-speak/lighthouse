@@ -2,6 +2,7 @@ package excute
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
@@ -56,61 +57,92 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 		ctx.Errors = append(ctx.Errors, e)
 		panic(e)
 	}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	errChan := make(chan errors.GraphqlErrorInterface, len(qp.Fields))
 
 	for _, field := range qp.Fields {
-		quickRes, isQuick, err := QuickExecute(ctx, field)
-		if err != nil {
-			ctx.Errors = append(ctx.Errors, err)
-			continue
-		}
-		if quickRes != nil {
-			res[field.Name] = quickRes
-			continue
-		}
-		if isQuick {
-			if field.Type.Kind == ast.KindNonNull {
-				e := &errors.GraphQLError{
-					Message:   "field is not nullable",
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		wg.Add(1)
+		go func(field *ast.Field) {
+			defer wg.Done()
+
+			quickRes, isQuick, err := QuickExecute(ctx, field)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			if quickRes != nil {
+				mu.Lock()
+				res[field.Name] = quickRes
+				mu.Unlock()
+				return
+			}
+			if isQuick {
+				if field.Type.Kind == ast.KindNonNull {
+					e := &errors.GraphQLError{
+						Message:   "field is not nullable",
+						Locations: []*errors.GraphqlLocation{field.GetLocation()},
+					}
+					errChan <- e
+					return
 				}
-				ctx.Errors = append(ctx.Errors, e)
-				continue
+				mu.Lock()
+				res[field.Name] = nil
+				mu.Unlock()
+				return
 			}
-			res[field.Name] = nil
-			continue
-		}
 
-		if queryFunc, ok := funMap[field.Name]; ok {
-			r, e := queryFunc(qp, field)
-			if e != nil {
-				ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-					Message:   e.Error(),
-					Locations: []*errors.GraphqlLocation{field.GetLocation()},
-				})
-				continue
+			if queryFunc, ok := funMap[field.Name]; ok {
+				r, e := queryFunc(qp, field)
+				if e != nil {
+					errChan <- &errors.GraphQLError{
+						Message:   e.Error(),
+						Locations: []*errors.GraphqlLocation{field.GetLocation()},
+					}
+					return
+				}
+				mu.Lock()
+				res[field.Name] = r
+				mu.Unlock()
+				return
 			}
-			res[field.Name] = r
-			continue
-		}
 
-		r, isResolver, err := executeResolver(ctx, field)
-		if err != nil {
-			ctx.Errors = append(ctx.Errors, err)
-			continue
-		}
-		if r != nil && isResolver {
-			res[field.Name] = r
-			continue
-		}
-		if r == nil && isResolver {
-			res[field.Name] = nil
-			continue
-		}
+			r, isResolver, err := executeResolver(ctx, field)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			if r != nil && isResolver {
+				mu.Lock()
+				res[field.Name] = r
+				mu.Unlock()
+				return
+			}
+			if r == nil && isResolver {
+				mu.Lock()
+				res[field.Name] = nil
+				mu.Unlock()
+				return
+			}
 
-		ctx.Errors = append(ctx.Errors, &errors.GraphQLError{
-			Message:   fmt.Sprintf("query %s not found", field.Name),
-			Locations: []*errors.GraphqlLocation{field.GetLocation()},
-		})
+			errChan <- &errors.GraphQLError{
+				Message:   fmt.Sprintf("query %s not found", field.Name),
+				Locations: []*errors.GraphqlLocation{field.GetLocation()},
+			}
+		}(field)
+	}
+
+	// Wait for all goroutines to finish
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	// Collect errors
+	for err := range errChan {
+		mu.Lock()
+		ctx.Errors = append(ctx.Errors, err)
+		mu.Unlock()
 	}
 	return res
 }

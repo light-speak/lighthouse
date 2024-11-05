@@ -3,11 +3,11 @@ package resolver
 
 import (
   "github.com/light-speak/lighthouse/graphql/model"
-  "fmt"
   "user/models"
+  "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/auth"
   "github.com/light-speak/lighthouse/log"
-  "github.com/light-speak/lighthouse/context"
+  "fmt"
 )
 
 
