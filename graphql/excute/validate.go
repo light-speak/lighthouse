@@ -33,7 +33,6 @@ func ValidateValue(field *ast.Field, value interface{}, isVariable bool) (interf
 			}
 		}
 	case ast.KindEnum:
-
 		if e, ok := value.(model.EnumInterface); ok {
 			v = e.ToString()
 		} else {

@@ -65,16 +65,36 @@ func firstEntity[T any](ctx *context.Context, data *sync.Map, enumFieldsFn func(
 }
 
 // Generic list function
-func listEntity[T any](ctx *context.Context, datas []*sync.Map, model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+func listEntity[T any](ctx *context.Context, datas []*sync.Map, enumFieldsFn func(string) func(interface{}) interface{}, model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
   if datas == nil {
     mapDatas := make([]map[string]interface{}, 0)
     err := queryEntity[T](model).Scopes(scopes...).Find(&mapDatas).Error
     if err != nil {
       return nil, err
     }
-    return utils.MapSliceToSyncMapSlice(mapDatas), nil
+    datas = utils.MapSliceToSyncMapSlice(mapDatas)
   }
-  return datas, nil
+
+  var mu sync.Mutex
+  results := make([]*sync.Map, len(datas))
+  
+  for i, data := range datas {
+    result := &sync.Map{}
+    data.Range(func(key, value interface{}) bool {
+      k := key.(string)
+      if fn := enumFieldsFn(k); fn != nil {
+        mu.Lock()
+        result.Store(k, fn(value))
+        mu.Unlock()
+      } else {
+        result.Store(k, value)
+      }
+      return true
+    })
+    results[i] = result
+  }
+  
+  return results, nil
 }
 
 // Generic count function
@@ -102,7 +122,7 @@ func First__Wallet(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm
 }
 
 func List__Wallet(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Wallet](ctx, datas, &models.Wallet{}, scopes...)
+  return listEntity[models.Wallet](ctx, datas, models.WalletEnumFields, &models.Wallet{}, scopes...)
 }
 
 func Count__Wallet(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
@@ -126,7 +146,7 @@ func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gor
 }
 
 func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
+  return listEntity[models.Article](ctx, datas, models.ArticleEnumFields, &models.Article{}, scopes...)
 }
 
 func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
@@ -150,7 +170,7 @@ func First__Comment(ctx *context.Context, data *sync.Map, scopes ...func(db *gor
 }
 
 func List__Comment(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Comment](ctx, datas, &models.Comment{}, scopes...)
+  return listEntity[models.Comment](ctx, datas, models.CommentEnumFields, &models.Comment{}, scopes...)
 }
 
 func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
@@ -174,7 +194,7 @@ func First__User(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.D
 }
 
 func List__User(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.User](ctx, datas, &models.User{}, scopes...)
+  return listEntity[models.User](ctx, datas, models.UserEnumFields, &models.User{}, scopes...)
 }
 
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
@@ -198,7 +218,7 @@ func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.D
 }
 
 func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Post](ctx, datas, &models.Post{}, scopes...)
+  return listEntity[models.Post](ctx, datas, models.PostEnumFields, &models.Post{}, scopes...)
 }
 
 func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
