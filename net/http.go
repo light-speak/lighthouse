@@ -1,7 +1,9 @@
 package net
 
 import (
+	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +14,10 @@ import (
 )
 
 func New() *chi.Mux {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	r := chi.NewRouter()
 	setMiddlewares(r)
 	setRoutes(r)

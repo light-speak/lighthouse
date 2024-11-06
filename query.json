@@ -1,0 +1,7 @@
+{
+  "query": "query Posts($postsId: [ID!]!, $userId: ID!) { posts(id: $postsId, user_id: $userId) { id title user { ...EE } } } fragment EE on User { id ...OO } fragment OO on User { name myPosts { id } } }",
+  "variables": {
+    "postsId": ["1", "2", "3", "4", "5", "6"],
+    "userId": "1"
+  }
+} 

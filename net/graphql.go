@@ -11,6 +11,8 @@ import (
 	"github.com/light-speak/lighthouse/log"
 )
 
+var requestLimit = make(chan struct{}, env.LighthouseConfig.Server.Throttle/8)
+
 type GraphQLRequest struct {
 	Query     string         `json:"query"`
 	Variables map[string]any `json:"variables"`
@@ -22,6 +24,11 @@ type GraphQLResponse struct {
 }
 
 func graphQLHandler(w http.ResponseWriter, r *http.Request) {
+	requestLimit <- struct{}{}
+	defer func() {
+		<-requestLimit
+	}()
+
 	var request GraphQLRequest
 
 	switch r.Method {

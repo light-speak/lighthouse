@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
@@ -13,15 +14,21 @@ import (
 //go:embed base.graphql
 var baseSchema string
 
+var parserPool = sync.Pool{
+	New: func() interface{} {
+		return &Parser{
+			NodeStore: &ast.NodeStore{},
+		}
+	},
+}
+
 type ParserInterface interface {
 	GetLexer() *lexer.Lexer
 	NextToken() error
 }
 
 type BaseParser struct {
-	// lexer is the Lexer instance used for lexical analysis, converting the input GraphQL text into a stream of tokens.
-	lexer *lexer.Lexer
-	// currToken is the current token being processed, which helps the parser determine its state.
+	lexer     *lexer.Lexer
 	currToken *lexer.Token
 }
 
@@ -38,16 +45,11 @@ func (p *BaseParser) NextToken() error {
 	return nil
 }
 
-// Parser is responsible for parsing the GraphQL schema.
-// It contains a lexer for tokenizing the input and the current token being processed.
-// The various maps are used to store different types of AST nodes for quick lookup and management during parsing.
 type Parser struct {
 	BaseParser
-	// NodeStore is a store of all parsed nodes
 	NodeStore *ast.NodeStore
 }
 
-// ReadGraphQLFile read graphql file and return a lexer
 func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -57,8 +59,9 @@ func ReadGraphQLFile(path string) (*lexer.Lexer, error) {
 }
 
 func ReadGraphQLFiles(paths []string) (*lexer.Lexer, errors.GraphqlErrorInterface) {
-	contents := make([]*lexer.Content, 0)
+	contents := make([]*lexer.Content, 0, len(paths)+1)
 	contents = append(contents, &lexer.Content{Path: nil, Content: baseSchema + "\n"})
+
 	for _, path := range paths {
 		content, err := os.ReadFile(path)
 		if err != nil {
@@ -72,23 +75,19 @@ func ReadGraphQLFiles(paths []string) (*lexer.Lexer, errors.GraphqlErrorInterfac
 	return lexer.NewLexer(contents), nil
 }
 
-// NewParser create a new parser
 func NewParser(lexer *lexer.Lexer) *Parser {
-	p := &Parser{BaseParser: BaseParser{lexer: lexer}}
-	p.nextToken() // Initialize currToken
+	p := parserPool.Get().(*Parser)
+	p.lexer = lexer
+	p.nextToken()
 	return p
 }
 
-// NewQueryParser create a new query parser, which is used to parse query
-// it will parse the operation and fragments
-// and store them in the QueryParser
 func (p *Parser) NewQueryParser(queryLexer *lexer.Lexer) *QueryParser {
 	qp := &QueryParser{BaseParser: BaseParser{lexer: queryLexer}, Parser: p}
 	qp.NextToken()
 	return qp
 }
 
-// nextToken move to next token
 func (p *Parser) nextToken() error {
 	var err error
 	p.currToken, err = p.lexer.NextToken()
@@ -98,12 +97,10 @@ func (p *Parser) nextToken() error {
 	return nil
 }
 
-// ParseSchema parse schema
-// return a list of ast nodes
-// the nodes is a list of type, enum, interface, input, scalar, union, directive, extend
 func (p *Parser) ParseSchema() map[string]ast.Node {
 	p.NodeStore = &ast.NodeStore{}
 	p.NodeStore.InitStore()
+
 	tokenTypeToParseFunc := map[lexer.TokenType]func(){
 		lexer.Type:      func() { p.parseObject() },
 		lexer.Extend:    func() { p.parseExtend() },
@@ -132,16 +129,15 @@ func (p *Parser) ParseSchema() map[string]ast.Node {
 
 	p.AddReserved()
 
+	defer parserPool.Put(p)
+
 	return p.NodeStore.Nodes
 }
 
-// PreviousToken return Previous Token
 func (p *BaseParser) PreviousToken() *lexer.Token {
 	return p.lexer.PreviousToken()
 }
 
-// expect check if the current token is the expected token
-// if not, panic
 func (p *BaseParser) expect(t lexer.TokenType, options ...bool) {
 	if p.currToken.Type != t {
 		panic(fmt.Sprintf("expect: %s but got: %s at line %d position %d", t, p.currToken.Value, p.currToken.Line, p.currToken.LinePosition))
@@ -151,6 +147,7 @@ func (p *BaseParser) expect(t lexer.TokenType, options ...bool) {
 		p.NextToken()
 	}
 }
+
 func (p *Parser) AddInput(node *ast.InputObjectNode, extend bool) {
 	if extend {
 		if existingNode, ok := p.NodeStore.Inputs[node.Name]; ok {
@@ -308,7 +305,6 @@ func (p *Parser) isNameConflict(name string) {
 	}
 }
 
-// AddScalarType add a scalar type
 func (p *Parser) AddScalarType(name string, scalarType ast.ScalarType) {
 	if p.NodeStore.ScalarTypes == nil {
 		p.NodeStore.ScalarTypes = make(map[string]ast.ScalarType)

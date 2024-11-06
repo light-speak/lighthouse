@@ -36,3 +36,8 @@ func (r *Resolver) CreatePostResolver(ctx *context.Context, input *models.TestIn
 	return nil, nil
 	// Func:CreatePost user code end. Do not remove this comment.
 }
+func (r *Resolver) CreatePost2Resolver(ctx *context.Context, name string) (*models.Post, error) {
+	// Func:CreatePost2 user code start. Do not remove this comment.
+	return nil, nil
+	// Func:CreatePost2 user code end. Do not remove this comment.
+}

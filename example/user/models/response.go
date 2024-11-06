@@ -5,9 +5,9 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 
 
 type LoginResponse struct {
-  Authorization string `json:"authorization" gorm:"type:varchar(255)" `
   User *User `json:"user" `
-  Token string `json:"token" gorm:"type:varchar(255)" `
+  Token string `gorm:"type:varchar(255)" json:"token" `
+  Authorization string `json:"authorization" gorm:"type:varchar(255)" `
 }
 
 type PostPaginateResponse struct {
@@ -15,11 +15,11 @@ type PostPaginateResponse struct {
   PaginateInfo *model.PaginateInfo `json:"paginate_info" `
 }
 
-type Test struct {
-  Test string `gorm:"type:varchar(255)" json:"test" `
-}
-
 type UserPaginateResponse struct {
   Data *[]*User `json:"data" `
   PaginateInfo *model.PaginateInfo `json:"paginate_info" `
+}
+
+type Test struct {
+  Test string `json:"test" gorm:"type:varchar(255)" `
 }

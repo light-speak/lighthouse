@@ -34,6 +34,10 @@ func init() {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to connect database")
 	}
+	sqlDB, _ := db.DB()
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(env.LighthouseConfig.Server.Throttle / 2)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 }
 
 func GetDB() *gorm.DB { return db }

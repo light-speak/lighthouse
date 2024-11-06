@@ -2,19 +2,18 @@
 package resolver
 
 import (
+  "user/models"
+  "github.com/light-speak/lighthouse/log"
   "github.com/light-speak/lighthouse/graphql/model"
   "fmt"
-  "github.com/light-speak/lighthouse/log"
   "github.com/light-speak/lighthouse/context"
-  "user/models"
 )
 
 
-func (r *Resolver) TestPostInputResolver(ctx *context.Context,input *models.TestInput) (string, error) {
-	// Func:TestPostInput user code start. Do not remove this comment.
-	res := fmt.Sprintf("input: %+v", input)
-	return res, nil
-	// Func:TestPostInput user code end. Do not remove this comment. 
+func (r *Resolver) GetPostIdsResolver(ctx *context.Context) ([]int64, error) {
+	// Func:GetPostIds user code start. Do not remove this comment.
+	return []int64{1, 2, 3}, nil
+	// Func:GetPostIds user code end. Do not remove this comment. 
 }
 func (r *Resolver) TestPostIdResolver(ctx *context.Context,id int64) (*models.Post, error) {
 	// Func:TestPostId user code start. Do not remove this comment.
@@ -22,31 +21,21 @@ func (r *Resolver) TestPostIdResolver(ctx *context.Context,id int64) (*models.Po
 	return nil, nil
 	// Func:TestPostId user code end. Do not remove this comment. 
 }
-func (r *Resolver) GetPostIdsResolver(ctx *context.Context) ([]int64, error) {
-	// Func:GetPostIds user code start. Do not remove this comment.
-	return []int64{1, 2, 3}, nil
-	// Func:GetPostIds user code end. Do not remove this comment. 
-}
-func (r *Resolver) TestPostEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
-	// Func:TestPostEnum user code start. Do not remove this comment.
-	log.Debug().Msgf("enum: %+v", enum)
-	res := fmt.Sprintf("啥也不是！：%v", *enum == models.TestEnumA)
-	return res, nil
-	// Func:TestPostEnum user code end. Do not remove this comment. 
+func (r *Resolver) TestNullableEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
+	// Func:TestNullableEnum user code start. Do not remove this comment.
+	panic("not implement")
+	// Func:TestNullableEnum user code end. Do not remove this comment. 
 }
 func (r *Resolver) TestPostIntResolver(ctx *context.Context,id bool) (*models.Post, error) {
 	// Func:TestPostInt user code start. Do not remove this comment.
 	return nil, nil
 	// Func:TestPostInt user code end. Do not remove this comment. 
 }
-func (r *Resolver) GetPostResolver(ctx *context.Context,fuck string) (*models.Post, error) {
-	// Func:GetPost user code start. Do not remove this comment.
-	log.Debug().Msg("GetPostResolver")
-	db := model.GetDB()
-	post := &models.Post{}
-	db.Where("id = ?", fuck).First(post)
-	return post, nil
-	// Func:GetPost user code end. Do not remove this comment. 
+func (r *Resolver) TestPostInputResolver(ctx *context.Context,input *models.TestInput) (string, error) {
+	// Func:TestPostInput user code start. Do not remove this comment.
+	res := fmt.Sprintf("input: %+v", input)
+	return res, nil
+	// Func:TestPostInput user code end. Do not remove this comment. 
 }
 func (r *Resolver) GetPostsResolver(ctx *context.Context,fuck string) ([]*models.Post, error) {
 	// Func:GetPosts user code start. Do not remove this comment.
@@ -56,8 +45,19 @@ func (r *Resolver) GetPostsResolver(ctx *context.Context,fuck string) ([]*models
 	return posts, nil
 	// Func:GetPosts user code end. Do not remove this comment. 
 }
-func (r *Resolver) TestNullableEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
-	// Func:TestNullableEnum user code start. Do not remove this comment.
-	panic("not implement")
-	// Func:TestNullableEnum user code end. Do not remove this comment. 
+func (r *Resolver) TestPostEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
+	// Func:TestPostEnum user code start. Do not remove this comment.
+	log.Debug().Msgf("enum: %+v", enum)
+	res := fmt.Sprintf("啥也不是！：%v", *enum == models.TestEnumA)
+	return res, nil
+	// Func:TestPostEnum user code end. Do not remove this comment. 
+}
+func (r *Resolver) GetPostResolver(ctx *context.Context,fuck string) (*models.Post, error) {
+	// Func:GetPost user code start. Do not remove this comment.
+	log.Debug().Msg("GetPostResolver")
+	db := model.GetDB()
+	post := &models.Post{}
+	db.Where("id = ?", fuck).First(post)
+	return post, nil
+	// Func:GetPost user code end. Do not remove this comment. 
 }

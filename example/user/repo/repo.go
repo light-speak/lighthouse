@@ -2,12 +2,12 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/utils"
   "github.com/light-speak/lighthouse/graphql/model"
+  "user/models"
   "gorm.io/gorm"
   "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/utils"
   "sync"
-  "user/models"
 )
 
 // Generic loader function
@@ -84,53 +84,29 @@ func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB)
   return count, err
 }
 
-// Post functions
-func Load__Post(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.Post](ctx, key, "posts", field)
+// Comment functions
+func Load__Comment(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Comment](ctx, key, "comments", field)
 }
 
-func LoadList__Post(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.Post](ctx, key, "posts", field)
+func LoadList__Comment(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Comment](ctx, key, "comments", field)
 }
 
-func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Post](&models.Post{}, scopes...)
+func Query__Comment(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Comment](&models.Comment{}, scopes...)
 }
 
-func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Post](ctx, data, models.PostEnumFields, &models.Post{}, scopes...)
+func First__Comment(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Comment](ctx, data, models.CommentEnumFields, &models.Comment{}, scopes...)
 }
 
-func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Post](ctx, datas, &models.Post{}, scopes...)
+func List__Comment(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Comment](ctx, datas, &models.Comment{}, scopes...)
 }
 
-func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Post](&models.Post{}, scopes...)
-}
-// Article functions
-func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.Article](ctx, key, "articles", field)
-}
-
-func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.Article](ctx, key, "articles", field)
-}
-
-func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Article](&models.Article{}, scopes...)
-}
-
-func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
-}
-
-func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
-}
-
-func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Article](&models.Article{}, scopes...)
+func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Comment](&models.Comment{}, scopes...)
 }
 // User functions
 func Load__User(ctx *context.Context, key int64, field string) (*sync.Map, error) {
@@ -156,51 +132,75 @@ func List__User(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.User](&models.User{}, scopes...)
 }
-// Comment functions
-func Load__Comment(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.Comment](ctx, key, "comments", field)
+// Article functions
+func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Article](ctx, key, "articles", field)
 }
 
-func LoadList__Comment(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.Comment](ctx, key, "comments", field)
+func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Article](ctx, key, "articles", field)
 }
 
-func Query__Comment(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Comment](&models.Comment{}, scopes...)
+func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Article](&models.Article{}, scopes...)
 }
 
-func First__Comment(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Comment](ctx, data, models.CommentEnumFields, &models.Comment{}, scopes...)
+func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
 }
 
-func List__Comment(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Comment](ctx, datas, &models.Comment{}, scopes...)
+func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
 }
 
-func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Comment](&models.Comment{}, scopes...)
+func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Article](&models.Article{}, scopes...)
+}
+// Post functions
+func Load__Post(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Post](ctx, key, "posts", field)
+}
+
+func LoadList__Post(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Post](ctx, key, "posts", field)
+}
+
+func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Post](&models.Post{}, scopes...)
+}
+
+func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Post](ctx, data, models.PostEnumFields, &models.Post{}, scopes...)
+}
+
+func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Post](ctx, datas, &models.Post{}, scopes...)
+}
+
+func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Post](&models.Post{}, scopes...)
 }
 
 
 func init() {
-  model.AddQuickFirst("Post", First__Post)
-  model.AddQuickList("Post", List__Post)
-  model.AddQuickLoad("Post", Load__Post)
-  model.AddQuickLoadList("Post", LoadList__Post)
-  model.AddQuickCount("Post", Count__Post)
-  model.AddQuickFirst("Article", First__Article)
-  model.AddQuickList("Article", List__Article)
-  model.AddQuickLoad("Article", Load__Article)
-  model.AddQuickLoadList("Article", LoadList__Article)
-  model.AddQuickCount("Article", Count__Article)
-  model.AddQuickFirst("User", First__User)
-  model.AddQuickList("User", List__User)
-  model.AddQuickLoad("User", Load__User)
-  model.AddQuickLoadList("User", LoadList__User)
-  model.AddQuickCount("User", Count__User)
   model.AddQuickFirst("Comment", First__Comment)
   model.AddQuickList("Comment", List__Comment)
   model.AddQuickLoad("Comment", Load__Comment)
   model.AddQuickLoadList("Comment", LoadList__Comment)
   model.AddQuickCount("Comment", Count__Comment)
+  model.AddQuickFirst("User", First__User)
+  model.AddQuickList("User", List__User)
+  model.AddQuickLoad("User", Load__User)
+  model.AddQuickLoadList("User", LoadList__User)
+  model.AddQuickCount("User", Count__User)
+  model.AddQuickFirst("Article", First__Article)
+  model.AddQuickList("Article", List__Article)
+  model.AddQuickLoad("Article", Load__Article)
+  model.AddQuickLoadList("Article", LoadList__Article)
+  model.AddQuickCount("Article", Count__Article)
+  model.AddQuickFirst("Post", First__Post)
+  model.AddQuickList("Post", List__Post)
+  model.AddQuickLoad("Post", Load__Post)
+  model.AddQuickLoadList("Post", LoadList__Post)
+  model.AddQuickCount("Post", Count__Post)
 }
