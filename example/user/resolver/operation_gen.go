@@ -2,13 +2,13 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/graphql/excute"
-  "github.com/light-speak/lighthouse/resolve"
-  "user/models"
-  "github.com/light-speak/lighthouse/graphql/model"
-  "fmt"
   "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/resolve"
   "sync"
+  "user/models"
+  "github.com/light-speak/lighthouse/graphql/excute"
+  "fmt"
   "github.com/light-speak/lighthouse/graphql"
 )
 
@@ -166,6 +166,18 @@ func init() {
   })
   excute.AddResolver("createPost2", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
     r := resolve.(*Resolver)
+    var age int64
+    if args["age"] != nil {
+      page, e := graphql.Parser.NodeStore.Scalars["Int"].ScalarType.ParseValue(args["age"], nil)
+      if e != nil {
+        return nil, e
+      }
+      var ok bool
+      age, ok = page.(int64)
+      if !ok {
+        return nil, fmt.Errorf("argument: 'age' is not a int64, got %T", args["age"])
+      }
+    }
     var name string
     if args["name"] != nil {
       pname, e := graphql.Parser.NodeStore.Scalars["String"].ScalarType.ParseValue(args["name"], nil)
@@ -178,7 +190,7 @@ func init() {
         return nil, fmt.Errorf("argument: 'name' is not a string, got %T", args["name"])
       }
     }
-    res, err := r.CreatePost2Resolver(ctx, name)
+    res, err := r.CreatePost2Resolver(ctx, age, name)
     if res == nil {
       return nil, err
     }

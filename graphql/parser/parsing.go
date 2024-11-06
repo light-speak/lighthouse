@@ -258,8 +258,16 @@ func (p *BaseParser) parseArguments() map[string]*ast.Argument {
 		if p.currToken.Type == lexer.Comma {
 			p.expect(lexer.Comma)
 		}
+		for {
+			if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
+				p.NextToken()
+			} else {
+				break
+			}
+		}
 		arg := p.parseArgument()
 		args[arg.Name] = arg
+
 		if p.currToken.Type == lexer.RightParent {
 			break
 		}

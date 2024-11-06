@@ -1,4 +1,14 @@
 {{- range $key, $field := .Fields }}
+// {{ $field.Name | ucFirst }} {{ $field.Description }}
+// 
+// Parameters:
+{{- range $index, $arg := $field.Args }}
+// - {{ $arg.Name }}: {{ $arg.Description }}
+{{- end }}
+// 
+// Returns:
+// 
+// - {{ false | $field.Type.GetGoType }}
 func (r *Resolver) {{ $field.Name | ucFirst }}Resolver(ctx *context.Context
 	{{- range $index, $arg := $field.Args -}}, 
 	{{- $arg.Name -}}

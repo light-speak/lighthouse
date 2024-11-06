@@ -3,6 +3,8 @@ type User implements HasName @model {
   name: String! @index
   "五二零"
   myPosts: [Post!]! @hasMany(relation: "post", foreignKey: "user_id")
+
+  wallet: Wallet! @hasOne
 }
 
 extend type Query {
@@ -17,7 +19,9 @@ type LoginResponse {
 }
 
 extend type Mutation {
-  login(name: String!): LoginResponse!
+  login(
+    name: String!
+  ): LoginResponse!
 }
 
 interface Userable {

@@ -1,0 +1,6 @@
+type Wallet @model {
+  id: ID!
+  userId: ID!
+  user: User! @belongsTo
+  balance: Int!
+}

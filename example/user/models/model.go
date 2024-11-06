@@ -4,10 +4,24 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
+type Wallet struct {
+  model.Model
+  UserId int64 `json:"user_id" `
+  User *User `json:"user" `
+  Balance int64 `json:"balance" `
+}
+
+func (*Wallet) IsModel() bool { return true }
+func (*Wallet) TableName() string { return "wallets" }
+func (*Wallet) TypeName() string { return "wallet" }
+func WalletEnumFields(key string) func(interface{}) interface{} {
+  return nil
+}
+
 type Comment struct {
   model.Model
   Content string `json:"content" gorm:"type:varchar(255)" `
-  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
+  CommentableId int64 `gorm:"index:commentable" json:"commentable_id" `
   CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
   Commentable interface{} `json:"commentable" gorm:"-" `
 }
@@ -21,8 +35,9 @@ func CommentEnumFields(key string) func(interface{}) interface{} {
 
 type User struct {
   model.Model
-  Name string `gorm:"index;type:varchar(255)" json:"name" `
-  MyPosts *[]Post `gorm:"comment:五二零" json:"my_posts" `
+  Name string `json:"name" gorm:"index;type:varchar(255)" `
+  MyPosts *[]Post `json:"my_posts" gorm:"comment:五二零" `
+  Wallet *Wallet `json:"wallet" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -49,14 +64,14 @@ func ArticleEnumFields(key string) func(interface{}) interface{} {
 
 type Post struct {
   model.ModelSoftDelete
-  Title string `json:"title" gorm:"index;type:varchar(255)" `
   UserId int64 `json:"user_id" gorm:"index" `
-  TagId int64 `json:"tag_id" `
-  User *User `json:"user" `
-  Enum TestEnum `json:"enum" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
   BackId int64 `json:"back_id" `
+  User *User `json:"user" `
+  Title string `gorm:"index;type:varchar(255)" json:"title" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+  TagId int64 `json:"tag_id" `
   IsBool bool `json:"is_bool" gorm:"default:false" `
+  Enum TestEnum `json:"enum" `
 }
 
 func (*Post) IsModel() bool { return true }
@@ -82,6 +97,7 @@ func PostEnumFields(key string) func(interface{}) interface{} {
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
+    &Wallet{},
     &Comment{},
     &User{},
     &Article{},

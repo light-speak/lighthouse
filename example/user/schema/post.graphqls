@@ -25,7 +25,13 @@ extend type Query {
 
 extend type Mutation {
   createPost(input: TestInput): Post!
-  createPost2(name: String): Post
+  "创建帖子2"
+  createPost2(
+    "用户名"
+    name: String
+    "年龄"
+    age: Int
+  ): Post
 }
 
 type Test {

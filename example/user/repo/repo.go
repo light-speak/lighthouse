@@ -2,12 +2,12 @@
 package repo
 
 import (
-  "github.com/light-speak/lighthouse/graphql/model"
-  "user/models"
-  "gorm.io/gorm"
-  "github.com/light-speak/lighthouse/context"
-  "github.com/light-speak/lighthouse/utils"
   "sync"
+  "github.com/light-speak/lighthouse/utils"
+  "user/models"
+  "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "gorm.io/gorm"
 )
 
 // Generic loader function
@@ -84,6 +84,30 @@ func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB)
   return count, err
 }
 
+// Wallet functions
+func Load__Wallet(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Wallet](ctx, key, "wallets", field)
+}
+
+func LoadList__Wallet(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Wallet](ctx, key, "wallets", field)
+}
+
+func Query__Wallet(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Wallet](&models.Wallet{}, scopes...)
+}
+
+func First__Wallet(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Wallet](ctx, data, models.WalletEnumFields, &models.Wallet{}, scopes...)
+}
+
+func List__Wallet(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Wallet](ctx, datas, &models.Wallet{}, scopes...)
+}
+
+func Count__Wallet(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Wallet](&models.Wallet{}, scopes...)
+}
 // Comment functions
 func Load__Comment(ctx *context.Context, key int64, field string) (*sync.Map, error) {
   return loadEntity[models.Comment](ctx, key, "comments", field)
@@ -183,6 +207,11 @@ func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
 
 
 func init() {
+  model.AddQuickFirst("Wallet", First__Wallet)
+  model.AddQuickList("Wallet", List__Wallet)
+  model.AddQuickLoad("Wallet", Load__Wallet)
+  model.AddQuickLoadList("Wallet", LoadList__Wallet)
+  model.AddQuickCount("Wallet", Count__Wallet)
   model.AddQuickFirst("Comment", First__Comment)
   model.AddQuickList("Comment", List__Comment)
   model.AddQuickLoad("Comment", Load__Comment)
