@@ -124,3 +124,17 @@ func isVowel(c rune) bool {
 func IsInternalType(name string) bool {
 	return len(name) >= 2 && name[:2] == "__"
 }
+
+func Able(name string) string {
+	// Handle special cases ending in 'e'
+	if strings.HasSuffix(name, "e") {
+		return name[:len(name)-1] + "able"
+	}
+
+	// Handle special cases ending in 'y'
+	if strings.HasSuffix(name, "y") {
+		return name[:len(name)-1] + "iable"
+	}
+
+	return name + "able"
+}

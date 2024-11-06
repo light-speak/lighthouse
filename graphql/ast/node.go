@@ -329,12 +329,17 @@ const (
 )
 
 type Relation struct {
-	RelationType RelationType `json:"relationType"`
-	Name         string       `json:"name"`
-	ForeignKey   string       `json:"foreignKey"`
-	Reference    string       `json:"reference"`
-	MorphType    string       `json:"morphType"`
-	MorphKey     string       `json:"morphKey"`
+	RelationType       RelationType `json:"relationType"`
+	Name               string       `json:"name"`
+	CurrentType        string       `json:"currentType"`
+	ForeignKey         string       `json:"foreignKey"`
+	Reference          string       `json:"reference"`
+	MorphType          string       `json:"morphType"`
+	MorphKey           string       `json:"morphKey"`
+	PivotForeignKey    string       `json:"pivotForeignKey"`
+	PivotReference     string       `json:"pivotReference"`
+	RelationForeignKey string       `json:"relationForeignKey"`
+	Pivot              string       `json:"pivot"`
 }
 
 func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objectNode Node, location Location, fragments map[string]*Fragment, args map[string]*Argument) errors.GraphqlErrorInterface {

@@ -43,8 +43,8 @@ directive @belongsTo(relation: String, foreignKey: String, reference: String) on
 directive @hasMany(relation: String, foreignKey: String, reference: String) on FIELD_DEFINITION
 directive @hasOne(relation: String, foreignKey: String, reference: String) on FIELD_DEFINITION
 directive @morphTo(morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
-directive @morphToMany(relation: String!, morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
-directive @manyToMany(relation: String!, pivot: String, pivotForeignKey: String, pivotReference: String, foreignKey: String, relationForeignKey: String) on FIELD_DEFINITION
+directive @morphToMany(relation: String, currentType: String, morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
+directive @manyToMany(relation: String!, pivot: String!, pivotForeignKey: String, pivotReference: String, foreignKey: String, relationForeignKey: String) on FIELD_DEFINITION
 
 # runtime
 directive @auth(msg: String) on FIELD_DEFINITION

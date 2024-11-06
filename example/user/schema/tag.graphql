@@ -1,0 +1,10 @@
+type Tag @model {
+  name: String!
+}
+
+type UserTag @model {
+  user: User! @belongsTo
+  tag: Tag! @belongsTo
+  user_id: ID! @index(name: "user_tag_index")
+  tag_id: ID! @index(name: "tag_user_index")
+}

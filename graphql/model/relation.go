@@ -18,6 +18,11 @@ type SelectRelation struct {
 	SelectColumns map[string]interface{}
 }
 
+type Filter struct {
+	Field string
+	Value interface{}
+}
+
 var (
 	quickListMap     sync.Map
 	quickFirstMap    sync.Map
@@ -203,22 +208,28 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		return fetchMultipleRelations(ctx, relation.Name, relation.MorphKey, fieldValue)
+		filters := []Filter{
+			{
+				Field: relation.MorphType,
+				Value: relation.CurrentType,
+			},
+		}
+		return fetchMultipleRelations(ctx, relation.Name, relation.MorphKey, fieldValue, filters...)
 
 	case ast.RelationTypeBelongsToMany:
-		fieldValue, ok := data.Load(relation.Reference)
+		fieldValue, ok := data.Load(relation.ForeignKey)
 		if !ok {
 			return nil, &errors.GraphQLError{
-				Message:   fmt.Sprintf("field %s not found in function %s", relation.Reference, "FetchRelation"),
+				Message:   fmt.Sprintf("field %s not found in function %s", relation.ForeignKey, "FetchRelation"),
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		return fetchMultipleRelations(ctx, relation.Name, relation.ForeignKey, fieldValue)
+		return fetchManyToManyRelations(ctx, relation, fieldValue)
 	}
 	return nil, nil
 }
 
-func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}) ([]*sync.Map, error) {
+func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}, filters ...Filter) ([]*sync.Map, error) {
 	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err
@@ -232,6 +243,10 @@ func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKe
 	datas, err := loadListFn(ctx, key, foreignKey)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, filter := range filters {
+		datas = filterList(datas, filter)
 	}
 
 	listFn := GetQuickList(utils.UcFirst(utils.CamelCase(relationName)))
@@ -295,4 +310,71 @@ func convertToInt64(relationName string, fieldName string, value interface{}) (i
 	default:
 		return 0, fmt.Errorf("relation %s field %s value is not int64, got %v, type %T", relationName, fieldName, value, value)
 	}
+}
+
+func fetchManyToManyRelations(ctx *context.Context, relation *ast.Relation, fieldValue interface{}) ([]*sync.Map, error) {
+	key, err := convertToInt64(relation.Name, relation.ForeignKey, fieldValue)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取中间表数据
+	loadListFn := GetQuickLoadList(utils.UcFirst(utils.CamelCase(relation.Pivot)))
+	if loadListFn == nil {
+		return nil, fmt.Errorf("pivot relation %s not found", relation.Pivot)
+	}
+
+	pivotDatas, err := loadListFn(ctx, key, relation.PivotForeignKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// 从中间表数据中提取关联ID
+	var relatedIds []int64
+	for _, pivotData := range pivotDatas {
+		if relatedId, ok := pivotData.Load(relation.PivotReference); ok {
+			if id, err := convertToInt64(relation.Name, relation.PivotReference, relatedId); err == nil {
+				relatedIds = append(relatedIds, id)
+			}
+		}
+	}
+
+	// 获取关联表数据
+	var results []*sync.Map
+	for _, relatedId := range relatedIds {
+		loadFn := GetQuickLoad(utils.UcFirst(utils.CamelCase(relation.Name)))
+		if loadFn == nil {
+			return nil, fmt.Errorf("relation %s not found", relation.Name)
+		}
+
+		data, err := loadFn(ctx, relatedId, relation.RelationForeignKey)
+		if err != nil {
+			continue
+		}
+
+		firstFn := GetQuickFirst(utils.UcFirst(utils.CamelCase(relation.Name)))
+		if firstFn == nil {
+			return nil, fmt.Errorf("relation %s not found", relation.Name)
+		}
+
+		data, err = firstFn(ctx, data)
+		if err != nil {
+			continue
+		}
+
+		data.Store("__typename", relation.Name)
+		results = append(results, data)
+	}
+
+	return results, nil
+}
+
+func filterList(datas []*sync.Map, filter Filter) []*sync.Map {
+	results := make([]*sync.Map, 0)
+	for _, data := range datas {
+		if value, ok := data.Load(filter.Field); ok && value == filter.Value {
+			results = append(results, data)
+		}
+	}
+	return results
 }

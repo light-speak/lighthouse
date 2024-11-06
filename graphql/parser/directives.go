@@ -364,6 +364,10 @@ func (p *Parser) addRelationDirective() {
 				Name: "relation",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
+			"currentType": {
+				Name: "currentType",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 			"morphType": {
 				Name: "morphType",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
