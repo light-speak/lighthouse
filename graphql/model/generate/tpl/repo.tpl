@@ -53,16 +53,36 @@ func firstEntity[T any](ctx *context.Context, data *sync.Map, enumFieldsFn func(
 }
 
 // Generic list function
-func listEntity[T any](ctx *context.Context, datas []*sync.Map, model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+func listEntity[T any](ctx *context.Context, datas []*sync.Map, enumFieldsFn func(string) func(interface{}) interface{}, model interface{}, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
   if datas == nil {
     mapDatas := make([]map[string]interface{}, 0)
     err := queryEntity[T](model).Scopes(scopes...).Find(&mapDatas).Error
     if err != nil {
       return nil, err
     }
-    return utils.MapSliceToSyncMapSlice(mapDatas), nil
+    datas = utils.MapSliceToSyncMapSlice(mapDatas)
   }
-  return datas, nil
+
+  var mu sync.Mutex
+  results := make([]*sync.Map, len(datas))
+  
+  for i, data := range datas {
+    result := &sync.Map{}
+    data.Range(func(key, value interface{}) bool {
+      k := key.(string)
+      if fn := enumFieldsFn(k); fn != nil {
+        mu.Lock()
+        result.Store(k, fn(value))
+        mu.Unlock()
+      } else {
+        result.Store(k, value)
+      }
+      return true
+    })
+    results[i] = result
+  }
+  
+  return results, nil
 }
 
 // Generic count function
@@ -92,7 +112,7 @@ func First__{{ $name | ucFirst }}(ctx *context.Context, data *sync.Map, scopes .
 }
 
 func List__{{ $name | ucFirst }}(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.{{ $name | ucFirst }}](ctx, datas, &models.{{ $name | ucFirst }}{}, scopes...)
+  return listEntity[models.{{ $name | ucFirst }}](ctx, datas, models.{{ $name | ucFirst }}EnumFields, &models.{{ $name | ucFirst }}{}, scopes...)
 }
 
 func Count__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
