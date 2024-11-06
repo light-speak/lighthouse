@@ -5,6 +5,7 @@ type {{ $key }} int8
 const (
   {{- $index := 0}}
   {{- range $vKey, $enumValue := $node.EnumValues }}
+  // {{ $enumValue.Description }}
   {{- if $enumValue.Value }}
   {{ $key }}{{ $vKey }} {{ $key }} = {{ $enumValue.Value }}
   {{- else }}

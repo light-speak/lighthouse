@@ -2,14 +2,14 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/context"
-  "github.com/light-speak/lighthouse/graphql/model"
-  "github.com/light-speak/lighthouse/resolve"
-  "sync"
-  "user/models"
-  "github.com/light-speak/lighthouse/graphql/excute"
-  "fmt"
   "github.com/light-speak/lighthouse/graphql"
+  "github.com/light-speak/lighthouse/resolve"
+  "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/excute"
+  "user/models"
+  "github.com/light-speak/lighthouse/graphql/model"
+  "sync"
+  "fmt"
 )
 
 func init() {

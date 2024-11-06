@@ -548,6 +548,13 @@ func (p *Parser) parseEnum() {
 	p.expect(lexer.LeftBrace)
 	node.EnumValues = make(map[string]*ast.EnumValue)
 	for p.currToken.Type != lexer.RightBrace {
+		for {
+			if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
+				p.NextToken()
+			} else {
+				break
+			}
+		}
 		enumValue := p.parseEnumValue()
 		if _, ok := node.EnumValues[enumValue.Name]; ok {
 			panic("duplicate enum value: " + enumValue.Name)

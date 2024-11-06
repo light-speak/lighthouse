@@ -3,11 +3,11 @@ package resolver
 
 import (
   "fmt"
-  "github.com/light-speak/lighthouse/context"
-  "github.com/light-speak/lighthouse/graphql/model"
-  "github.com/light-speak/lighthouse/log"
   "github.com/light-speak/lighthouse/auth"
+  "github.com/light-speak/lighthouse/log"
+  "github.com/light-speak/lighthouse/context"
   "user/models"
+  "github.com/light-speak/lighthouse/graphql/model"
 )
 
 
@@ -38,20 +38,6 @@ func (r *Resolver) LoginResolver(ctx *context.Context,name string) (*models.Logi
 	}, nil
 	// Func:Login user code end. Do not remove this comment. 
 }
-// CreatePost <nil>
-// 
-// Parameters:
-// - input: <nil>
-// 
-// Returns:
-// 
-// - Post
-func (r *Resolver) CreatePostResolver(ctx *context.Context,input *models.TestInput) (*models.Post, error) {
-	// Func:CreatePost user code start. Do not remove this comment.
-	log.Debug().Msgf("input: %+v", input)
-	return nil, nil
-	// Func:CreatePost user code end. Do not remove this comment. 
-}
 // CreatePost2 创建帖子2
 // 
 // Parameters:
@@ -65,4 +51,18 @@ func (r *Resolver) CreatePost2Resolver(ctx *context.Context,age int64,name strin
 	// Func:CreatePost2 user code start. Do not remove this comment.
 	return nil, nil
 	// Func:CreatePost2 user code end. Do not remove this comment. 
+}
+// CreatePost <nil>
+// 
+// Parameters:
+// - input: <nil>
+// 
+// Returns:
+// 
+// - Post
+func (r *Resolver) CreatePostResolver(ctx *context.Context,input *models.TestInput) (*models.Post, error) {
+	// Func:CreatePost user code start. Do not remove this comment.
+	log.Debug().Msgf("input: %+v", input)
+	return nil, nil
+	// Func:CreatePost user code end. Do not remove this comment. 
 }

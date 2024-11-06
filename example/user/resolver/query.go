@@ -2,14 +2,43 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/log"
-  "user/models"
   "fmt"
+  "github.com/light-speak/lighthouse/log"
   "github.com/light-speak/lighthouse/context"
+  "user/models"
   "github.com/light-speak/lighthouse/graphql/model"
 )
 
 
+// GetPosts <nil>
+// 
+// Parameters:
+// - fuck: <nil>
+// 
+// Returns:
+// 
+// - []Post
+func (r *Resolver) GetPostsResolver(ctx *context.Context,fuck string) ([]*models.Post, error) {
+	// Func:GetPosts user code start. Do not remove this comment.
+	posts := []*models.Post{}
+	db := model.GetDB()
+	db.Find(&posts)
+	return posts, nil
+	// Func:GetPosts user code end. Do not remove this comment. 
+}
+// TestNullableEnum <nil>
+// 
+// Parameters:
+// - enum: <nil>
+// 
+// Returns:
+// 
+// - string
+func (r *Resolver) TestNullableEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
+	// Func:TestNullableEnum user code start. Do not remove this comment.
+	panic("not implement")
+	// Func:TestNullableEnum user code end. Do not remove this comment. 
+}
 // TestPostInput <nil>
 // 
 // Parameters:
@@ -68,19 +97,6 @@ func (r *Resolver) GetPostResolver(ctx *context.Context,fuck string) (*models.Po
 	return post, nil
 	// Func:GetPost user code end. Do not remove this comment. 
 }
-// TestNullableEnum <nil>
-// 
-// Parameters:
-// - enum: <nil>
-// 
-// Returns:
-// 
-// - string
-func (r *Resolver) TestNullableEnumResolver(ctx *context.Context,enum *models.TestEnum) (string, error) {
-	// Func:TestNullableEnum user code start. Do not remove this comment.
-	panic("not implement")
-	// Func:TestNullableEnum user code end. Do not remove this comment. 
-}
 // TestPostId <nil>
 // 
 // Parameters:
@@ -107,20 +123,4 @@ func (r *Resolver) TestPostIntResolver(ctx *context.Context,id bool) (*models.Po
 	// Func:TestPostInt user code start. Do not remove this comment.
 	return nil, nil
 	// Func:TestPostInt user code end. Do not remove this comment. 
-}
-// GetPosts <nil>
-// 
-// Parameters:
-// - fuck: <nil>
-// 
-// Returns:
-// 
-// - []Post
-func (r *Resolver) GetPostsResolver(ctx *context.Context,fuck string) ([]*models.Post, error) {
-	// Func:GetPosts user code start. Do not remove this comment.
-	posts := []*models.Post{}
-	db := model.GetDB()
-	db.Find(&posts)
-	return posts, nil
-	// Func:GetPosts user code end. Do not remove this comment. 
 }

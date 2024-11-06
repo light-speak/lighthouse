@@ -45,7 +45,9 @@ input TestInput {
 }
 
 enum TestEnum {
+  "这是A"
   A @enum(value: 1)
+  "这是B"
   B @enum(value: 2)
 }
 

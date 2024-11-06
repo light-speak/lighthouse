@@ -6,9 +6,9 @@ import  "github.com/light-speak/lighthouse/graphql/model"
 
 type Wallet struct {
   model.Model
-  UserId int64 `json:"user_id" `
   User *User `json:"user" `
   Balance int64 `json:"balance" `
+  UserId int64 `json:"user_id" `
 }
 
 func (*Wallet) IsModel() bool { return true }
@@ -18,12 +18,25 @@ func WalletEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
+type Article struct {
+  model.Model
+  Name string `json:"name" gorm:"type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
+}
+
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+func ArticleEnumFields(key string) func(interface{}) interface{} {
+  return nil
+}
+
 type Comment struct {
   model.Model
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  CommentableId int64 `gorm:"index:commentable" json:"commentable_id" `
+  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
   CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
   Commentable interface{} `json:"commentable" gorm:"-" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
 }
 
 func (*Comment) IsModel() bool { return true }
@@ -49,29 +62,16 @@ func UserEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
-type Article struct {
-  model.Model
-  Name string `json:"name" gorm:"type:varchar(255)" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-}
-
-func (*Article) IsModel() bool { return true }
-func (*Article) TableName() string { return "articles" }
-func (*Article) TypeName() string { return "article" }
-func ArticleEnumFields(key string) func(interface{}) interface{} {
-  return nil
-}
-
 type Post struct {
   model.ModelSoftDelete
   UserId int64 `json:"user_id" gorm:"index" `
-  BackId int64 `json:"back_id" `
-  User *User `json:"user" `
-  Title string `gorm:"index;type:varchar(255)" json:"title" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  TagId int64 `json:"tag_id" `
   IsBool bool `json:"is_bool" gorm:"default:false" `
+  User *User `json:"user" `
   Enum TestEnum `json:"enum" `
+  Title string `json:"title" gorm:"index;type:varchar(255)" `
+  Content string `gorm:"type:varchar(255)" json:"content" `
+  TagId int64 `json:"tag_id" `
+  BackId int64 `json:"back_id" `
 }
 
 func (*Post) IsModel() bool { return true }
@@ -98,9 +98,9 @@ func PostEnumFields(key string) func(interface{}) interface{} {
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
     &Wallet{},
+    &Article{},
     &Comment{},
     &User{},
-    &Article{},
     &Post{},
   )
 }

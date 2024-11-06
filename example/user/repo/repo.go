@@ -2,12 +2,12 @@
 package repo
 
 import (
-  "sync"
-  "github.com/light-speak/lighthouse/utils"
   "user/models"
-  "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/model"
+  "sync"
   "gorm.io/gorm"
+  "github.com/light-speak/lighthouse/utils"
+  "github.com/light-speak/lighthouse/context"
 )
 
 // Generic loader function
@@ -108,6 +108,30 @@ func List__Wallet(ctx *context.Context, datas []*sync.Map, scopes ...func(db *go
 func Count__Wallet(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.Wallet](&models.Wallet{}, scopes...)
 }
+// Article functions
+func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+  return loadEntity[models.Article](ctx, key, "articles", field)
+}
+
+func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+  return loadEntityList[models.Article](ctx, key, "articles", field)
+}
+
+func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Article](&models.Article{}, scopes...)
+}
+
+func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
+}
+
+func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
+}
+
+func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Article](&models.Article{}, scopes...)
+}
 // Comment functions
 func Load__Comment(ctx *context.Context, key int64, field string) (*sync.Map, error) {
   return loadEntity[models.Comment](ctx, key, "comments", field)
@@ -156,30 +180,6 @@ func List__User(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.User](&models.User{}, scopes...)
 }
-// Article functions
-func Load__Article(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.Article](ctx, key, "articles", field)
-}
-
-func LoadList__Article(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.Article](ctx, key, "articles", field)
-}
-
-func Query__Article(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Article](&models.Article{}, scopes...)
-}
-
-func First__Article(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Article](ctx, data, models.ArticleEnumFields, &models.Article{}, scopes...)
-}
-
-func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Article](ctx, datas, &models.Article{}, scopes...)
-}
-
-func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Article](&models.Article{}, scopes...)
-}
 // Post functions
 func Load__Post(ctx *context.Context, key int64, field string) (*sync.Map, error) {
   return loadEntity[models.Post](ctx, key, "posts", field)
@@ -212,6 +212,11 @@ func init() {
   model.AddQuickLoad("Wallet", Load__Wallet)
   model.AddQuickLoadList("Wallet", LoadList__Wallet)
   model.AddQuickCount("Wallet", Count__Wallet)
+  model.AddQuickFirst("Article", First__Article)
+  model.AddQuickList("Article", List__Article)
+  model.AddQuickLoad("Article", Load__Article)
+  model.AddQuickLoadList("Article", LoadList__Article)
+  model.AddQuickCount("Article", Count__Article)
   model.AddQuickFirst("Comment", First__Comment)
   model.AddQuickList("Comment", List__Comment)
   model.AddQuickLoad("Comment", Load__Comment)
@@ -222,11 +227,6 @@ func init() {
   model.AddQuickLoad("User", Load__User)
   model.AddQuickLoadList("User", LoadList__User)
   model.AddQuickCount("User", Count__User)
-  model.AddQuickFirst("Article", First__Article)
-  model.AddQuickList("Article", List__Article)
-  model.AddQuickLoad("Article", Load__Article)
-  model.AddQuickLoadList("Article", LoadList__Article)
-  model.AddQuickCount("Article", Count__Article)
   model.AddQuickFirst("Post", First__Post)
   model.AddQuickList("Post", List__Post)
   model.AddQuickLoad("Post", Load__Post)

@@ -7,7 +7,9 @@ package models
 type SortOrder int8
 
 const (
+  // The ASC enum value represents ascending order.
   SortOrderASC SortOrder = 1
+  // The DESC enum value represents descending order.
   SortOrderDESC SortOrder = -1
 )
 
@@ -29,7 +31,9 @@ var SortOrderMap = map[string]SortOrder{
 type TestEnum int8
 
 const (
+  // 这是A
   TestEnumA TestEnum = 1
+  // 这是B
   TestEnumB TestEnum = 2
 )
 
@@ -51,7 +55,9 @@ var TestEnumMap = map[string]TestEnum{
 type TestEnum2 int8
 
 const (
+  // <nil>
   TestEnum2A2 = iota
+  // <nil>
   TestEnum2B2
 )
 
