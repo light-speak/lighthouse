@@ -16,7 +16,6 @@ var quickExcuteMap = map[string]func(ctx *context.Context, field *ast.Field, sco
 	"find":     executeFind,
 	"first":    executeFirst,
 	"paginate": executePaginate,
-	// TODO: create, update, delete,
 }
 
 func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, errors.GraphqlErrorInterface) {

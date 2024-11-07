@@ -34,6 +34,7 @@ extend type Mutation {
     "年龄"
     age: Int
   ): Post
+
 }
 
 type Test {

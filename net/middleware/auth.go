@@ -27,7 +27,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			ctx := r.Context().(*context.Context)
 			ctx.UserId = &userId
 		} else {
-			//TODO: 从router获取
+			//TODO: manor获取
 		}
 		next.ServeHTTP(w, r)
 	})
