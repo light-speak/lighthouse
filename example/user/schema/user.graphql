@@ -11,6 +11,7 @@ type User implements HasName @model {
 extend type Query {
   users: [User!]! @paginate
   user(id: ID!): User! @first
+  me(id: ID): User! @first @auth
 }
 
 type LoginResponse {

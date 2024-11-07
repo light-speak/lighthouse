@@ -8,17 +8,25 @@ func init() {
     r := resolve.(*Resolver)
   {{- range $index, $arg := $args }}
     {{- if eq $arg.Type.GetRealType.Kind "SCALAR" }}
-    var {{ $arg.Name | lcFirst }} {{ false | $arg.Type.GetGoType }}
+    var {{ $arg.Name | lcFirst }} {{ if $arg.Type.IsNullable }}*{{ end }}{{ false | $arg.Type.GetGoType }}
     if args["{{ $index }}"] != nil {
       p{{ $arg.Name | lcFirst }}, e := graphql.Parser.NodeStore.Scalars["{{ $arg.Type.GetRealType.Name }}"].ScalarType.ParseValue(args["{{ $index }}"], nil)
       if e != nil {
         return nil, e
       }
       var ok bool
+      {{- if $arg.Type.IsNullable }}
+      tmp, ok := p{{ $arg.Name | lcFirst }}.({{ false | $arg.Type.GetGoType }})
+      if !ok {
+        return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a {{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
+      }
+      {{ $arg.Name | lcFirst }} = &tmp
+      {{- else }}
       {{ $arg.Name | lcFirst }}, ok = p{{ $arg.Name | lcFirst }}.({{ false | $arg.Type.GetGoType }})
       if !ok {
         return nil, fmt.Errorf("argument: '{{ $arg.Name }}' is not a {{ false | $arg.Type.GetGoType }}, got %T", args["{{ $index }}"])
       }
+      {{- end }}
     {{- else if eq $arg.Type.GetRealType.Kind "ENUM" }}
     var {{ $arg.Name | lcFirst }} {{ false | $arg.Type.GetGoType | prefixModels }}
     if args["{{ $index }}"] != nil {

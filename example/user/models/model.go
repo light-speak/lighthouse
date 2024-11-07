@@ -4,27 +4,27 @@ package models
 import  "github.com/light-speak/lighthouse/graphql/model"
 
 
-type Comment struct {
+type UserTag struct {
   model.Model
-  Content string `gorm:"type:varchar(255)" json:"content" `
-  CommentableId int64 `json:"commentable_id" gorm:"index:commentable" `
-  CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
-  Commentable interface{} `gorm:"-" json:"commentable" `
+  User *User `gorm:"-" json:"user" `
+  Tag *Tag `json:"tag" gorm:"-" `
+  UserId int64 `json:"user_id" gorm:"uniqueIndex:user_tag_index" `
+  TagId int64 `json:"tag_id" gorm:"uniqueIndex:user_tag_index" `
 }
 
-func (*Comment) IsModel() bool { return true }
-func (*Comment) TableName() string { return "comments" }
-func (*Comment) TypeName() string { return "comment" }
-func CommentEnumFields(key string) func(interface{}) interface{} {
+func (*UserTag) IsModel() bool { return true }
+func (*UserTag) TableName() string { return "user_tags" }
+func (*UserTag) TypeName() string { return "user_tag" }
+func UserTagEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
 type User struct {
   model.Model
+  Wallet *Wallet `json:"wallet" gorm:"-" `
+  Tags *[]Tag `json:"tags" gorm:"-" `
   Name string `json:"name" gorm:"index;type:varchar(255)" `
   MyPosts *[]Post `json:"my_posts" gorm:"-;comment:五二零" `
-  Wallet *Wallet `gorm:"-" json:"wallet" `
-  Tags *[]Tag `json:"tags" gorm:"-" `
 }
 
 func (*User) IsModel() bool { return true }
@@ -39,14 +39,14 @@ func UserEnumFields(key string) func(interface{}) interface{} {
 type Post struct {
   model.ModelSoftDelete
   Title string `json:"title" gorm:"index;type:varchar(255)" `
-  IsBool bool `gorm:"default:false" json:"is_bool" `
-  TagId int64 `json:"tag_id" `
-  Enum TestEnum `json:"enum" `
-  Comments *[]Comment `json:"comments" gorm:"-" `
-  Content string `json:"content" gorm:"type:varchar(255)" `
-  UserId int64 `json:"user_id" gorm:"index" `
+  Content string `gorm:"type:varchar(255)" json:"content" `
   BackId int64 `json:"back_id" `
-  User *User `gorm:"-" json:"user" `
+  Comments *[]Comment `json:"comments" gorm:"-" `
+  IsBool bool `json:"is_bool" gorm:"default:false" `
+  Enum TestEnum `json:"enum" `
+  UserId int64 `json:"user_id" gorm:"index" `
+  TagId int64 `json:"tag_id" `
+  User *User `json:"user" gorm:"-" `
 }
 
 func (*Post) IsModel() bool { return true }
@@ -69,16 +69,32 @@ func PostEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
-type Article struct {
+type Comment struct {
   model.Model
-  Name string `json:"name" gorm:"type:varchar(255)" `
   Content string `json:"content" gorm:"type:varchar(255)" `
+  CommentableId int64 `gorm:"index:commentable" json:"commentable_id" `
+  CommentableType string `json:"commentable_type" gorm:"index:commentable;type:varchar(255)" `
+  Commentable interface{} `json:"commentable" gorm:"-" `
 }
 
-func (*Article) IsModel() bool { return true }
-func (*Article) TableName() string { return "articles" }
-func (*Article) TypeName() string { return "article" }
-func ArticleEnumFields(key string) func(interface{}) interface{} {
+func (*Comment) IsModel() bool { return true }
+func (*Comment) TableName() string { return "comments" }
+func (*Comment) TypeName() string { return "comment" }
+func CommentEnumFields(key string) func(interface{}) interface{} {
+  return nil
+}
+
+type Wallet struct {
+  model.Model
+  User *User `json:"user" gorm:"-" `
+  Balance int64 `json:"balance" `
+  UserId int64 `json:"user_id" `
+}
+
+func (*Wallet) IsModel() bool { return true }
+func (*Wallet) TableName() string { return "wallets" }
+func (*Wallet) TypeName() string { return "wallet" }
+func WalletEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
@@ -94,44 +110,28 @@ func TagEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
-type UserTag struct {
+type Article struct {
   model.Model
-  User *User `json:"user" gorm:"-" `
-  Tag *Tag `json:"tag" gorm:"-" `
-  UserId int64 `json:"user_id" gorm:"uniqueIndex:user_tag_index" `
-  TagId int64 `json:"tag_id" gorm:"uniqueIndex:user_tag_index" `
+  Name string `json:"name" gorm:"type:varchar(255)" `
+  Content string `json:"content" gorm:"type:varchar(255)" `
 }
 
-func (*UserTag) IsModel() bool { return true }
-func (*UserTag) TableName() string { return "user_tags" }
-func (*UserTag) TypeName() string { return "user_tag" }
-func UserTagEnumFields(key string) func(interface{}) interface{} {
-  return nil
-}
-
-type Wallet struct {
-  model.Model
-  UserId int64 `json:"user_id" `
-  User *User `json:"user" gorm:"-" `
-  Balance int64 `json:"balance" `
-}
-
-func (*Wallet) IsModel() bool { return true }
-func (*Wallet) TableName() string { return "wallets" }
-func (*Wallet) TypeName() string { return "wallet" }
-func WalletEnumFields(key string) func(interface{}) interface{} {
+func (*Article) IsModel() bool { return true }
+func (*Article) TableName() string { return "articles" }
+func (*Article) TypeName() string { return "article" }
+func ArticleEnumFields(key string) func(interface{}) interface{} {
   return nil
 }
 
 
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
-    &Comment{},
+    &UserTag{},
     &User{},
     &Post{},
-    &Article{},
-    &Tag{},
-    &UserTag{},
+    &Comment{},
     &Wallet{},
+    &Tag{},
+    &Article{},
   )
 }

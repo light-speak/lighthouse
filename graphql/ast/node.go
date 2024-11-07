@@ -541,6 +541,13 @@ func (t *TypeRef) IsEnum() bool {
 	return t.GetRealType().Kind == KindEnum
 }
 
+func (t *TypeRef) IsNullable() bool {
+	if t.Kind == KindNonNull {
+		return t.OfType.IsNullable()
+	}
+	return false
+}
+
 func (t *TypeRef) GetRealType() *TypeRef {
 	if t.Kind == KindNonNull {
 		return t.OfType.GetRealType()
@@ -558,7 +565,10 @@ func (t *TypeRef) GetGoType(NonNull bool) string {
 
 	switch t.Kind {
 	case KindScalar:
-		return t.TypeNode.(*ScalarNode).ScalarType.GoType()
+		if NonNull {
+			return t.TypeNode.(*ScalarNode).ScalarType.GoType()
+		}
+		return "*" + t.TypeNode.(*ScalarNode).ScalarType.GoType()
 	case KindEnum, KindObject, KindInputObject:
 		if NonNull {
 			return t.Name

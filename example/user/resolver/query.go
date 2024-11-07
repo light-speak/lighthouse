@@ -10,19 +10,18 @@ import (
 )
 
 
-// TestPostInput <nil>
+// TestPostInt <nil>
 // 
 // Parameters:
-// - input: <nil>
+// - id: <nil>
 // 
 // Returns:
 // 
-// - string
-func (r *Resolver) TestPostInputResolver(ctx *context.Context,input *models.TestInput) (string, error) {
-	// Func:TestPostInput user code start. Do not remove this comment.
-	res := fmt.Sprintf("input: %+v", input)
-	return res, nil
-	// Func:TestPostInput user code end. Do not remove this comment. 
+// - *Post
+func (r *Resolver) TestPostIntResolver(ctx *context.Context,id bool) (*models.Post, error) {
+	// Func:TestPostInt user code start. Do not remove this comment.
+	return nil, nil
+	// Func:TestPostInt user code end. Do not remove this comment. 
 }
 // TestNullableEnum <nil>
 // 
@@ -36,6 +35,32 @@ func (r *Resolver) TestNullableEnumResolver(ctx *context.Context,enum *models.Te
 	// Func:TestNullableEnum user code start. Do not remove this comment.
 	panic("not implement")
 	// Func:TestNullableEnum user code end. Do not remove this comment. 
+}
+// GetPostIds <nil>
+// 
+// Parameters:
+// 
+// Returns:
+// 
+// - []int64
+func (r *Resolver) GetPostIdsResolver(ctx *context.Context) ([]int64, error) {
+	// Func:GetPostIds user code start. Do not remove this comment.
+	return []int64{1, 2, 3}, nil
+	// Func:GetPostIds user code end. Do not remove this comment. 
+}
+// TestPostInput <nil>
+// 
+// Parameters:
+// - input: <nil>
+// 
+// Returns:
+// 
+// - string
+func (r *Resolver) TestPostInputResolver(ctx *context.Context,input *models.TestInput) (string, error) {
+	// Func:TestPostInput user code start. Do not remove this comment.
+	res := fmt.Sprintf("input: %+v", input)
+	return res, nil
+	// Func:TestPostInput user code end. Do not remove this comment. 
 }
 // GetPost <nil>
 // 
@@ -98,29 +123,4 @@ func (r *Resolver) TestPostIdResolver(ctx *context.Context,id int64) (*models.Po
 	log.Debug().Msgf("id: %d", id)
 	return nil, nil
 	// Func:TestPostId user code end. Do not remove this comment. 
-}
-// GetPostIds <nil>
-// 
-// Parameters:
-// 
-// Returns:
-// 
-// - []int64
-func (r *Resolver) GetPostIdsResolver(ctx *context.Context) ([]int64, error) {
-	// Func:GetPostIds user code start. Do not remove this comment.
-	return []int64{1, 2, 3}, nil
-	// Func:GetPostIds user code end. Do not remove this comment. 
-}
-// TestPostInt <nil>
-// 
-// Parameters:
-// - id: <nil>
-// 
-// Returns:
-// 
-// - *Post
-func (r *Resolver) TestPostIntResolver(ctx *context.Context,id bool) (*models.Post, error) {
-	// Func:TestPostInt user code start. Do not remove this comment.
-	return nil, nil
-	// Func:TestPostInt user code end. Do not remove this comment. 
 }

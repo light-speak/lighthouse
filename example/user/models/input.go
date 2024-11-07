@@ -5,15 +5,15 @@ import  "fmt"
 
 
 type TestInput struct {
-  E bool `json:"E"`
+  E *bool `json:"E"`
   Enum TestEnum `json:"Enum"`
-  Id string `json:"Id"`
+  Id *string `json:"Id"`
 }
 
 func MapToTestInput(data map[string]interface{}) (*TestInput, error) {
   result := &TestInput{}
   
-  e, ok := data["e"].(bool)
+  e, ok := data["e"].(*bool)
   if !ok {
     return nil, fmt.Errorf("invalid value for field 'e', got %T", data["e"])
   }
@@ -25,7 +25,7 @@ func MapToTestInput(data map[string]interface{}) (*TestInput, error) {
   }
   result.Enum = enum
   
-  id, ok := data["id"].(string)
+  id, ok := data["id"].(*string)
   if !ok {
     return nil, fmt.Errorf("invalid value for field 'id', got %T", data["id"])
   }
