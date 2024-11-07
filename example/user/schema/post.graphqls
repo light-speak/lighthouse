@@ -1,4 +1,4 @@
-type Post @softDeleteModel {
+type Post @softDeleteModel @scopes(names: ["userId1", "userId2"]) {
   title: String! @index
   content: String!
   userId: ID! @index
@@ -14,7 +14,7 @@ type Post @softDeleteModel {
 extend type Query {
   postPage: [Post!]! @paginate
   posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find
-  post(id: ID! @eq): Post! @first
+  post(id: ID! @eq): Post! @first(scopes: ["userId1"])
   getPost(fuck: String!): Post! 
   getPosts(fuck: String!): [Post!]! 
   getPostIds: [ID!]!

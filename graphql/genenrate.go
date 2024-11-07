@@ -101,7 +101,6 @@ func Generate() error {
 			}
 		}
 	}
-	log.Warn().Msgf("attrNodes: %v", attrNodes)
 	if err := generate.GenAttr(attrNodes, currentPath); err != nil {
 		return err
 	}

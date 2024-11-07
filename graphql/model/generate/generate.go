@@ -64,7 +64,38 @@ func GenObject(nodes []*ast.ObjectNode, path string) error {
 			"Nodes": filteredNodes,
 		},
 	}
-	return template.Render(options)
+	if err := template.Render(options); err != nil {
+		return err
+	}
+
+	// Generate scopes for each model
+	scopeTemplate, err := modelFs.ReadFile("tpl/scope.tpl")
+	if err != nil {
+		return err
+	}
+
+	for _, node := range filteredNodes {
+		if len(node.Scopes) > 0 {
+			scopeOptions := &template.Options{
+				Path:         filepath.Join(path, "models"),
+				Template:     string(scopeTemplate),
+				FileName:     fmt.Sprintf("%s_scopes", utils.LcFirst(utils.SnakeCase(node.GetName()))),
+				FileExt:      "go",
+				Package:      "models",
+				Editable:     false,
+				SkipIfExists: false,
+				Data: map[string]interface{}{
+					"Name":   node.GetName(),
+					"Scopes": node.Scopes,
+				},
+			}
+			if err := template.Render(scopeOptions); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func GenResponse(nodes []*ast.ObjectNode, path string) error {

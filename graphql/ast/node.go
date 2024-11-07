@@ -99,8 +99,8 @@ type ObjectNode struct {
 	Fields         map[string]*Field `json:"fields"`
 	InterfaceNames []string          `json:"-"`
 	IsModel        bool              `json:"-"`
-
-	Table string `json:"-"`
+	Scopes         []string          `json:"-"`
+	Table          string            `json:"-"`
 }
 
 func (o *ObjectNode) GetFields() map[string]*Field { return o.Fields }

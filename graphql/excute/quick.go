@@ -1,9 +1,14 @@
 package excute
 
 import (
+	"fmt"
+
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
+	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/log"
+	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +32,18 @@ func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, er
 	}
 	for _, directive := range field.DefinitionDirectives {
 		if fn, ok := quickExcuteMap[directive.Name]; ok {
+			if directive.GetArg("scopes") != nil {
+				names := directive.GetArg("scopes").Value.([]interface{})
+				for _, name := range names {
+					n := fmt.Sprintf("%s%s", utils.UcFirst(utils.CamelCase(field.Type.GetRealType().Name)), utils.UcFirst(utils.CamelCase(name.(string))))
+					fn := model.GetScopes(n)
+					if fn == nil {
+						log.Warn().Str("name", n).Msg("scope not found")
+						continue
+					}
+					scopes = append(scopes, fn(ctx))
+				}
+			}
 			res, err := fn(ctx, field, scopes...)
 			if err != nil {
 				return nil, true, err

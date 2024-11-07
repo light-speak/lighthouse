@@ -505,6 +505,17 @@ func (p *Parser) addObjectDirective() {
 			},
 		},
 	})
+	// scopes
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "scopes", Description: utils.StrPtr("The scopes of the model."),
+		Locations: []ast.Location{ast.LocationObject},
+		Args: map[string]*ast.Argument{
+			"names": {
+				Name: "names",
+				Type: &ast.TypeRef{Kind: ast.KindList, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
+			},
+		},
+	})
 }
 
 func (p *Parser) addRuntimeFieldDirective() {

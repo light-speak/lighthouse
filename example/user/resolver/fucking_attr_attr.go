@@ -2,10 +2,10 @@
 package resolver
 
 import (
-  "errors"
   "fmt"
   "sync"
   "github.com/light-speak/lighthouse/context"
+  "errors"
 )
 
 

@@ -24,7 +24,19 @@ var (
 	quickLoadMap     sync.Map
 	quickLoadListMap sync.Map
 	quickCountMap    sync.Map
+	scopesMap        sync.Map
 )
+
+func AddScopes(name string, fn func(ctx *context.Context) func(db *gorm.DB) *gorm.DB) {
+	scopesMap.Store(name, fn)
+}
+
+func GetScopes(name string) func(ctx *context.Context) func(db *gorm.DB) *gorm.DB {
+	if fn, ok := scopesMap.Load(name); ok {
+		return fn.(func(ctx *context.Context) func(db *gorm.DB) *gorm.DB)
+	}
+	return nil
+}
 
 func AddQuickList(name string, fn func(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error)) {
 	quickListMap.Store(name, fn)

@@ -2,10 +2,10 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/graphql/excute"
   "github.com/light-speak/lighthouse/resolve"
   "sync"
   "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/excute"
 )
 
 func init() {
