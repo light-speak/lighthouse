@@ -176,7 +176,7 @@ func GenOperationResolverGen(nodes []*ast.ObjectNode, path string) error {
 		FileName:     "operation_gen",
 		FileExt:      "go",
 		Package:      "resolver",
-		Editable:     true,
+		Editable:     false,
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Nodes": nodes,

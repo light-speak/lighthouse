@@ -2,23 +2,25 @@
 package resolver
 
 import (
-	"fmt"
-	"github.com/light-speak/lighthouse/auth"
-	"github.com/light-speak/lighthouse/context"
-	"github.com/light-speak/lighthouse/graphql/model"
-	"github.com/light-speak/lighthouse/log"
-	"user/models"
+  "github.com/light-speak/lighthouse/log"
+  "fmt"
+  "user/models"
+  "user/test"
+  "github.com/light-speak/lighthouse/auth"
+  "github.com/light-speak/lighthouse/context"
+  "github.com/light-speak/lighthouse/graphql/model"
 )
 
+
 // Login <nil>
-//
+// 
 // Parameters:
 // - name: <nil>
-//
+// 
 // Returns:
-//
+// 
 // - LoginResponse
-func (r *Resolver) LoginResolver(ctx *context.Context, name string) (*models.LoginResponse, error) {
+func (r *Resolver) LoginResolver(ctx *context.Context,name string) (*models.LoginResponse, error) {
 	// Func:Login user code start. Do not remove this comment.
 	user := &models.User{}
 	db := model.GetDB()
@@ -30,40 +32,39 @@ func (r *Resolver) LoginResolver(ctx *context.Context, name string) (*models.Log
 		return nil, err
 	}
 	log.Info().Msgf("currentUser: %v", ctx.UserId)
+	test.Test()
 	return &models.LoginResponse{
 		User:          user,
 		Token:         token,
 		Authorization: fmt.Sprintf("Bearer %s", token),
 	}, nil
-	// Func:Login user code end. Do not remove this comment.
+	// Func:Login user code end. Do not remove this comment. 
 }
-
 // CreatePost <nil>
-//
+// 
 // Parameters:
 // - input: <nil>
-//
+// 
 // Returns:
-//
+// 
 // - Post
-func (r *Resolver) CreatePostResolver(ctx *context.Context, input *models.TestInput) (*models.Post, error) {
+func (r *Resolver) CreatePostResolver(ctx *context.Context,input *models.TestInput) (*models.Post, error) {
 	// Func:CreatePost user code start. Do not remove this comment.
 	log.Debug().Msgf("input: %+v", input)
 	return nil, nil
-	// Func:CreatePost user code end. Do not remove this comment.
+	// Func:CreatePost user code end. Do not remove this comment. 
 }
-
 // CreatePost2 创建帖子2
-//
+// 
 // Parameters:
 // - age: 年龄
 // - name: 用户名
-//
+// 
 // Returns:
-//
+// 
 // - *Post
-func (r *Resolver) CreatePost2Resolver(ctx *context.Context, age int64, name string) (*models.Post, error) {
+func (r *Resolver) CreatePost2Resolver(ctx *context.Context,age int64,name string) (*models.Post, error) {
 	// Func:CreatePost2 user code start. Do not remove this comment.
 	return nil, nil
-	// Func:CreatePost2 user code end. Do not remove this comment.
+	// Func:CreatePost2 user code end. Do not remove this comment. 
 }
