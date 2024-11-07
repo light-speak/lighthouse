@@ -43,23 +43,32 @@ type LoaderConfig[K comparable] struct {
 	Field string
 }
 
-func GetLoader[K comparable](db *gorm.DB, table string, field string, config ...*LoaderConfig[K]) *Loader[K] {
+type Filter struct {
+	Field string
+	Value interface{}
+}
+
+func GetLoader[K comparable](db *gorm.DB, table string, field string, filters []*Filter, config ...*LoaderConfig[K]) *Loader[K] {
 	if len(config) > 0 {
 		field = config[0].Field
 	}
-	loaderKey := fmt.Sprintf("%v-%v", table, field)
+	filterKey := ""
+	for _, filter := range filters {
+		filterKey += fmt.Sprintf("%v:%v,", filter.Field, filter.Value)
+	}
+	loaderKey := fmt.Sprintf("%v-%v-%v", table, field, filterKey)
 	loaderMutex.Lock()
 	defer loaderMutex.Unlock()
 	if loader, ok := loaderCache[loaderKey]; ok {
 		return loader.(*Loader[K])
 	}
-	loader := getLoader(db, table, field, config...)
+	loader := getLoader(db, table, field, filters, config...)
 	loaderCache[loaderKey] = loader
 	return loader
 }
 
 // NewLoader creates a new Loader with the given configuration
-func getLoader[K comparable](db *gorm.DB, table string, field string, c ...*LoaderConfig[K]) *Loader[K] {
+func getLoader[K comparable](db *gorm.DB, table string, field string, filters []*Filter, c ...*LoaderConfig[K]) *Loader[K] {
 	config := &LoaderConfig[K]{
 		MaxBatch: 100,
 		Wait:     10 * time.Millisecond,
@@ -69,7 +78,11 @@ func getLoader[K comparable](db *gorm.DB, table string, field string, c ...*Load
 	if len(c) == 0 {
 		fetch := func(keys []K) ([][]map[string]interface{}, []error) {
 			var data []map[string]interface{}
-			if err := db.Table(table).Where(fmt.Sprintf("%s IN (?)", config.Field), keys).Find(&data).Error; err != nil {
+			query := db.Table(table).Where(fmt.Sprintf("%s IN (?)", config.Field), keys)
+			for _, filter := range filters {
+				query = query.Where(fmt.Sprintf("%s = ?", filter.Field), filter.Value)
+			}
+			if err := query.Find(&data).Error; err != nil {
 				return nil, []error{err}
 			}
 

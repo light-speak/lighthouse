@@ -5,6 +5,7 @@ type User implements HasName @model {
   myPosts: [Post!]! @hasMany(relation: "post", foreignKey: "user_id")
 
   wallet: Wallet! @hasOne
+  tags: [Tag!]! @manyToMany(relation: "tag", pivot: "user_tag")
 }
 
 extend type Query {

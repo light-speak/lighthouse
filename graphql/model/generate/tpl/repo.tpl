@@ -1,6 +1,6 @@
 // Generic loader function
-func loadEntity[T any](ctx *context.Context, key int64, table string, field string) (*sync.Map, error) {
-  data, err := model.GetLoader[int64](model.GetDB(), table, field).Load(key)
+func loadEntity[T any](ctx *context.Context, key int64, table string, field string, filters ...*model.Filter) (*sync.Map, error) {
+  data, err := model.GetLoader[int64](model.GetDB(), table, field, filters).Load(key)
   if err != nil {
     return nil, err
   }
@@ -8,8 +8,8 @@ func loadEntity[T any](ctx *context.Context, key int64, table string, field stri
 }
 
 // Generic list loader function  
-func loadEntityList[T any](ctx *context.Context, key int64, table string, field string) ([]*sync.Map, error) {
-  datas, err := model.GetLoader[int64](model.GetDB(), table, field).LoadList(key)
+func loadEntityList[T any](ctx *context.Context, key int64, table string, field string, filters ...*model.Filter) ([]*sync.Map, error) {
+  datas, err := model.GetLoader[int64](model.GetDB(), table, field, filters).LoadList(key)
   if err != nil {
     return nil, err
   }
@@ -95,12 +95,12 @@ func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB)
 {{ range .Nodes }}
 {{- $name := .Name -}}
 // {{ $name | ucFirst }} functions
-func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) (*sync.Map, error) {
-  return loadEntity[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field)
+func Load__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
+  return loadEntity[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst | snakeCase }}{{ end }}", field, filters...)
 }
 
-func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
-  return loadEntityList[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst }}{{ end }}", field)
+func LoadList__{{ $name | ucFirst }}(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
+  return loadEntityList[models.{{ $name | ucFirst }}](ctx, key, "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ $name | pluralize | lcFirst | snakeCase }}{{ end }}", field, filters...)
 }
 
 func Query__{{ $name | ucFirst }}(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {

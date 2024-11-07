@@ -52,10 +52,19 @@ func Fields(fields map[string]*Field) string {
 	}
 	return strings.Join(lines, "\n")
 }
-
 func indexDirective(tags map[string][]string, directive *Directive) error {
 	if arg := directive.GetArg("name"); arg != nil {
-		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", arg.Value.(string)))
+		name := arg.Value.(string)
+		unique := false
+		if uniqueArg := directive.GetArg("unique"); uniqueArg != nil {
+			unique = uniqueArg.Value.(bool)
+		}
+
+		if unique {
+			tags["gorm"] = append(tags["gorm"], fmt.Sprintf("uniqueIndex:%s", name))
+		} else {
+			tags["gorm"] = append(tags["gorm"], fmt.Sprintf("index:%s", name))
+		}
 	} else {
 		tags["gorm"] = append(tags["gorm"], "index")
 	}
@@ -102,7 +111,7 @@ func genTag(field *Field) string {
 	}
 	hasType := false
 
-	if field.Type.GetRealType().Kind == KindUnion {
+	if field.Relation != nil {
 		tags["gorm"] = append(tags["gorm"], "-")
 	}
 
@@ -167,8 +176,4 @@ func Model(typeNode *ObjectNode) string {
 		builder.WriteString(fmt.Sprintf("\nfunc (%s) TableName() string { return \"%s\" }", typeNode.GetName(), dbName))
 	}
 	return builder.String()
-}
-
-func BuildRelation(field *Field) string {
-	return fmt.Sprintf("{Name: \"%s\", RelationType: ast.%s, ForeignKey: \"%s\", Reference: \"%s\"}", field.Relation.Name, field.Relation.RelationType, field.Relation.ForeignKey, field.Relation.Reference)
 }

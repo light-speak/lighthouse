@@ -7,8 +7,8 @@ func (*{{ $name | ucFirst }}) Is{{ .Name | ucFirst }}() bool { return true }
 func (this *{{ $name | ucFirst }}) Get{{ .Name | ucFirst }}() {{ false | .Type.GetGoType }} { return this.{{ .Name | ucFirst }} }
 {{- end }}
 {{- end }}
-func (*{{ $name | ucFirst }}) TableName() string { return "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ .Name | pluralize | lcFirst }}{{ end }}" }
-func (*{{ $name | ucFirst }}) TypeName() string { return "{{ .Name | lcFirst }}" }
+func (*{{ $name | ucFirst }}) TableName() string { return "{{ if ne .Table "" }}{{ .Table }}{{ else }}{{ .Name | pluralize | lcFirst | snakeCase }}{{ end }}" }
+func (*{{ $name | ucFirst }}) TypeName() string { return "{{ .Name | lcFirst | snakeCase }}" }
 func {{ $name | ucFirst }}EnumFields(key string) func(interface{}) interface{} {
   {{- range .Fields }}
   {{- if .Type.IsEnum }}

@@ -18,11 +18,6 @@ type SelectRelation struct {
 	SelectColumns map[string]interface{}
 }
 
-type Filter struct {
-	Field string
-	Value interface{}
-}
-
 var (
 	quickListMap     sync.Map
 	quickFirstMap    sync.Map
@@ -39,11 +34,11 @@ func AddQuickFirst(name string, fn func(ctx *context.Context, data *sync.Map, sc
 	quickFirstMap.Store(name, fn)
 }
 
-func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string) (*sync.Map, error)) {
+func AddQuickLoad(name string, fn func(ctx *context.Context, key int64, field string, filters ...*Filter) (*sync.Map, error)) {
 	quickLoadMap.Store(name, fn)
 }
 
-func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string) ([]*sync.Map, error)) {
+func AddQuickLoadList(name string, fn func(ctx *context.Context, key int64, field string, filters ...*Filter) ([]*sync.Map, error)) {
 	quickLoadListMap.Store(name, fn)
 }
 
@@ -65,16 +60,16 @@ func GetQuickList(name string) func(ctx *context.Context, datas []*sync.Map, sco
 	return nil
 }
 
-func GetQuickLoad(name string) func(ctx *context.Context, key int64, field string) (*sync.Map, error) {
+func GetQuickLoad(name string) func(ctx *context.Context, key int64, field string, filters ...*Filter) (*sync.Map, error) {
 	if fn, ok := quickLoadMap.Load(name); ok {
-		return fn.(func(ctx *context.Context, key int64, field string) (*sync.Map, error))
+		return fn.(func(ctx *context.Context, key int64, field string, filters ...*Filter) (*sync.Map, error))
 	}
 	return nil
 }
 
-func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string) ([]*sync.Map, error) {
+func GetQuickLoadList(name string) func(ctx *context.Context, key int64, field string, filters ...*Filter) ([]*sync.Map, error) {
 	if fn, ok := quickLoadListMap.Load(name); ok {
-		return fn.(func(ctx *context.Context, key int64, field string) ([]*sync.Map, error))
+		return fn.(func(ctx *context.Context, key int64, field string, filters ...*Filter) ([]*sync.Map, error))
 	}
 	return nil
 }
@@ -208,7 +203,7 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 				Locations: []*errors.GraphqlLocation{},
 			}
 		}
-		filters := []Filter{
+		filters := []*Filter{
 			{
 				Field: relation.MorphType,
 				Value: relation.CurrentType,
@@ -229,7 +224,7 @@ func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation)
 	return nil, nil
 }
 
-func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}, filters ...Filter) ([]*sync.Map, error) {
+func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKey string, fieldValue interface{}, filters ...*Filter) ([]*sync.Map, error) {
 	key, err := convertToInt64(relationName, foreignKey, fieldValue)
 	if err != nil {
 		return nil, err
@@ -240,13 +235,9 @@ func fetchMultipleRelations(ctx *context.Context, relationName string, foreignKe
 		return nil, fmt.Errorf("relation %s not found", relationName)
 	}
 
-	datas, err := loadListFn(ctx, key, foreignKey)
+	datas, err := loadListFn(ctx, key, foreignKey, filters...)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, filter := range filters {
-		datas = filterList(datas, filter)
 	}
 
 	listFn := GetQuickList(utils.UcFirst(utils.CamelCase(relationName)))
@@ -318,7 +309,6 @@ func fetchManyToManyRelations(ctx *context.Context, relation *ast.Relation, fiel
 		return nil, err
 	}
 
-	// 获取中间表数据
 	loadListFn := GetQuickLoadList(utils.UcFirst(utils.CamelCase(relation.Pivot)))
 	if loadListFn == nil {
 		return nil, fmt.Errorf("pivot relation %s not found", relation.Pivot)
@@ -329,7 +319,6 @@ func fetchManyToManyRelations(ctx *context.Context, relation *ast.Relation, fiel
 		return nil, err
 	}
 
-	// 从中间表数据中提取关联ID
 	var relatedIds []int64
 	for _, pivotData := range pivotDatas {
 		if relatedId, ok := pivotData.Load(relation.PivotReference); ok {
@@ -338,43 +327,39 @@ func fetchManyToManyRelations(ctx *context.Context, relation *ast.Relation, fiel
 			}
 		}
 	}
-
-	// 获取关联表数据
 	var results []*sync.Map
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	for _, relatedId := range relatedIds {
-		loadFn := GetQuickLoad(utils.UcFirst(utils.CamelCase(relation.Name)))
-		if loadFn == nil {
-			return nil, fmt.Errorf("relation %s not found", relation.Name)
-		}
+		wg.Add(1)
+		go func(id int64) {
+			defer wg.Done()
+			loadFn := GetQuickLoad(utils.UcFirst(utils.CamelCase(relation.Name)))
+			if loadFn == nil {
+				return
+			}
+			data, err := loadFn(ctx, id, relation.RelationForeignKey)
+			if err != nil {
+				return
+			}
+			firstFn := GetQuickFirst(utils.UcFirst(utils.CamelCase(relation.Name)))
+			if firstFn == nil {
+				return
+			}
 
-		data, err := loadFn(ctx, relatedId, relation.RelationForeignKey)
-		if err != nil {
-			continue
-		}
-
-		firstFn := GetQuickFirst(utils.UcFirst(utils.CamelCase(relation.Name)))
-		if firstFn == nil {
-			return nil, fmt.Errorf("relation %s not found", relation.Name)
-		}
-
-		data, err = firstFn(ctx, data)
-		if err != nil {
-			continue
-		}
-
-		data.Store("__typename", relation.Name)
-		results = append(results, data)
+			data, err = firstFn(ctx, data)
+			if err != nil {
+				return
+			}
+			data.Store("__typename", relation.Name)
+			mu.Lock()
+			results = append(results, data)
+			mu.Unlock()
+		}(relatedId)
 	}
+
+	wg.Wait()
 
 	return results, nil
-}
-
-func filterList(datas []*sync.Map, filter Filter) []*sync.Map {
-	results := make([]*sync.Map, 0)
-	for _, data := range datas {
-		if value, ok := data.Load(filter.Field); ok && value == filter.Value {
-			results = append(results, data)
-		}
-	}
-	return results
 }

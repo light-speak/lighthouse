@@ -395,6 +395,10 @@ func (p *Parser) addRelationDirective() {
 				Name: "pivot",
 				Type: &ast.TypeRef{Kind: ast.KindNonNull, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
 			},
+			"currentType": {
+				Name: "currentType",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 			"pivotForeignKey": {
 				Name: "pivotForeignKey",
 				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
@@ -471,6 +475,14 @@ func (p *Parser) addObjectDirective() {
 					Kind: ast.KindScalar,
 					Name: "String",
 				},
+			},
+			"unique": {
+				Name: "unique",
+				Type: &ast.TypeRef{
+					Kind: ast.KindScalar,
+					Name: "Boolean",
+				},
+				DefaultValue: false,
 			},
 		},
 	})

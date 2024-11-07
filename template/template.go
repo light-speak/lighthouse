@@ -68,7 +68,6 @@ func (o *Options) addFunc() {
 	o.Funcs["sub"] = Sub
 	o.Funcs["mul"] = Mul
 	o.Funcs["div"] = Div
-	o.Funcs["buildRelation"] = ast.BuildRelation
 	o.Funcs["pluralize"] = utils.Pluralize
 	o.Funcs["isInternalType"] = utils.IsInternalType
 	o.Funcs["prefixModels"] = ast.PrefixModels
