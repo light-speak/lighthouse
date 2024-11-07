@@ -8,6 +8,7 @@ import (
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
 	"github.com/light-speak/lighthouse/graphql/model"
+	"github.com/light-speak/lighthouse/resolve"
 	"github.com/light-speak/lighthouse/utils"
 )
 
@@ -85,6 +86,24 @@ func mergeData(ctx *context.Context, field *ast.Field, datas *sync.Map) (interfa
 
 	fieldName := utils.SnakeCase(field.Name)
 	var v interface{}
+
+	// Handle attr fields first
+	if field.IsAttr {
+		if resolver, ok := attrResolverMap[fmt.Sprintf("%sAttr", utils.UcFirst(utils.CamelCase(field.Name)))]; ok {
+			r, err := resolver(ctx, datas, resolve.R)
+			if err != nil {
+				return nil, &errors.GraphQLError{
+					Message:   fmt.Sprintf("Failed to resolve attr: %v", err),
+					Locations: []*errors.GraphqlLocation{field.GetLocation()},
+				}
+			}
+			return r, nil
+		}
+		return nil, &errors.GraphQLError{
+			Message:   fmt.Sprintf("Attr resolver not found for %s", field.Name),
+			Locations: []*errors.GraphqlLocation{field.GetLocation()},
+		}
+	}
 
 	// Get value from sync.Map
 	if ev, exists := datas.Load(fieldName); exists && ev != nil {

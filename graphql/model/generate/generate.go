@@ -2,6 +2,7 @@ package generate
 
 import (
 	"embed"
+	"fmt"
 	"path/filepath"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
@@ -151,7 +152,7 @@ func GenOperationResolver(node *ast.ObjectNode, path string, name string) error 
 			options := &template.Options{
 				Path:         filepath.Join(path, "resolver"),
 				Template:     string(operationTemplate),
-				FileName:     field.Name,
+				FileName:     utils.SnakeCase(field.Name),
 				FileExt:      "go",
 				Package:      "resolver",
 				Editable:     true,
@@ -208,6 +209,53 @@ func GenEnum(nodes map[string]*ast.EnumNode, path string) error {
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Nodes": nodes,
+		},
+	}
+	return template.Render(options)
+}
+
+func GenAttr(nodes map[string][]*ast.Field, path string) error {
+	// 生成每个类型的 attr resolver 文件
+	for typeName, fields := range nodes {
+		for _, field := range fields {
+			attrTemplate, err := modelFs.ReadFile("tpl/attr.tpl")
+			if err != nil {
+				return err
+			}
+			options := &template.Options{
+				Path:         filepath.Join(path, "resolver"),
+				Template:     string(attrTemplate),
+				FileName:     fmt.Sprintf("%s_attr", utils.SnakeCase(field.Name)),
+				FileExt:      "go",
+				Package:      "resolver",
+				Editable:     true,
+				SkipIfExists: false,
+				Data: map[string]interface{}{
+					"Fields": map[string][]*ast.Field{
+						typeName: {field},
+					},
+				},
+			}
+			if err := template.Render(options); err != nil {
+				return err
+			}
+		}
+	}
+
+	attrGenTemplate, err := modelFs.ReadFile("tpl/attr_gen.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "resolver"),
+		Template:     string(attrGenTemplate),
+		FileName:     "attr_gen",
+		FileExt:      "go",
+		Package:      "resolver",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Fields": nodes,
 		},
 	}
 	return template.Render(options)

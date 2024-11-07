@@ -184,3 +184,9 @@ var resolverMap = make(map[string]func(ctx *context.Context, args map[string]any
 func AddResolver(name string, fn func(ctx *context.Context, args map[string]any, r resolve.Resolve) (interface{}, error)) {
 	resolverMap[name] = fn
 }
+
+var attrResolverMap = make(map[string]func(ctx *context.Context, data *sync.Map, resolve resolve.Resolve) (interface{}, error))
+
+func AddAttrResolver(name string, fn func(ctx *context.Context, data *sync.Map, resolve resolve.Resolve) (interface{}, error)) {
+	attrResolverMap[name] = fn
+}

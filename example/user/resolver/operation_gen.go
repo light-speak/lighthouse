@@ -2,6 +2,7 @@
 package resolver
 
 import (
+  "sync"
   "user/models"
   "fmt"
   "github.com/light-speak/lighthouse/context"
@@ -9,7 +10,6 @@ import (
   "github.com/light-speak/lighthouse/graphql/excute"
   "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/resolve"
-  "sync"
 )
 
 func init() {

@@ -3,8 +3,8 @@ package resolver
 
 import (
   "github.com/light-speak/lighthouse/log"
-  "fmt"
   "user/models"
+  "fmt"
   "github.com/light-speak/lighthouse/context"
 )
 

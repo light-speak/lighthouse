@@ -2,9 +2,9 @@
 package resolver
 
 import (
-  "user/models"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/log"
+  "user/models"
 )
 
 

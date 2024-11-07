@@ -409,6 +409,7 @@ func (f *Field) Validate(store *NodeStore, objectFields map[string]*Field, objec
 				f.DefinitionDirectives = append(f.DefinitionDirectives, field.Directives...)
 				f.Relation = field.Relation
 				f.DefinitionArgs = field.Args
+				f.IsAttr = field.IsAttr
 				for _, defArg := range f.DefinitionArgs {
 					if defArg.DefaultValue != nil && f.Args[defArg.Name] == nil {
 						if f.Args == nil {

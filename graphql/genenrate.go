@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"errors"
 	"os"
 
 	"github.com/light-speak/lighthouse/graphql/ast"
@@ -80,6 +81,29 @@ func Generate() error {
 		if err := generate.GenOperationResolver(p.NodeStore.Objects["Mutation"], currentPath, "mutation"); err != nil {
 			return err
 		}
+	}
+	attrNodes := map[string][]*ast.Field{}
+	fieldNameMap := make(map[string]string) // field name -> type name mapping
+	for _, node := range p.NodeStore.Objects {
+		if node.IsModel {
+			for _, field := range node.Fields {
+				if field.IsAttr {
+					if existingType, exists := fieldNameMap[field.Name]; exists {
+						return errors.New("duplicate attr field name '" + field.Name + "' found in types '" + existingType + "' and '" + node.GetName() + "'")
+					}
+					fieldNameMap[field.Name] = node.GetName()
+
+					if _, ok := attrNodes[node.GetName()]; !ok {
+						attrNodes[node.GetName()] = []*ast.Field{}
+					}
+					attrNodes[node.GetName()] = append(attrNodes[node.GetName()], field)
+				}
+			}
+		}
+	}
+	log.Warn().Msgf("attrNodes: %v", attrNodes)
+	if err := generate.GenAttr(attrNodes, currentPath); err != nil {
+		return err
 	}
 
 	if err := generate.GenOperationResolverGen(operationNodes, currentPath); err != nil {
