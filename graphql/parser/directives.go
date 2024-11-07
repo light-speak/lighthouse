@@ -514,10 +514,9 @@ func (p *Parser) addRuntimeFieldDirective() {
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 		Args: map[string]*ast.Argument{
 			"msg": {
-				Name:         "msg",
-				Description:  utils.StrPtr("The message of the auth."),
-				Type:         &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
-				DefaultValue: "Unauthorized! please login",
+				Name:        "msg",
+				Description: utils.StrPtr("The message of the auth."),
+				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 		},
 	})
@@ -559,5 +558,10 @@ func (p *Parser) addRuntimeFieldDirective() {
 				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "Boolean"},
 			},
 		},
+	})
+	// attr
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "attr", Description: utils.StrPtr("The field is attr."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
 }

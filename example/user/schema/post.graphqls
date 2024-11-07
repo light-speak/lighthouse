@@ -8,6 +8,7 @@ type Post @softDeleteModel {
   user: User! @belongsTo
   enum: TestEnum!
   comments: [Comment!]! @morphToMany(relation: "comment")
+  fuckingAttr: String! @attr
 }
 
 extend type Query {
@@ -40,6 +41,7 @@ type Test {
 }
 
 input TestInput {
+  "这是ID"
   id: String
   e: Boolean
   enum: TestEnum!

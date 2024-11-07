@@ -62,9 +62,20 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 	errChan := make(chan errors.GraphqlErrorInterface, len(qp.Fields))
 
 	for _, field := range qp.Fields {
+		err := ast.ExecuteFieldBeforeDirectives(ctx, field, p.NodeStore, nil)
+		if err != nil {
+			errChan <- err
+			continue
+		}
 		wg.Add(1)
 		go func(field *ast.Field) {
-			defer wg.Done()
+			defer func() {
+				err := ast.ExecuteFieldAfterDirectives(ctx, field, p.NodeStore, nil)
+				if err != nil {
+					errChan <- err
+				}
+				wg.Done()
+			}()
 
 			quickRes, isQuick, err := QuickExecute(ctx, field)
 			if err != nil {

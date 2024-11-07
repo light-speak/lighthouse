@@ -71,6 +71,8 @@ func (o *Options) addFunc() {
 	o.Funcs["pluralize"] = utils.Pluralize
 	o.Funcs["isInternalType"] = utils.IsInternalType
 	o.Funcs["prefixModels"] = ast.PrefixModels
+	o.Funcs["isQuickDirective"] = ast.IsQuickDirective
+	o.Funcs["isQuickDirectives"] = ast.IsQuickDirectives
 }
 func Render(options *Options) error {
 	options.addFunc()

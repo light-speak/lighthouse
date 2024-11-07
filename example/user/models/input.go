@@ -5,8 +5,11 @@ import  "fmt"
 
 
 type TestInput struct {
+  // description: <nil>
   E *bool `json:"E"`
+  // description: <nil>
   Enum TestEnum `json:"Enum"`
+  // description: 这是ID
   Id *string `json:"Id"`
 }
 

@@ -2,7 +2,7 @@ func init() {
 {{- range .Nodes }}
 {{- range .Fields }}
 {{- if not (isInternalType .Name) }}
-{{- if eq (len .Directives) 0 }}
+{{- if not (isQuickDirectives .Directives) }}
   {{- $args := .Args }}
   excute.AddResolver("{{ .Name }}", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
     r := resolve.(*Resolver)

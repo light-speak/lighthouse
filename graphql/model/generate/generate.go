@@ -139,28 +139,32 @@ func GenOperationResolver(node *ast.ObjectNode, path string, name string) error 
 		return err
 	}
 
-	fields := []*ast.Field{}
 	for _, field := range node.Fields {
-		if len(field.Directives) == 0 && !utils.IsInternalType(field.Name) {
-			fields = append(fields, field)
+		hasQuickDirective := false
+		for _, directive := range field.Directives {
+			if ast.IsQuickDirective(directive) {
+				hasQuickDirective = true
+				break
+			}
 		}
-	}
-
-	options := &template.Options{
-		Path:         filepath.Join(path, "resolver"),
-		Template:     string(operationTemplate),
-		FileName:     name,
-		FileExt:      "go",
-		Package:      "resolver",
-		Editable:     true,
-		SkipIfExists: false,
-		Data: map[string]interface{}{
-			"Fields": fields,
-		},
-	}
-	err = template.Render(options)
-	if err != nil {
-		return err
+		if !hasQuickDirective && !utils.IsInternalType(field.Name) {
+			options := &template.Options{
+				Path:         filepath.Join(path, "resolver"),
+				Template:     string(operationTemplate),
+				FileName:     field.Name,
+				FileExt:      "go",
+				Package:      "resolver",
+				Editable:     true,
+				SkipIfExists: false,
+				Data: map[string]interface{}{
+					"Fields": []*ast.Field{field},
+				},
+			}
+			err = template.Render(options)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

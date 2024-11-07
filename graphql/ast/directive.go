@@ -1,10 +1,14 @@
 package ast
 
-import "github.com/light-speak/lighthouse/errors"
+import (
+	"github.com/light-speak/lighthouse/context"
+	"github.com/light-speak/lighthouse/errors"
+)
 
 var fieldDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
 var objectDirectiveMap = make(map[string]func(o *ObjectNode, d *Directive, store *NodeStore) errors.GraphqlErrorInterface)
-var fieldRuntimeDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
+var fieldRuntimeAfterDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
+var fieldRuntimeBeforeDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
 
 func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
 	fieldDirectiveMap[name] = fn
@@ -14,8 +18,12 @@ func AddObjectDirective(name string, fn func(o *ObjectNode, d *Directive, store 
 	objectDirectiveMap[name] = fn
 }
 
-func AddFieldRuntimeDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
-	fieldRuntimeDirectiveMap[name] = fn
+func AddFieldRuntimeBeforeDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
+	fieldRuntimeBeforeDirectiveMap[name] = fn
+}
+
+func AddFieldRuntimeAfterDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
+	fieldRuntimeAfterDirectiveMap[name] = fn
 }
 
 func (f *Field) ParseFieldDirectives(store *NodeStore, parent Node) errors.GraphqlErrorInterface {

@@ -16,6 +16,32 @@ var excludeFieldName = map[string]struct{}{
 	"__typename": {},
 }
 
+var quickDirectives = map[string]struct{}{
+	"first":    {},
+	"find":     {},
+	"paginate": {},
+	"last":     {},
+	"create":   {},
+	"update":   {},
+	"delete":   {},
+}
+
+func IsQuickDirective(directive *Directive) bool {
+	if _, ok := quickDirectives[directive.Name]; ok {
+		return true
+	}
+	return false
+}
+
+func IsQuickDirectives(directives []*Directive) bool {
+	for _, directive := range directives {
+		if IsQuickDirective(directive) {
+			return true
+		}
+	}
+	return false
+}
+
 func PrefixModels(typeName string) string {
 	if strings.HasPrefix(typeName, "*") {
 		if strings.HasPrefix(strings.TrimPrefix(typeName, "*"), "[]") {
@@ -110,9 +136,11 @@ func genTag(field *Field) string {
 		"json": {utils.SnakeCase(field.Name)},
 	}
 	hasType := false
+	gorm := true
 
-	if field.Relation != nil {
+	if field.Relation != nil || field.IsAttr {
 		tags["gorm"] = append(tags["gorm"], "-")
+		gorm = false
 	}
 
 	for _, directive := range field.Directives {
@@ -126,10 +154,10 @@ func genTag(field *Field) string {
 			}
 		}
 	}
-	if !hasType && field.Type.GetRealType().Name == "String" {
+	if !hasType && field.Type.GetRealType().Name == "String" && gorm {
 		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("type:varchar(%s)", "255"))
 	}
-	if field.Description != nil {
+	if field.Description != nil && gorm {
 		tags["gorm"] = append(tags["gorm"], fmt.Sprintf("comment:%s", *field.Description))
 	}
 

@@ -2,14 +2,14 @@
 package resolver
 
 import (
+  "user/models"
+  "fmt"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql"
   "github.com/light-speak/lighthouse/graphql/excute"
   "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/resolve"
   "sync"
-  "user/models"
-  "fmt"
 )
 
 func init() {
@@ -68,6 +68,26 @@ func init() {
       res = append(res, itemMap)
     }
     return res, nil
+  })
+  excute.AddResolver("me", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
+    r := resolve.(*Resolver)
+    var id *int64
+    if args["id"] != nil {
+      pid, e := graphql.Parser.NodeStore.Scalars["ID"].ScalarType.ParseValue(args["id"], nil)
+      if e != nil {
+        return nil, e
+      }
+      var ok bool
+      id, ok = pid.(*int64)
+      if !ok {
+        return nil, fmt.Errorf("argument: 'id' is not a *int64, got %T", args["id"])
+      }
+    }
+    res, err := r.MeResolver(ctx, id)
+    if res == nil {
+      return nil, err
+    }
+    return model.StructToMap(res)
   })
   excute.AddResolver("testNullableEnum", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
     r := resolve.(*Resolver)

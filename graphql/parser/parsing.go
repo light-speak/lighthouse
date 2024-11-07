@@ -628,6 +628,13 @@ func (p *Parser) parseInput() {
 	node.Fields = make(map[string]*ast.Field)
 
 	for {
+		for {
+			if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
+				p.NextToken()
+			} else {
+				break
+			}
+		}
 		field := p.parseField(false, "")
 		if _, ok := node.Fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
@@ -670,12 +677,22 @@ func (p *Parser) parseInterface() {
 	}
 	p.expect(lexer.LeftBrace)
 	fields := make(map[string]*ast.Field)
-	for p.currToken.Type == lexer.Letter || p.currToken.Type == lexer.TripleDot {
+	for {
+		for {
+			if p.currToken.Type == lexer.Comment || p.currToken.Type == lexer.Message {
+				p.NextToken()
+			} else {
+				break
+			}
+		}
 		field := p.parseField(false, "")
 		if _, ok := fields[field.Name]; ok {
 			panic("duplicate field: " + field.Name)
 		}
 		fields[field.Name] = field
+		if p.currToken.Type == lexer.RightBrace {
+			break
+		}
 	}
 
 	node.Fields = fields

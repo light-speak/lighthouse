@@ -79,7 +79,8 @@ type Config struct {
 		Orm      DatabaseOrm
 	}
 	Auth struct {
-		Driver AuthDriver
+		Driver              AuthDriver
+		UnauthorizedMessage string
 	}
 	Logger struct {
 		Level  zerolog.Level
@@ -154,9 +155,11 @@ func init() {
 			Orm:      DatabaseOrm(GetEnv("DB_ORM", "gorm")),
 		},
 		Auth: struct {
-			Driver AuthDriver
+			Driver              AuthDriver
+			UnauthorizedMessage string
 		}{
-			Driver: AuthDriver(GetEnv("AUTH_DRIVER", "jwt")),
+			Driver:              AuthDriver(GetEnv("AUTH_DRIVER", "jwt")),
+			UnauthorizedMessage: GetEnv("UNAUTHORIZED_MESSAGE", "unauthorized"),
 		},
 		Logger: struct {
 			Level  zerolog.Level

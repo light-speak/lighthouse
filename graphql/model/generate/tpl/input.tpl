@@ -1,6 +1,7 @@
 {{ range .Nodes }}
 type {{ .GetName }} struct {
   {{- range .Fields }}
+  // description: {{ .Description }}
   {{ .Name | ucFirst }} {{ false | .Type.GetGoType }} `json:"{{ .Name | ucFirst }}"`
   {{- end }}
 }

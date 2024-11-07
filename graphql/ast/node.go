@@ -311,6 +311,7 @@ type Field struct {
 	IsFragment bool              `json:"-"`
 	IsUnion    bool              `json:"-"`
 	Fragment   *Fragment         `json:"-"`
+	IsAttr     bool              `json:"-"`
 
 	DefinitionDirectives []*Directive         `json:"-"`
 	DefinitionArgs       map[string]*Argument `json:"-"`
