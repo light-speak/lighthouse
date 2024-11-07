@@ -162,6 +162,10 @@ func (p *Parser) addFilterDirective() {
 					Name: "String",
 				},
 			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 		},
 	})
 	// neq
@@ -190,6 +194,10 @@ func (p *Parser) addFilterDirective() {
 					Name: "String",
 				},
 			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 		},
 	})
 	// gte
@@ -203,6 +211,10 @@ func (p *Parser) addFilterDirective() {
 					Kind: ast.KindScalar,
 					Name: "String",
 				},
+			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 		},
 	})
@@ -218,6 +230,10 @@ func (p *Parser) addFilterDirective() {
 					Name: "String",
 				},
 			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 		},
 	})
 	// lte
@@ -231,6 +247,10 @@ func (p *Parser) addFilterDirective() {
 					Kind: ast.KindScalar,
 					Name: "String",
 				},
+			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 		},
 	})
@@ -246,6 +266,10 @@ func (p *Parser) addFilterDirective() {
 					Name: "String",
 				},
 			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 		},
 	})
 	// notIn
@@ -260,6 +284,10 @@ func (p *Parser) addFilterDirective() {
 					Name: "String",
 				},
 			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+			},
 		},
 	})
 	// like
@@ -273,6 +301,10 @@ func (p *Parser) addFilterDirective() {
 					Kind: ast.KindScalar,
 					Name: "String",
 				},
+			},
+			"inject": {
+				Name: "inject",
+				Type: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
 			},
 		},
 	})

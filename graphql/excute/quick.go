@@ -22,7 +22,12 @@ func QuickExecute(ctx *context.Context, field *ast.Field) (interface{}, bool, er
 	scopes := make([]func(db *gorm.DB) *gorm.DB, 0)
 	for _, arg := range field.DefinitionArgs {
 		if len(arg.Directives) > 0 {
-			scope, err := executeFilter(ctx, arg, field.Args[arg.Name].Value)
+			var v interface{}
+			argValue := field.Args[arg.Name]
+			if argValue != nil {
+				v = argValue.Value
+			}
+			scope, err := executeFilter(ctx, arg, v)
 			if err != nil {
 				return nil, false, err
 			}

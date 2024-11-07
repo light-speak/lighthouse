@@ -26,6 +26,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			}
 			ctx := r.Context().(*context.Context)
 			ctx.UserId = &userId
+			ctx.Inject = map[string]interface{}{
+				"userId": userId,
+			}
 		} else {
 			//TODO: manor获取
 		}

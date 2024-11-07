@@ -19,6 +19,13 @@ func executeFilter(ctx *context.Context, arg *ast.Argument, value interface{}) (
 		if fieldArg := directive.GetArg("field"); fieldArg != nil {
 			fieldName = fieldArg.Value.(string)
 		}
+		injectName := ""
+		if injectArg := directive.GetArg("inject"); injectArg != nil {
+			injectName = injectArg.Value.(string)
+		}
+		if injectName != "" && ctx.Inject != nil && value == nil {
+			value = ctx.Inject[injectName]
+		}
 		return filter(ctx, fieldName, value), nil
 	}
 	return nil, nil

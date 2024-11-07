@@ -28,15 +28,15 @@ directive @first(scopes: [String!]) on FIELD_DEFINITION
 
 
 # argument filter
-directive @in(field: String) on ARGUMENT_DEFINITION
-directive @eq(field: String) on ARGUMENT_DEFINITION
-directive @neq(field: String) on ARGUMENT_DEFINITION
-directive @gt(field: String) on ARGUMENT_DEFINITION
-directive @gte(field: String) on ARGUMENT_DEFINITION
-directive @lt(field: String) on ARGUMENT_DEFINITION
-directive @lte(field: String) on ARGUMENT_DEFINITION
-directive @like(field: String) on ARGUMENT_DEFINITION
-directive @notIn(field: String) on ARGUMENT_DEFINITION
+directive @in(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @eq(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @neq(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @gt(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @gte(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @lt(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @lte(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @like(field: String, inject: String) on ARGUMENT_DEFINITION
+directive @notIn(field: String, inject: String) on ARGUMENT_DEFINITION
 
 # relation
 directive @belongsTo(relation: String, foreignKey: String, reference: String) on FIELD_DEFINITION

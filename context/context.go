@@ -11,6 +11,7 @@ type Context struct {
 	UserId          *int64                         `json:"userId"`
 	RemoteAddr      *string                        `json:"remoteAddr"`
 	Errors          []errors.GraphqlErrorInterface `json:"-"`
+	Inject          map[string]interface{}         `json:"-"`
 }
 
 func NewContext(ctx context.Context) *Context {
