@@ -2,12 +2,12 @@
 package repo
 
 import (
-  "gorm.io/gorm"
   "sync"
   "user/models"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/model"
   "github.com/light-speak/lighthouse/utils"
+  "gorm.io/gorm"
 )
 
 // Generic loader function
@@ -104,6 +104,30 @@ func countEntity[T any](model interface{}, scopes ...func(db *gorm.DB) *gorm.DB)
   return count, err
 }
 
+// UserTag functions
+func Load__UserTag(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
+  return loadEntity[models.UserTag](ctx, key, "user_tags", field, filters...)
+}
+
+func LoadList__UserTag(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
+  return loadEntityList[models.UserTag](ctx, key, "user_tags", field, filters...)
+}
+
+func Query__UserTag(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.UserTag](&models.UserTag{}, scopes...)
+}
+
+func First__UserTag(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.UserTag](ctx, data, models.UserTagEnumFields, &models.UserTag{}, scopes...)
+}
+
+func List__UserTag(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.UserTag](ctx, datas, models.UserTagEnumFields, &models.UserTag{}, scopes...)
+}
+
+func Count__UserTag(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.UserTag](&models.UserTag{}, scopes...)
+}
 // Wallet functions
 func Load__Wallet(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
   return loadEntity[models.Wallet](ctx, key, "wallets", field, filters...)
@@ -127,30 +151,6 @@ func List__Wallet(ctx *context.Context, datas []*sync.Map, scopes ...func(db *go
 
 func Count__Wallet(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.Wallet](&models.Wallet{}, scopes...)
-}
-// Post functions
-func Load__Post(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
-  return loadEntity[models.Post](ctx, key, "posts", field, filters...)
-}
-
-func LoadList__Post(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
-  return loadEntityList[models.Post](ctx, key, "posts", field, filters...)
-}
-
-func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Post](&models.Post{}, scopes...)
-}
-
-func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Post](ctx, data, models.PostEnumFields, &models.Post{}, scopes...)
-}
-
-func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Post](ctx, datas, models.PostEnumFields, &models.Post{}, scopes...)
-}
-
-func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Post](&models.Post{}, scopes...)
 }
 // Comment functions
 func Load__Comment(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
@@ -176,6 +176,30 @@ func List__Comment(ctx *context.Context, datas []*sync.Map, scopes ...func(db *g
 func Count__Comment(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.Comment](&models.Comment{}, scopes...)
 }
+// Tag functions
+func Load__Tag(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
+  return loadEntity[models.Tag](ctx, key, "tags", field, filters...)
+}
+
+func LoadList__Tag(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
+  return loadEntityList[models.Tag](ctx, key, "tags", field, filters...)
+}
+
+func Query__Tag(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Tag](&models.Tag{}, scopes...)
+}
+
+func First__Tag(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Tag](ctx, data, models.TagEnumFields, &models.Tag{}, scopes...)
+}
+
+func List__Tag(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Tag](ctx, datas, models.TagEnumFields, &models.Tag{}, scopes...)
+}
+
+func Count__Tag(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Tag](&models.Tag{}, scopes...)
+}
 // User functions
 func Load__User(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
   return loadEntity[models.User](ctx, key, "users", field, filters...)
@@ -199,30 +223,6 @@ func List__User(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm
 
 func Count__User(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.User](&models.User{}, scopes...)
-}
-// UserTag functions
-func Load__UserTag(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
-  return loadEntity[models.UserTag](ctx, key, "user_tags", field, filters...)
-}
-
-func LoadList__UserTag(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
-  return loadEntityList[models.UserTag](ctx, key, "user_tags", field, filters...)
-}
-
-func Query__UserTag(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.UserTag](&models.UserTag{}, scopes...)
-}
-
-func First__UserTag(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.UserTag](ctx, data, models.UserTagEnumFields, &models.UserTag{}, scopes...)
-}
-
-func List__UserTag(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.UserTag](ctx, datas, models.UserTagEnumFields, &models.UserTag{}, scopes...)
-}
-
-func Count__UserTag(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.UserTag](&models.UserTag{}, scopes...)
 }
 // Article functions
 func Load__Article(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
@@ -248,66 +248,66 @@ func List__Article(ctx *context.Context, datas []*sync.Map, scopes ...func(db *g
 func Count__Article(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
   return countEntity[models.Article](&models.Article{}, scopes...)
 }
-// Tag functions
-func Load__Tag(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
-  return loadEntity[models.Tag](ctx, key, "tags", field, filters...)
+// Post functions
+func Load__Post(ctx *context.Context, key int64, field string, filters ...*model.Filter) (*sync.Map, error) {
+  return loadEntity[models.Post](ctx, key, "posts", field, filters...)
 }
 
-func LoadList__Tag(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
-  return loadEntityList[models.Tag](ctx, key, "tags", field, filters...)
+func LoadList__Post(ctx *context.Context, key int64, field string, filters ...*model.Filter) ([]*sync.Map, error) {
+  return loadEntityList[models.Post](ctx, key, "posts", field, filters...)
 }
 
-func Query__Tag(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
-  return queryEntity[models.Tag](&models.Tag{}, scopes...)
+func Query__Post(scopes ...func(db *gorm.DB) *gorm.DB) *gorm.DB {
+  return queryEntity[models.Post](&models.Post{}, scopes...)
 }
 
-func First__Tag(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
-  return firstEntity[models.Tag](ctx, data, models.TagEnumFields, &models.Tag{}, scopes...)
+func First__Post(ctx *context.Context, data *sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) (*sync.Map, error) {
+  return firstEntity[models.Post](ctx, data, models.PostEnumFields, &models.Post{}, scopes...)
 }
 
-func List__Tag(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
-  return listEntity[models.Tag](ctx, datas, models.TagEnumFields, &models.Tag{}, scopes...)
+func List__Post(ctx *context.Context, datas []*sync.Map, scopes ...func(db *gorm.DB) *gorm.DB) ([]*sync.Map, error) {
+  return listEntity[models.Post](ctx, datas, models.PostEnumFields, &models.Post{}, scopes...)
 }
 
-func Count__Tag(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
-  return countEntity[models.Tag](&models.Tag{}, scopes...)
+func Count__Post(scopes ...func(db *gorm.DB) *gorm.DB) (int64, error) {
+  return countEntity[models.Post](&models.Post{}, scopes...)
 }
 
 
 func init() {
-  model.AddQuickFirst("Wallet", First__Wallet)
-  model.AddQuickList("Wallet", List__Wallet)
-  model.AddQuickLoad("Wallet", Load__Wallet)
-  model.AddQuickLoadList("Wallet", LoadList__Wallet)
-  model.AddQuickCount("Wallet", Count__Wallet)
-  model.AddQuickFirst("Post", First__Post)
-  model.AddQuickList("Post", List__Post)
-  model.AddQuickLoad("Post", Load__Post)
-  model.AddQuickLoadList("Post", LoadList__Post)
-  model.AddQuickCount("Post", Count__Post)
-  model.AddQuickFirst("Comment", First__Comment)
-  model.AddQuickList("Comment", List__Comment)
-  model.AddQuickLoad("Comment", Load__Comment)
-  model.AddQuickLoadList("Comment", LoadList__Comment)
-  model.AddQuickCount("Comment", Count__Comment)
-  model.AddQuickFirst("User", First__User)
-  model.AddQuickList("User", List__User)
-  model.AddQuickLoad("User", Load__User)
-  model.AddQuickLoadList("User", LoadList__User)
-  model.AddQuickCount("User", Count__User)
   model.AddQuickFirst("UserTag", First__UserTag)
   model.AddQuickList("UserTag", List__UserTag)
   model.AddQuickLoad("UserTag", Load__UserTag)
   model.AddQuickLoadList("UserTag", LoadList__UserTag)
   model.AddQuickCount("UserTag", Count__UserTag)
-  model.AddQuickFirst("Article", First__Article)
-  model.AddQuickList("Article", List__Article)
-  model.AddQuickLoad("Article", Load__Article)
-  model.AddQuickLoadList("Article", LoadList__Article)
-  model.AddQuickCount("Article", Count__Article)
+  model.AddQuickFirst("Wallet", First__Wallet)
+  model.AddQuickList("Wallet", List__Wallet)
+  model.AddQuickLoad("Wallet", Load__Wallet)
+  model.AddQuickLoadList("Wallet", LoadList__Wallet)
+  model.AddQuickCount("Wallet", Count__Wallet)
+  model.AddQuickFirst("Comment", First__Comment)
+  model.AddQuickList("Comment", List__Comment)
+  model.AddQuickLoad("Comment", Load__Comment)
+  model.AddQuickLoadList("Comment", LoadList__Comment)
+  model.AddQuickCount("Comment", Count__Comment)
   model.AddQuickFirst("Tag", First__Tag)
   model.AddQuickList("Tag", List__Tag)
   model.AddQuickLoad("Tag", Load__Tag)
   model.AddQuickLoadList("Tag", LoadList__Tag)
   model.AddQuickCount("Tag", Count__Tag)
+  model.AddQuickFirst("User", First__User)
+  model.AddQuickList("User", List__User)
+  model.AddQuickLoad("User", Load__User)
+  model.AddQuickLoadList("User", LoadList__User)
+  model.AddQuickCount("User", Count__User)
+  model.AddQuickFirst("Article", First__Article)
+  model.AddQuickList("Article", List__Article)
+  model.AddQuickLoad("Article", Load__Article)
+  model.AddQuickLoadList("Article", LoadList__Article)
+  model.AddQuickCount("Article", Count__Article)
+  model.AddQuickFirst("Post", First__Post)
+  model.AddQuickList("Post", List__Post)
+  model.AddQuickLoad("Post", Load__Post)
+  model.AddQuickLoadList("Post", LoadList__Post)
+  model.AddQuickCount("Post", Count__Post)
 }

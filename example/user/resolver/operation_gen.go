@@ -2,14 +2,14 @@
 package resolver
 
 import (
-  "github.com/light-speak/lighthouse/resolve"
-  "sync"
-  "user/models"
-  "fmt"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql"
   "github.com/light-speak/lighthouse/graphql/excute"
   "github.com/light-speak/lighthouse/graphql/model"
+  "github.com/light-speak/lighthouse/resolve"
+  "sync"
+  "user/models"
+  "fmt"
 )
 
 func init() {
@@ -28,15 +28,18 @@ func init() {
       }
     }
     res, err := r.GetPostResolver(ctx, fuck)
-    if res == nil {
+    if err != nil {
       return nil, err
+    }
+    if res == nil {
+      return nil, nil
     }
     return model.StructToMap(res)
   })
   excute.AddResolver("getPostIds", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
     r := resolve.(*Resolver)
     res, err := r.GetPostIdsResolver(ctx)
-    if res == nil {
+    if err != nil {
       return nil, err
     }
     return res, nil
@@ -56,8 +59,11 @@ func init() {
       }
     }
     list, err := r.GetPostsResolver(ctx, fuck)
-    if list == nil {
+    if err != nil {
       return nil, err
+    }
+    if list == nil {
+      return nil, nil
     }
     res := []*sync.Map{}
     for _, item := range list {
@@ -69,33 +75,13 @@ func init() {
     }
     return res, nil
   })
-  excute.AddResolver("me", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
-    r := resolve.(*Resolver)
-    var id *int64
-    if args["id"] != nil {
-      pid, e := graphql.Parser.NodeStore.Scalars["ID"].ScalarType.ParseValue(args["id"], nil)
-      if e != nil {
-        return nil, e
-      }
-      var ok bool
-      id, ok = pid.(*int64)
-      if !ok {
-        return nil, fmt.Errorf("argument: 'id' is not a *int64, got %T", args["id"])
-      }
-    }
-    res, err := r.MeResolver(ctx, id)
-    if res == nil {
-      return nil, err
-    }
-    return model.StructToMap(res)
-  })
   excute.AddResolver("testNullableEnum", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
     r := resolve.(*Resolver)
     var enum *models.TestEnum
     if args["enum"] != nil {
       enumValue, ok := models.TestEnumMap[args["enum"].(string)]
       if !ok {
-        return nil, fmt.Errorf("argument: 'enum' is not a models.TestEnum, got %T", args["enum"])
+        return nil, fmt.Errorf("argument: 'enum' is not a valid models.TestEnum, got %v", args["enum"])
       }
       enum = &enumValue
     }
@@ -108,7 +94,7 @@ func init() {
     if args["enum"] != nil {
       enumValue, ok := models.TestEnumMap[args["enum"].(string)]
       if !ok {
-        return nil, fmt.Errorf("argument: 'enum' is not a models.TestEnum, got %T", args["enum"])
+        return nil, fmt.Errorf("argument: 'enum' is not a valid models.TestEnum, got %v", args["enum"])
       }
       enum = &enumValue
     }
@@ -130,8 +116,11 @@ func init() {
       }
     }
     res, err := r.TestPostIdResolver(ctx, id)
-    if res == nil {
+    if err != nil {
       return nil, err
+    }
+    if res == nil {
+      return nil, nil
     }
     return model.StructToMap(res)
   })
@@ -142,7 +131,7 @@ func init() {
       var err error
       input, err = models.MapToTestInput(args["input"].(map[string]interface{}))
       if err != nil {
-        return nil, fmt.Errorf("argument: 'input' can not convert to models.TestInput, got %T", args["input"])
+        return nil, fmt.Errorf("argument: 'input' can not convert to models.TestInput, error: %v", err)
       }
     }
     res, err := r.TestPostInputResolver(ctx, input)
@@ -163,8 +152,11 @@ func init() {
       }
     }
     res, err := r.TestPostIntResolver(ctx, id)
-    if res == nil {
+    if err != nil {
       return nil, err
+    }
+    if res == nil {
+      return nil, nil
     }
     return model.StructToMap(res)
   })
@@ -175,12 +167,15 @@ func init() {
       var err error
       input, err = models.MapToTestInput(args["input"].(map[string]interface{}))
       if err != nil {
-        return nil, fmt.Errorf("argument: 'input' can not convert to models.TestInput, got %T", args["input"])
+        return nil, fmt.Errorf("argument: 'input' can not convert to models.TestInput, error: %v", err)
       }
     }
     res, err := r.CreatePostResolver(ctx, input)
-    if res == nil {
+    if err != nil {
       return nil, err
+    }
+    if res == nil {
+      return nil, nil
     }
     return model.StructToMap(res)
   })
@@ -211,8 +206,11 @@ func init() {
       }
     }
     res, err := r.CreatePost2Resolver(ctx, age, name)
-    if res == nil {
+    if err != nil {
       return nil, err
+    }
+    if res == nil {
+      return nil, nil
     }
     return model.StructToMap(res)
   })
@@ -231,9 +229,32 @@ func init() {
       }
     }
     res, err := r.LoginResolver(ctx, name)
-    if res == nil {
+    if err != nil {
       return nil, err
     }
+    if res == nil {
+      return nil, nil
+    }
     return model.TypeToMap(res)
+  })
+  excute.AddResolver("testInputList", func(ctx *context.Context, args map[string]any, resolve resolve.Resolve) (interface{}, error) {
+    r := resolve.(*Resolver)
+    var input []*models.TestInput
+    if args["input"] != nil {
+      var inputList []*models.TestInput
+      for _, v := range args["input"].([]interface{}) {
+        input, err := models.MapToTestInput(v.(map[string]interface{}))
+        if err != nil {
+          return nil, fmt.Errorf("argument: 'input' contains invalid input, error: %v", err)
+        }
+        inputList = append(inputList, input)
+      }
+      input = inputList
+    }
+    res, err := r.TestInputListResolver(ctx, input)
+    if err != nil {
+      return nil, err
+    }
+    return res, nil
   })
 }

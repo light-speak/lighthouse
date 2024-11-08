@@ -10,15 +10,15 @@ import (
 
 func PostUserId1(ctx *context.Context) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-    // Func:UserId1 user code start. Do not remove this comment. 
-		return db.Where("user_id = ?", 1)
+    // Func:UserId1 user code start. Do not remove this comment.
+    return db.Where("user_id = ?", 1)
     // Func:UserId1 user code end. Do not remove this comment. 
 	}
 }
 func PostUserId2(ctx *context.Context) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-    // Func:UserId2 user code start. Do not remove this comment. 
-		return db.Where("user_id = ?", 2)
+    // Func:UserId2 user code start. Do not remove this comment.
+    return db.Where("user_id = ?", 2)
     // Func:UserId2 user code end. Do not remove this comment. 
 	}
 }

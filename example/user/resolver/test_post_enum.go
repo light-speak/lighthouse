@@ -2,10 +2,10 @@
 package resolver
 
 import (
+  "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/log"
   "user/models"
   "fmt"
-  "github.com/light-speak/lighthouse/context"
 )
 
 

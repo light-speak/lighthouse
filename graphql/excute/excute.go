@@ -62,20 +62,30 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 	errChan := make(chan errors.GraphqlErrorInterface, len(qp.Fields))
 
 	for _, field := range qp.Fields {
-		err := ast.ExecuteFieldBeforeDirectives(ctx, field, p.NodeStore, nil)
-		if err != nil {
-			errChan <- err
-			continue
-		}
+		resultChan := make(chan interface{}, 1)
 		wg.Add(1)
 		go func(field *ast.Field) {
 			defer func() {
-				err := ast.ExecuteFieldAfterDirectives(ctx, field, p.NodeStore, nil)
+				err := ast.ExecuteFieldAfterDirectives(ctx, field, p.NodeStore, nil, res[field.Name])
 				if err != nil {
 					errChan <- err
 				}
 				wg.Done()
 			}()
+			err := ast.ExecuteFieldBeforeDirectives(ctx, field, p.NodeStore, nil, resultChan)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			// Get result from resultChan if directive has set it
+			select {
+			case result := <-resultChan:
+				mu.Lock()
+				res[field.Name] = result
+				mu.Unlock()
+				return
+			default:
+			}
 
 			quickRes, isQuick, err := QuickExecute(ctx, field)
 			if err != nil {
@@ -140,6 +150,7 @@ func ExecuteQuery(ctx *context.Context, query string, variables map[string]any) 
 				Message:   fmt.Sprintf("query %s not found", field.Name),
 				Locations: []*errors.GraphqlLocation{field.GetLocation()},
 			}
+
 		}(field)
 	}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/light-speak/lighthouse/graphql/ast"
 )
 
-func Auth(ctx *context.Context, f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node) errors.GraphqlErrorInterface {
+func Auth(ctx *context.Context, f *ast.Field, d *ast.Directive, store *ast.NodeStore, parent ast.Node, result interface{}) errors.GraphqlErrorInterface {
 	msg := env.LighthouseConfig.Auth.UnauthorizedMessage
 	if msgArg := d.GetArg("msg"); msgArg != nil {
 		msg = msgArg.Value.(string)

@@ -13,7 +13,7 @@ type Post @softDeleteModel @scopes(names: ["userId1", "userId2"]) {
 
 extend type Query {
   postPage: [Post!]! @paginate
-  posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find
+  posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find @cache(auth: true, ttl: 10, tag: "posts")
   post(id: ID! @eq): Post! @first(scopes: ["userId1"])
   getPost(fuck: String!): Post! 
   getPosts(fuck: String!): [Post!]! 
@@ -34,7 +34,7 @@ extend type Mutation {
     "年龄"
     age: Int
   ): Post
-
+  testInputList(input: [TestInput!]!): [Int!]!
 }
 
 type Test {

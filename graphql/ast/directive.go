@@ -7,8 +7,8 @@ import (
 
 var fieldDirectiveMap = make(map[string]func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
 var objectDirectiveMap = make(map[string]func(o *ObjectNode, d *Directive, store *NodeStore) errors.GraphqlErrorInterface)
-var fieldRuntimeAfterDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
-var fieldRuntimeBeforeDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface)
+var fieldRuntimeAfterDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node, result interface{}) errors.GraphqlErrorInterface)
+var fieldRuntimeBeforeDirectiveMap = make(map[string]func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node, result interface{}) errors.GraphqlErrorInterface)
 
 func AddFieldDirective(name string, fn func(f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
 	fieldDirectiveMap[name] = fn
@@ -18,11 +18,11 @@ func AddObjectDirective(name string, fn func(o *ObjectNode, d *Directive, store 
 	objectDirectiveMap[name] = fn
 }
 
-func AddFieldRuntimeBeforeDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
+func AddFieldRuntimeBeforeDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node, result interface{}) errors.GraphqlErrorInterface) {
 	fieldRuntimeBeforeDirectiveMap[name] = fn
 }
 
-func AddFieldRuntimeAfterDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node) errors.GraphqlErrorInterface) {
+func AddFieldRuntimeAfterDirective(name string, fn func(ctx *context.Context, f *Field, d *Directive, store *NodeStore, parent Node, result interface{}) errors.GraphqlErrorInterface) {
 	fieldRuntimeAfterDirectiveMap[name] = fn
 }
 

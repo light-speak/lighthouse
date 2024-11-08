@@ -587,6 +587,24 @@ func (t *TypeRef) GetGoType(NonNull bool) string {
 	return "interface{}"
 }
 
+func (t *TypeRef) GetGoRealType() string {
+	if t == nil {
+		return "interface{}"
+	}
+
+	switch t.Kind {
+	case KindScalar:
+		return t.TypeNode.(*ScalarNode).ScalarType.GoType()
+	case KindEnum, KindObject, KindInputObject:
+		return t.Name
+	case KindList:
+		return "[]" + t.OfType.GetGoRealType()
+	case KindNonNull:
+		return t.OfType.GetGoRealType()
+	}
+	return "interface{}"
+}
+
 func (t *TypeRef) Validate(store *NodeStore) errors.GraphqlErrorInterface {
 	if t.Kind == KindNonNull {
 		if t.OfType == nil {

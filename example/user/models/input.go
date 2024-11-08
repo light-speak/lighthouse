@@ -15,23 +15,26 @@ type TestInput struct {
 
 func MapToTestInput(data map[string]interface{}) (*TestInput, error) {
   result := &TestInput{}
-  
-  e, ok := data["e"].(*bool)
-  if !ok {
-    return nil, fmt.Errorf("invalid value for field 'e', got %T", data["e"])
+  if data["e"] != nil {
+    e, ok := data["e"].(bool)
+    if !ok {
+      return nil, fmt.Errorf("invalid value for field 'e', got %T", data["e"])
+    }
+    result.E = &e
   }
-  result.E = e
-  
-  enum, ok := TestEnumMap[data["enum"].(string)]
-  if !ok {
-    return nil, fmt.Errorf("invalid value for field 'enum', got %T", data["enum"])
+  if data["enum"] != nil {
+    enum, ok := TestEnumMap[data["enum"].(string)]
+    if !ok {
+      return nil, fmt.Errorf("invalid value for field 'enum', got %T", data["enum"])
+    }
+    result.Enum = enum
   }
-  result.Enum = enum
-  
-  id, ok := data["id"].(*string)
-  if !ok {
-    return nil, fmt.Errorf("invalid value for field 'id', got %T", data["id"])
+  if data["id"] != nil {
+    id, ok := data["id"].(string)
+    if !ok {
+      return nil, fmt.Errorf("invalid value for field 'id', got %T", data["id"])
+    }
+    result.Id = &id
   }
-  result.Id = id
   return result, nil
 }
