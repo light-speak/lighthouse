@@ -47,8 +47,8 @@ func IsEnabled() bool {
 	return isEnabled
 }
 
-// Set stores value in cache with expiration
-func Set(key string, value interface{}, expiration time.Duration) error {
+// Set stores value in cache with expiration and tags
+func Set(key string, value interface{}, expiration time.Duration, tags ...string) error {
 	if !isEnabled {
 		return nil
 	}
@@ -59,7 +59,18 @@ func Set(key string, value interface{}, expiration time.Duration) error {
 	}
 
 	ctx := context.Background()
-	return redisClient.Set(ctx, key, data, expiration).Err()
+	pipe := redisClient.Pipeline()
+
+	// 设置缓存值
+	pipe.Set(ctx, key, data, expiration)
+
+	// 为每个tag添加关联的key
+	for _, tag := range tags {
+		pipe.SAdd(ctx, fmt.Sprintf("tag:%s", tag), key)
+	}
+
+	_, err = pipe.Exec(ctx)
+	return err
 }
 
 // Get retrieves value from cache
@@ -98,4 +109,37 @@ func Clear() error {
 
 	ctx := context.Background()
 	return redisClient.FlushAll(ctx).Err()
+}
+
+// DeleteByTags removes all keys associated with given tags
+func DeleteByTags(tags ...string) error {
+	if !isEnabled {
+		return nil
+	}
+
+	ctx := context.Background()
+	pipe := redisClient.Pipeline()
+
+	// 收集所有要删除的键
+	var keysToDelete []string
+	for _, tag := range tags {
+		tagKey := fmt.Sprintf("tag:%s", tag)
+		// 获取tag关联的所有键
+		keys, err := redisClient.SMembers(ctx, tagKey).Result()
+		if err != nil {
+			return err
+		}
+		keysToDelete = append(keysToDelete, keys...)
+
+		// 删除tag集合
+		pipe.Del(ctx, tagKey)
+	}
+
+	// 删除所有关联的键
+	if len(keysToDelete) > 0 {
+		pipe.Del(ctx, keysToDelete...)
+	}
+
+	_, err := pipe.Exec(ctx)
+	return err
 }

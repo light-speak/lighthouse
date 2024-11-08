@@ -578,10 +578,10 @@ func (p *Parser) addRuntimeFieldDirective() {
 				Description: utils.StrPtr("Cache ttl."),
 				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "Int"},
 			},
-			"tag": {
-				Name:        "tag",
+			"tags": {
+				Name:        "tags",
 				Description: utils.StrPtr("Cache tag."),
-				Type:        &ast.TypeRef{Kind: ast.KindScalar, Name: "String"},
+				Type:        &ast.TypeRef{Kind: ast.KindList, OfType: &ast.TypeRef{Kind: ast.KindScalar, Name: "String"}},
 			},
 		},
 	})

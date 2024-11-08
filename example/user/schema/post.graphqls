@@ -13,7 +13,7 @@ type Post @softDeleteModel @scopes(names: ["userId1", "userId2"]) {
 
 extend type Query {
   postPage: [Post!]! @paginate
-  posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find @cache(auth: true, ttl: 10, tag: "posts")
+  posts(id: [ID!]! @in, user_id: ID! @neq): [Post!]! @find @cache(auth: true, ttl: 30, tags: ["posts","testTag"])
   post(id: ID! @eq): Post! @first(scopes: ["userId1"])
   getPost(fuck: String!): Post! 
   getPosts(fuck: String!): [Post!]! 

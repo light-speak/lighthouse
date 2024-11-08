@@ -12,7 +12,7 @@ const (
 )
 
 // GetOrSet gets value from cache, if not exists then sets it
-func GetOrSet(key string, result interface{}, fn func() (interface{}, error)) error {
+func GetOrSet(key string, result interface{}, fn func() (interface{}, error), tags ...string) error {
 	if !isEnabled {
 		value, err := fn()
 		if err != nil {
@@ -31,7 +31,7 @@ func GetOrSet(key string, result interface{}, fn func() (interface{}, error)) er
 		return err
 	}
 
-	if err := Set(key, value, DefaultExpiration); err != nil {
+	if err := Set(key, value, DefaultExpiration, tags...); err != nil {
 		return err
 	}
 
@@ -39,27 +39,26 @@ func GetOrSet(key string, result interface{}, fn func() (interface{}, error)) er
 }
 
 // CacheStruct caches struct type
-func CacheStruct[T any](key string, result *T, fn func() (*T, error)) error {
+func CacheStruct[T any](key string, result *T, fn func() (*T, error), tags ...string) error {
 	return GetOrSet(key, result, func() (interface{}, error) {
 		return fn()
-	})
+	}, tags...)
 }
 
 // CacheMap caches map type
-func CacheMap(key string, result *map[string]interface{}, fn func() (map[string]interface{}, error)) error {
+func CacheMap(key string, result *map[string]interface{}, fn func() (map[string]interface{}, error), tags ...string) error {
 	return GetOrSet(key, result, func() (interface{}, error) {
 		return fn()
-	})
+	}, tags...)
 }
 
 // CacheSyncMap caches sync.Map type
-func CacheSyncMap(key string, result *sync.Map, fn func() (*sync.Map, error)) error {
+func CacheSyncMap(key string, result *sync.Map, fn func() (*sync.Map, error), tags ...string) error {
 	if !isEnabled {
 		value, err := fn()
 		if err != nil {
 			return err
 		}
-		// Copy values instead of the map itself
 		value.Range(func(k, v interface{}) bool {
 			result.Store(k, v)
 			return true
@@ -67,24 +66,20 @@ func CacheSyncMap(key string, result *sync.Map, fn func() (*sync.Map, error)) er
 		return nil
 	}
 
-	// Try to get from cache first
 	var tempMap map[string]interface{}
 	err := Get(key, &tempMap)
 	if err == nil {
-		// Convert to sync.Map
 		for k, v := range tempMap {
 			result.Store(k, v)
 		}
 		return nil
 	}
 
-	// If cache miss, execute function to get data
 	value, err := fn()
 	if err != nil {
 		return err
 	}
 
-	// Convert sync.Map to regular map for caching
 	tempMap = make(map[string]interface{})
 	value.Range(func(k, v interface{}) bool {
 		if keyStr, ok := k.(string); ok {
@@ -93,12 +88,10 @@ func CacheSyncMap(key string, result *sync.Map, fn func() (*sync.Map, error)) er
 		return true
 	})
 
-	// Store in cache
-	if err := Set(key, tempMap, DefaultExpiration); err != nil {
+	if err := Set(key, tempMap, DefaultExpiration, tags...); err != nil {
 		return err
 	}
 
-	// Copy values instead of the map itself
 	value.Range(func(k, v interface{}) bool {
 		result.Store(k, v)
 		return true
