@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/bytedance/sonic"
 	"github.com/light-speak/lighthouse/context"
 	"github.com/light-speak/lighthouse/errors"
 	"github.com/light-speak/lighthouse/graphql/ast"
@@ -118,13 +119,13 @@ func StructToMap(m ModelInterface) (*sync.Map, error) {
 }
 
 func TypeToMap(m interface{}) (*sync.Map, error) {
-	jsonData, err := json.Marshal(m)
+	jsonData, err := sonic.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make(map[string]interface{})
-	if err = json.Unmarshal(jsonData, &result); err != nil {
+	if err = sonic.Unmarshal(jsonData, &result); err != nil {
 		return nil, err
 	}
 
@@ -148,15 +149,16 @@ func MapToStruct[T any](data *sync.Map) (T, error) {
 		return true
 	})
 
-	jsonData, err := json.Marshal(tempMap)
+	jsonData, err := sonic.Marshal(tempMap)
 	if err != nil {
 		return m, err
 	}
-	if err = json.Unmarshal(jsonData, &m); err != nil {
+	if err = sonic.Unmarshal(jsonData, &m); err != nil {
 		return m, err
 	}
 	return m, nil
 }
+
 func FetchRelation(ctx *context.Context, data *sync.Map, relation *ast.Relation) (interface{}, error) {
 	switch relation.RelationType {
 	case ast.RelationTypeBelongsTo:

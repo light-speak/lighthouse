@@ -56,6 +56,8 @@ func StartService(resolver resolve.Resolve) {
 		log.Info().Msgf("GraphQL service started on port %s", port)
 	}
 
+	go Manorable(graphql.GetParser().NodeStore)
+
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), r)
 	if err != nil {
 		log.Error().Msgf("Failed to start GraphQL service: %v", err)

@@ -6,8 +6,8 @@ import (
   "user/models"
   "github.com/light-speak/lighthouse/context"
   "github.com/light-speak/lighthouse/graphql/model"
-  "github.com/light-speak/lighthouse/utils"
-  "gorm.io/gorm"
+	"github.com/light-speak/lighthouse/utils"
+	"gorm.io/gorm"  
 )
 
 // Generic loader function

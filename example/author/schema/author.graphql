@@ -1,0 +1,17 @@
+type Author @model {
+  name: String!
+}
+
+extend type Mutation {
+  login(name: String!): LoginResponse! 
+}
+
+extend type Query {
+  me(id: ID! @eq(inject: "user_id")): Author! @first @auth
+}
+
+type LoginResponse {
+  token: String!
+  authorization: String!
+  author: Author!
+}

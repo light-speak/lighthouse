@@ -1,3 +1,3 @@
 func StartService() {
-	handler.StartService()
+	handler.StartService(&resolver.Resolver{})
 }

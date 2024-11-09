@@ -61,6 +61,11 @@ type Config struct {
 		Environment AppEnvironment
 		Mode        AppMode
 	}
+	Manor struct {
+		Host   string
+		Port   string
+		Weight int
+	}
 	Server struct {
 		Throttle int
 		Port     string
@@ -122,6 +127,15 @@ func init() {
 			Name:        GetEnv("APP_NAME", "MyApp"),
 			Environment: AppEnvironment(GetEnv("APP_ENVIRONMENT", "development")),
 			Mode:        AppMode(GetEnv("APP_MODE", "single")),
+		},
+		Manor: struct {
+			Host   string
+			Port   string
+			Weight int
+		}{
+			Host:   GetEnv("MANOR_HOST", "localhost"),
+			Port:   GetEnv("MANOR_PORT", "8080"),
+			Weight: GetEnvInt("MANOR_WEIGHT", 100),
 		},
 		Server: struct {
 			Throttle int

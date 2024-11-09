@@ -37,8 +37,8 @@ type Locationable interface {
 }
 
 type BaseLocation struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
+	Line   int `json:"-"`
+	Column int `json:"-"`
 }
 
 func (l *BaseLocation) GetLocation() *errors.GraphqlLocation {
@@ -75,6 +75,9 @@ type BaseNode struct {
 	Kind       Kind         `json:"kind"`
 	Directives []*Directive `json:"-"`
 	IsReserved bool         `json:"-"`
+
+	// IsMain is true when the node is the main service
+	IsMain bool `json:"-"`
 }
 
 func (n *BaseNode) GetName() string { return n.Name }
@@ -316,6 +319,12 @@ type Field struct {
 	DefinitionDirectives []*Directive         `json:"-"`
 	DefinitionArgs       map[string]*Argument `json:"-"`
 	Relation             *Relation            `json:"-"`
+
+	ServiceInfo *ServiceInfo `json:"-"`
+}
+
+type ServiceInfo struct {
+	ServiceName string `json:"serviceName"`
 }
 
 type RelationType string

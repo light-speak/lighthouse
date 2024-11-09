@@ -68,7 +68,7 @@ func CacheAfter(ctx *context.Context, field *ast.Field, directive *ast.Directive
 	var existingCache interface{}
 	if err := cache.Get(cacheKey, &existingCache); err == nil {
 		// Cache already exists, skip setting
-		log.Info().
+		log.Debug().
 			Str("cacheKey", cacheKey).
 			Str("field", field.Name).
 			Bool("isAuth", isAuth).
@@ -104,7 +104,7 @@ func CacheAfter(ctx *context.Context, field *ast.Field, directive *ast.Directive
 		time.Sleep(time.Millisecond * 100 * time.Duration(i+1))
 	}
 
-	log.Info().
+	log.Debug().
 		Str("cacheKey", cacheKey).
 		Strs("tags", cacheTags).
 		Dur("ttl", ttl).
@@ -132,7 +132,7 @@ func CacheBefore(ctx *context.Context, field *ast.Field, directive *ast.Directiv
 		// Cache hit, send result through channel
 		resultChannel := resultChan.(chan interface{})
 		resultChannel <- cachedResult
-		log.Info().
+		log.Debug().
 			Str("cacheKey", cacheKey).
 			Str("field", field.Name).
 			Bool("isAuth", isAuth).
