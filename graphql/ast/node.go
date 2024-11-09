@@ -306,13 +306,13 @@ type Field struct {
 	IsDeprecated      bool                 `json:"isDeprecated"`
 	DeprecationReason *string              `json:"deprecationReason"`
 
-	Children   map[string]*Field `json:"-"`
-	Directives []*Directive      `json:"-"`
-	IsFragment bool              `json:"-"`
-	IsUnion    bool              `json:"-"`
-	Fragment   *Fragment         `json:"-"`
-	IsAttr     bool              `json:"-"`
-
+	Children             map[string]*Field    `json:"-"`
+	Directives           []*Directive         `json:"-"`
+	IsFragment           bool                 `json:"-"`
+	IsUnion              bool                 `json:"-"`
+	Fragment             *Fragment            `json:"-"`
+	IsAttr               bool                 `json:"-"`
+	IsSearchable         bool                 `json:"-"`
 	DefinitionDirectives []*Directive         `json:"-"`
 	DefinitionArgs       map[string]*Argument `json:"-"`
 	Relation             *Relation            `json:"-"`

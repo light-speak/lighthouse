@@ -13,6 +13,11 @@ func LcFirst(str string) string {
 	return strings.ToLower(str[:1]) + str[1:]
 }
 
+// 转小写
+func Lc(str string) string {
+	return strings.ToLower(str)
+}
+
 // UcFirst 首字母大写
 func UcFirst(str string) string {
 	if len(str) == 0 {

@@ -45,3 +45,8 @@ directive @hasOne(relation: String, foreignKey: String, reference: String) on FI
 directive @morphTo(morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
 directive @morphToMany(relation: String!, morphType: String, morphKey: String, reference: String) on FIELD_DEFINITION
 directive @manyToMany(relation: String!, pivot: String, pivotForeignKey: String, pivotReference: String, foreignKey: String, relationForeignKey: String) on FIELD_DEFINITION
+
+# runtime
+directive @auth(msg: String) on FIELD_DEFINITION
+directive @cache(auth: Boolean, ttl: Int, tags: [String!]!) on FIELD_DEFINITION
+directive @searchable(searchableType: SearchableType, indexAnalyzer: SearchableAnalyzer, searchAnalyzer: SearchableAnalyzer) on FIELD_DEFINITION

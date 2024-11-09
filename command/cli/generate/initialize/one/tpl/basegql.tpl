@@ -114,15 +114,3 @@ enum SearchableAnalyzer {
     # 智能分词，分出比较常用的词汇
     IK_SMART
 }
-# 可搜索指令
-# 用于标记字段为可搜索，并指定搜索相关的参数
-directive @searchable(
-    # 搜索类型，指定字段的数据类型
-    searchableType: SearchableType
-    # 索引分析器，用于创建索引时的分词
-    indexAnalyzer: SearchableAnalyzer = IK_MAX_WORD
-    # 搜索分析器，用于搜索时的分词
-    searchAnalyzer: SearchableAnalyzer = IK_SMART
-) on FIELD_DEFINITION
-
-

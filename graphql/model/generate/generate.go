@@ -20,6 +20,13 @@ var excludeType = map[string]struct{}{
 	"Subscription": {},
 }
 
+type SearchableField struct {
+	Field          *ast.Field
+	Type           string
+	IndexAnalyzer  *string
+	SearchAnalyzer *string
+}
+
 func GenInterface(nodes []ast.Node, path string) error {
 	interfaceTemplate, err := modelFs.ReadFile("tpl/interface.tpl")
 	if err != nil {
@@ -140,6 +147,26 @@ func GenInput(nodes map[string]*ast.InputObjectNode, path string) error {
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Nodes": nodes,
+		},
+	}
+	return template.Render(options)
+}
+
+func GenSearchable(fields map[*ast.ObjectNode][]*SearchableField, path string) error {
+	searchTemplate, err := modelFs.ReadFile("tpl/searchable.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "models"),
+		Template:     string(searchTemplate),
+		FileName:     "searchable",
+		FileExt:      "go",
+		Package:      "models",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Fields": fields,
 		},
 	}
 	return template.Render(options)

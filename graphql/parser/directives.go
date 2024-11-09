@@ -607,4 +607,28 @@ func (p *Parser) addRuntimeFieldDirective() {
 		Name: "attr", Description: utils.StrPtr("The field is attr."),
 		Locations: []ast.Location{ast.LocationFieldDefinition},
 	})
+	// searchable
+	p.AddDirectiveDefinition(&ast.DirectiveDefinition{
+		Name: "searchable", Description: utils.StrPtr("The field is searchable."),
+		Locations: []ast.Location{ast.LocationFieldDefinition},
+		Args: map[string]*ast.Argument{
+			"type": {
+				Name:        "searchableType",
+				Description: utils.StrPtr("The searchable type."),
+				Type:        &ast.TypeRef{Kind: ast.KindEnum, Name: "SearchableType", OfType: &ast.TypeRef{Kind: ast.KindNonNull}},
+			},
+			"indexAnalyzer": {
+				Name:         "indexAnalyzer",
+				Description:  utils.StrPtr("The index analyzer."),
+				Type:         &ast.TypeRef{Kind: ast.KindEnum, Name: "SearchableAnalyzer"},
+				DefaultValue: "IK_SMART",
+			},
+			"searchAnalyzer": {
+				Name:         "searchAnalyzer",
+				Description:  utils.StrPtr("The search analyzer."),
+				Type:         &ast.TypeRef{Kind: ast.KindEnum, Name: "SearchableAnalyzer"},
+				DefaultValue: "IK_SMART",
+			},
+		},
+	})
 }
