@@ -49,4 +49,4 @@ directive @manyToMany(relation: String!, pivot: String!, currentType: String, pi
 # runtime
 directive @auth(msg: String) on FIELD_DEFINITION
 directive @cache(auth: Boolean, ttl: Int, tags: [String!]!) on FIELD_DEFINITION
-directive @cacheClear(tags: [String!]!, auth: Boolean) on FIELD_DEFINITION
+directive @cacheClear(tags: [String!]!) on FIELD_DEFINITION

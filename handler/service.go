@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 
 func StartService(resolver resolve.Resolve) {
 	resolve.R = resolver
-
 	if env.LighthouseConfig.App.Environment == env.Development {
 		// Initialize progress bar
 		fmt.Print("\033[?25l")       // Hide cursor
@@ -51,7 +51,8 @@ func StartService(resolver resolve.Resolve) {
 		// Print final startup message
 		fmt.Printf("\n\n🚀 GraphQL service started on port %s\n", port)
 		fmt.Printf("📡 You can access the service at http://localhost:%s/query\n", port)
-		fmt.Printf("🎨 You can access the studio at http://localhost:%s/studio\n\n", port)
+		fmt.Printf("🎨 You can access the studio at http://localhost:%s/studio\n", port)
+		fmt.Printf("🔥 You can access the pprof at http://0.0.0.0:%s/debug/pprof\n\n", port)
 	} else {
 		log.Info().Msgf("GraphQL service started on port %s", port)
 	}

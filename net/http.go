@@ -1,9 +1,7 @@
 package net
 
 import (
-	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,10 +12,6 @@ import (
 )
 
 func New() *chi.Mux {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	r := chi.NewRouter()
 	setMiddlewares(r)
 	setRoutes(r)
@@ -51,4 +45,5 @@ func setRoutes(r *chi.Mux) {
 	r.Post("/query", graphQLHandler)
 	r.Get("/query", graphQLHandler)
 	r.Get("/studio", studio.Handler)
+	r.Mount("/debug/pprof/", http.DefaultServeMux)
 }
