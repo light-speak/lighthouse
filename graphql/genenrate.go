@@ -84,9 +84,33 @@ func Generate() error {
 	}
 	attrNodes := map[string][]*ast.Field{}
 	fieldNameMap := make(map[string]string) // field name -> type name mapping
+
+	searchableFields := map[*ast.ObjectNode][]*generate.SearchableField{}
 	for _, node := range p.NodeStore.Objects {
 		if node.IsModel {
 			for _, field := range node.Fields {
+				if field.IsSearchable {
+					for _, directive := range field.Directives {
+						if directive.Name == "searchable" {
+							indexAnalyzer := directive.Definition.Args["indexAnalyzer"].GetDefaultValue()
+							searchAnalyzer := directive.Definition.Args["searchAnalyzer"].GetDefaultValue()
+
+							if directive.GetArg("indexAnalyzer") != nil {
+								indexAnalyzer = directive.GetArg("indexAnalyzer").Value.(*string)
+							}
+							if directive.GetArg("searchAnalyzer") != nil {
+								searchAnalyzer = directive.GetArg("searchAnalyzer").Value.(*string)
+							}
+
+							searchableFields[node] = append(searchableFields[node], &generate.SearchableField{
+								Field:          field,
+								Type:           directive.GetArg("type").Value.(string),
+								IndexAnalyzer:  indexAnalyzer,
+								SearchAnalyzer: searchAnalyzer,
+							})
+						}
+					}
+				}
 				if field.IsAttr {
 					if existingType, exists := fieldNameMap[field.Name]; exists {
 						return errors.New("duplicate attr field name '" + field.Name + "' found in types '" + existingType + "' and '" + node.GetName() + "'")
@@ -101,7 +125,12 @@ func Generate() error {
 			}
 		}
 	}
+
 	if err := generate.GenAttr(attrNodes, currentPath); err != nil {
+		return err
+	}
+
+	if err := generate.GenSearchable(searchableFields, currentPath); err != nil {
 		return err
 	}
 

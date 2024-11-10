@@ -55,6 +55,7 @@ func (o *Options) addFunc() {
 	if o.Funcs == nil {
 		o.Funcs = template.FuncMap{}
 	}
+	o.Funcs["lc"] = utils.Lc
 	o.Funcs["ucFirst"] = utils.UcFirst
 	o.Funcs["lcFirst"] = utils.LcFirst
 	o.Funcs["camelCase"] = utils.CamelCase

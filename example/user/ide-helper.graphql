@@ -49,4 +49,16 @@ directive @manyToMany(relation: String!, pivot: String!, currentType: String, pi
 # runtime
 directive @auth(msg: String) on FIELD_DEFINITION
 directive @cache(auth: Boolean, ttl: Int, tags: [String!]!) on FIELD_DEFINITION
+<<<<<<< HEAD
 directive @cacheClear(tags: [String!]!) on FIELD_DEFINITION
+=======
+directive @cacheClear(tags: [String!]!, auth: Boolean) on FIELD_DEFINITION
+directive @searchable(
+    # 搜索类型，指定字段的数据类型
+    type: SearchableType
+    # 索引分析器，用于创建索引时的分词
+    indexAnalyzer: SearchableAnalyzer = IK_MAX_WORD
+    # 搜索分析器，用于搜索时的分词
+    searchAnalyzer: SearchableAnalyzer = IK_SMART
+) on FIELD_DEFINITION
+>>>>>>> b6d36bffa889d02ead89b7c015d1c818e3882dbc
