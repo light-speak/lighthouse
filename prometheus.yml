@@ -1,0 +1,7 @@
+scrape_configs:
+  - job_name: "etcd"
+    basic_auth:
+      username: "root"
+      password: "lighthouse"
+    static_configs:
+      - targets: ["etcd-server:2379"]
