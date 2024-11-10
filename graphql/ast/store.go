@@ -2,34 +2,34 @@ package ast
 
 type NodeStore struct {
 	// Scalars is a map of all scalars
-	Scalars map[string]*ScalarNode
+	Scalars map[string]*ScalarNode `json:"scalars"`
 
 	// Interfaces is a map of all interfaces
-	Interfaces map[string]*InterfaceNode
+	Interfaces map[string]*InterfaceNode `json:"interfaces"`
 
 	// Objects is a map of all objects
-	Objects map[string]*ObjectNode
+	Objects map[string]*ObjectNode `json:"objects"`
 
 	// Unions is a map of all unions
-	Unions map[string]*UnionNode
+	Unions map[string]*UnionNode `json:"unions"`
 
 	// Enums is a map of all enums
-	Enums map[string]*EnumNode
+	Enums map[string]*EnumNode `json:"enums"`
 
 	// Inputs is a map of all inputs
-	Inputs map[string]*InputObjectNode
+	Inputs map[string]*InputObjectNode `json:"inputs"`
 
 	// Directives is a map of all directives
-	Directives map[string]*DirectiveDefinition
+	Directives map[string]*DirectiveDefinition `json:"-"`
 
 	// ScalarTypes is a map of all scalar types
-	ScalarTypes map[string]ScalarType
+	ScalarTypes map[string]ScalarType `json:"-"`
 
 	// Names is a map of all names , it can be a type, enum, interface, input, scalar, union, directive, extend
-	Names map[string]any
+	Names map[string]any `json:"-"`
 
 	// Nodes is a map of all nodes
-	Nodes map[string]Node
+	Nodes map[string]Node `json:"-"`
 }
 
 func (s *NodeStore) InitStore() {

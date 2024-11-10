@@ -65,19 +65,19 @@ func (k Kind) String() string { return string(k) }
 
 type BaseNode struct {
 	Name          string                    `json:"name"`
-	Description   *string                   `json:"description"`
-	Fields        map[string]*Field         `json:"fields"`
-	InputFields   map[string]*Field         `json:"inputFields"`
-	Interfaces    map[string]*InterfaceNode `json:"interfaces"`
-	EnumValues    map[string]*EnumValue     `json:"enumValues"`
-	PossibleTypes map[string]*ObjectNode    `json:"possibleTypes"`
+	Description   *string                   `json:"description,omitempty"`
+	Fields        map[string]*Field         `json:"fields,omitempty"`
+	InputFields   map[string]*Field         `json:"inputFields,omitempty"`
+	Interfaces    map[string]*InterfaceNode `json:"interfaces,omitempty"`
+	EnumValues    map[string]*EnumValue     `json:"enumValues,omitempty"`
+	PossibleTypes map[string]*ObjectNode    `json:"possibleTypes,omitempty"`
 
 	Kind       Kind         `json:"kind"`
 	Directives []*Directive `json:"-"`
 	IsReserved bool         `json:"-"`
 
 	// IsMain is true when the node is the main service
-	IsMain bool `json:"-"`
+	IsMain bool `json:"isMain"`
 }
 
 func (n *BaseNode) GetName() string { return n.Name }
@@ -303,11 +303,11 @@ type Field struct {
 	BaseLocation
 	Alias             string               `json:"-"`
 	Name              string               `json:"name"`
-	Description       *string              `json:"description"`
-	Args              map[string]*Argument `json:"args"`
+	Description       *string              `json:"description,omitempty"`
+	Args              map[string]*Argument `json:"args,omitempty"`
 	Type              *TypeRef             `json:"type"`
 	IsDeprecated      bool                 `json:"isDeprecated"`
-	DeprecationReason *string              `json:"deprecationReason"`
+	DeprecationReason *string              `json:"deprecationReason,omitempty"`
 
 	Children             map[string]*Field    `json:"-"`
 	Directives           []*Directive         `json:"-"`

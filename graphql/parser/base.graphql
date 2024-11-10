@@ -1,3 +1,4 @@
+# GraphQL Schema Introspection Types
 type __Schema {
   description: String
   types: [__Type!]!
@@ -91,7 +92,44 @@ type Query {
   __type(name: String!): __Type
 }
 
+# Reserved Scalar Types
+"The Boolean scalar type represents a boolean value. It can be either true or false."
+scalar Boolean
 
+"The Int scalar type represents a signed 32-bit integer."
+scalar Int
+
+"The Float scalar type represents a signed double-precision floating-point number."
+scalar Float
+
+"The String scalar type represents a string value."
+scalar String
+
+"The ID scalar type represents a unique identifier."
+scalar ID
+
+"The DateTime scalar type represents a date and time."
+scalar DateTime
+
+enum SortOrder {
+	"Ascending order"
+	ASC
+	"Descending order"
+	DESC
+}
+
+type PaginateInfo {
+	"The current page number"
+	currentPage: Int!
+	"The total number of pages"
+	totalPage: Int!
+	"Whether there is a next page"
+	hasNextPage: Boolean!
+	"The total number of items"
+	totalCount: Int!
+}
+
+# Search Related Enums
 enum SearchableType {
 	"For full-text search, suitable for article content, descriptions, etc."
 	TEXT
@@ -127,3 +165,270 @@ enum SearchableAnalyzer {
 	"Smart word segmentation, splits into more commonly used terms"
 	IK_SMART
 }
+
+# Core Directives
+"Marks an element as deprecated with a reason"
+directive @deprecated(
+	"Deprecation reason"
+	reason: String
+) on FIELD_DEFINITION | FIELD | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Conditionally skip the selection during execution"
+directive @skip(
+	"If true, the field/fragment will be skipped"
+	if: Boolean
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Conditionally include the selection during execution"
+directive @include(
+	"If true, the field/fragment will be included"
+	if: Boolean
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Specify a custom value for an enum value"
+directive @enum(
+	"The custom integer value for the enum"
+	value: Int!
+) on ENUM_VALUE
+
+# Return Type Directives
+"Returns only the first matching record"
+directive @first(
+	"Optional query scopes to apply"
+	scopes: [String]
+) on FIELD_DEFINITION
+
+"Returns paginated results with metadata"
+directive @paginate(
+	"Optional query scopes to apply"
+	scopes: [String]
+) on FIELD_DEFINITION
+
+"Returns a single record matching the criteria"
+directive @find(
+	"Optional query scopes to apply"
+	scopes: [String]
+) on FIELD_DEFINITION
+
+# Filter Directives
+"Equality comparison filter"
+directive @eq(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Not equal comparison filter"
+directive @neq(
+	"Field name to filter on"
+	field: String
+) on ARGUMENT_DEFINITION
+
+"Greater than comparison filter"
+directive @gt(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Greater than or equal comparison filter"
+directive @gte(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Less than comparison filter"
+directive @lt(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Less than or equal comparison filter"
+directive @lte(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Inclusion comparison filter"
+directive @in(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Exclusion comparison filter"
+directive @notIn(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+"Like comparison filter"
+directive @like(
+	"Field name to filter on"
+	field: String
+	"Optional value injection source"
+	inject: String
+) on ARGUMENT_DEFINITION
+
+# Relationship Directives
+"Defines a belongs-to relationship"
+directive @belongsTo(
+	"Related model name"
+	relation: String
+	"Foreign key field name"
+	foreignKey: String
+	"Reference field name"
+	reference: String
+) on FIELD_DEFINITION
+
+"Defines a has-many relationship"
+directive @hasMany(
+	"Related model name"
+	relation: String
+	"Foreign key field name"
+	foreignKey: String
+	"Reference field name"
+	reference: String
+) on FIELD_DEFINITION
+
+"Defines a has-one relationship"
+directive @hasOne(
+	"Related model name"
+	relation: String
+	"Foreign key field name"
+	foreignKey: String
+	"Reference field name"
+	reference: String
+) on FIELD_DEFINITION
+
+"Defines a morph-to relationship"
+directive @morphTo(
+	"Morph type name"
+	morphType: String
+	"Morph key field name"
+	morphKey: String
+	"Reference field name"
+	reference: String
+) on FIELD_DEFINITION
+
+"Defines a morph-to-many relationship"
+directive @morphToMany(
+	"Related model name"
+	relation: String
+	"Current model name"
+	currentType: String
+	"Morph type name"
+	morphType: String
+	"Morph key field name"
+	morphKey: String
+	"Reference field name"
+	reference: String
+) on FIELD_DEFINITION
+
+"Defines a many-to-many relationship"
+directive @manyToMany(
+	"Related model name"
+	relation: String!
+	"Pivot table name"
+	pivot: String!
+	"Current model name"
+	currentType: String
+	"Pivot foreign key field name"
+	pivotForeignKey: String
+	"Foreign key field name"
+	foreignKey: String
+	"Pivot reference field name"
+	pivotReference: String
+	"Relation foreign key field name"
+	relationForeignKey: String
+) on FIELD_DEFINITION
+
+# Model & Field Directives
+"Marks a model as using soft deletes"
+directive @softDeleteModel(
+	"Database table name"
+	table: String
+) on OBJECT
+
+"Defines a database model"
+directive @model(
+	"Database table name"
+	table: String
+) on OBJECT
+
+"Adds custom tags to a field"
+directive @tag(
+	"Tag name"
+	name: String
+	"Tag value"
+	value: String
+) repeatable on FIELD_DEFINITION
+
+"Adds a unique index to a field"
+directive @index(
+	"Index name"
+	name: String
+	"Whether the index is unique"
+	unique: Boolean = false
+) on FIELD_DEFINITION
+
+"Adds a unique constraint to a field"
+directive @unique on FIELD_DEFINITION
+
+"Sets a default value for a field"
+directive @default(
+	"Default value"
+	value: String
+) on FIELD_DEFINITION
+
+"Adds custom scopes to a model"
+directive @scopes(
+	"Model scopes"
+	names: [String]
+) on OBJECT
+
+# Runtime Field Directives
+"Adds authentication requirement to a field"
+directive @auth(
+	"Authentication failure message"
+	msg: String
+) on FIELD_DEFINITION
+
+"Enables caching for a field"
+directive @cache(
+	"Whether to include auth context in cache key"
+	auth: Boolean
+	"Cache time-to-live in seconds"
+	ttl: Int
+	"Cache invalidation tags"
+	tags: [String]
+) on FIELD_DEFINITION
+
+"Clears the cache for the current user"
+directive @cacheClear(
+	"Cache invalidation tags"
+	tags: [String]
+	"Whether to clear cache for the current user"
+	auth: Boolean
+) on FIELD_DEFINITION
+
+"Adds a searchable attribute to a field"
+directive @searchable(
+	"The searchable type"
+	searchableType: SearchableType!
+	"The index analyzer"
+	indexAnalyzer: SearchableAnalyzer = IK_SMART
+	"The search analyzer"
+	searchAnalyzer: SearchableAnalyzer = IK_SMART
+) on FIELD_DEFINITION
