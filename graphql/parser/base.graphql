@@ -90,3 +90,40 @@ type Query {
   __schema: __Schema!
   __type(name: String!): __Type
 }
+
+
+enum SearchableType {
+	"For full-text search, suitable for article content, descriptions, etc."
+	TEXT
+	"For exact matching, suitable for user IDs, status, etc."
+	KEYWORD
+	"For long integer values, such as timestamps"
+	LONG
+	"For integer values, such as age, quantity"
+	INTEGER
+	"For short integer values, such as small range enums"
+	SHORT
+	"For byte values, such as flags"
+	BYTE
+	"For double precision floating point numbers, such as precise financial calculations"
+	DOUBLE
+	"For single precision floating point numbers, such as general scientific calculations"
+	FLOAT
+	"For half precision floating point numbers, such as simple graphics processing"
+	HALF_FLOAT
+	"For scaled floating point numbers, such as amounts requiring precise decimal control"
+	SCALED_FLOAT
+	"For date and time, supports multiple date formats, default is ISO 8601"
+	DATE
+	"For boolean values, represents true or false"
+	BOOLEAN
+	"For storing IPv4 or IPv6 addresses"
+	IP
+}
+
+enum SearchableAnalyzer {
+	"Maximum word segmentation, splits into as many possible terms as possible"
+	IK_MAX_WORD
+	"Smart word segmentation, splits into more commonly used terms"
+	IK_SMART
+}

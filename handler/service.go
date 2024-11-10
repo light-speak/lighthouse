@@ -8,6 +8,7 @@ import (
 	"github.com/light-speak/lighthouse/env"
 	"github.com/light-speak/lighthouse/graphql"
 	"github.com/light-speak/lighthouse/log"
+	"github.com/light-speak/lighthouse/manor"
 	"github.com/light-speak/lighthouse/net"
 	"github.com/light-speak/lighthouse/resolve"
 	"github.com/light-speak/lighthouse/utils"
@@ -56,7 +57,7 @@ func StartService(resolver resolve.Resolve) {
 		log.Info().Msgf("GraphQL service started on port %s", port)
 	}
 
-	go Manorable(graphql.GetParser().NodeStore)
+	go manor.Manorable(graphql.GetParser().NodeStore)
 
 	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), r)
 	if err != nil {

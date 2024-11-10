@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -62,9 +63,12 @@ type Config struct {
 		Mode        AppMode
 	}
 	Manor struct {
-		Host   string
-		Port   string
 		Weight int
+	}
+	Etcd struct {
+		Endpoints []string
+		Username  string
+		Password  string
 	}
 	Server struct {
 		Throttle int
@@ -129,13 +133,18 @@ func init() {
 			Mode:        AppMode(GetEnv("APP_MODE", "single")),
 		},
 		Manor: struct {
-			Host   string
-			Port   string
 			Weight int
 		}{
-			Host:   GetEnv("MANOR_HOST", "localhost"),
-			Port:   GetEnv("MANOR_PORT", "8080"),
 			Weight: GetEnvInt("MANOR_WEIGHT", 100),
+		},
+		Etcd: struct {
+			Endpoints []string
+			Username  string
+			Password  string
+		}{
+			Endpoints: strings.Split(GetEnv("ETCD_ENDPOINTS", "localhost:2379"), ","),
+			Username:  GetEnv("ETCD_USERNAME", ""),
+			Password:  GetEnv("ETCD_PASSWORD", ""),
 		},
 		Server: struct {
 			Throttle int
