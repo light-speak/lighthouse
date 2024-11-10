@@ -41,6 +41,10 @@ func Run(module string) error {
 	if err != nil {
 		return err
 	}
+	err = initSearcher()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -134,6 +138,23 @@ func initStart() error {
 	options := &template.Options{
 		Path:         filepath.Join(projectName, "cmd"),
 		Template:     string(startTemplate),
+		FileName:     "start",
+		FileExt:      "go",
+		Package:      "cmd",
+		Editable:     true,
+		SkipIfExists: true,
+	}
+	return template.Render(options)
+}
+
+func initSearcher() error {
+	searcherTemplate, err := twoFs.ReadFile("tpl/searcher.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "cmd"),
+		Template:     string(searcherTemplate),
 		FileName:     "start",
 		FileExt:      "go",
 		Package:      "cmd",
