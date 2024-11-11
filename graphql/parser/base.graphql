@@ -426,7 +426,7 @@ directive @cacheClear(
 "Adds a searchable attribute to a field"
 directive @searchable(
 	"The searchable type"
-	searchableType: SearchableType!
+	type: SearchableType!
 	"The index analyzer"
 	indexAnalyzer: SearchableAnalyzer = IK_SMART
 	"The search analyzer"

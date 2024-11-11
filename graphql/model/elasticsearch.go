@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -25,6 +26,20 @@ type SearchModel interface {
 	SearchId() int64
 	IndexName() string
 	GetSearchData(mapData ...map[string]interface{}) map[string]interface{}
+}
+
+type QBSortOrder string
+
+const (
+	QBSortOrderAsc  QBSortOrder = "ASC"
+	QBSortOrderDesc QBSortOrder = "DESC"
+)
+
+type SearchQueryBuilder struct {
+	indexName    string
+	termFilters  []map[string]interface{}
+	matchFilters []map[string]interface{}
+	sorts        []map[string]QBSortOrder
 }
 
 func InitSearch() {
@@ -53,17 +68,17 @@ func (s *Searcher) CreateOrUpdateIndex(model SearchModel) error {
 	}
 
 	propsMapping := model.FieldMapping()
-	mapping := map[string]interface{}{
-		"mappings": map[string]interface{}{
-			"properties": propsMapping,
-		},
-	}
-	mappingBytes, err := json.Marshal(mapping)
-	if err != nil {
-		return err
-	}
 
 	if res.StatusCode == 404 {
+		mapping := map[string]interface{}{
+			"mappings": map[string]interface{}{
+				"properties": propsMapping,
+			},
+		}
+		mappingBytes, err := json.Marshal(mapping)
+		if err != nil {
+			return err
+		}
 		res, err := s.client.Indices.Create(
 			model.IndexName(),
 			s.client.Indices.Create.WithBody(bytes.NewReader(mappingBytes)),
@@ -71,16 +86,77 @@ func (s *Searcher) CreateOrUpdateIndex(model SearchModel) error {
 		if err != nil {
 			return err
 		}
+
+		if res.StatusCode != 200 {
+			bodyBytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("create index error: %s , reason: %s", res.Status(), string(bodyBytes))
+		}
+
 		defer res.Body.Close()
 	} else if res.StatusCode == 200 {
-		res, err := s.client.Indices.PutMapping(
+		// 获取 index 当前 mapping
+		res, err := s.client.Indices.GetMapping(
+			s.client.Indices.GetMapping.WithIndex(model.IndexName()),
+		)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		existingMapping := map[string]interface{}{}
+		err = json.Unmarshal(bodyBytes, &existingMapping)
+		if err != nil {
+			return err
+		}
+
+		if v, ok := existingMapping[model.IndexName()].(map[string]interface{})["mappings"].(map[string]interface{})["properties"].(map[string]interface{}); ok {
+			existingMapping = v
+		} else {
+			return fmt.Errorf("es index %s not found", model.IndexName())
+		}
+
+		// 与当前 mapping 比较并合并映射，将新的字段添加到 new mapping 中
+		newMapping := map[string]interface{}{}
+		for k, v := range propsMapping {
+			if _, ok := existingMapping[k]; !ok {
+				newMapping[k] = v
+			}
+		}
+
+		if len(newMapping) == 0 {
+			return nil
+		}
+
+		// 更新 mapping
+		mappingBytes, err := json.Marshal(map[string]interface{}{
+			"properties": newMapping,
+		})
+		if err != nil {
+			return err
+		}
+
+		updateRes, err := s.client.Indices.PutMapping(
 			[]string{model.IndexName()},
 			bytes.NewReader(mappingBytes),
 		)
 		if err != nil {
 			return err
 		}
-		defer res.Body.Close()
+		if updateRes.StatusCode != 200 {
+			bodyBytes, err := io.ReadAll(updateRes.Body)
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("update index error: %s , reason: %s", updateRes.Status(), string(bodyBytes))
+		}
+		defer updateRes.Body.Close()
 	}
 	return nil
 }
@@ -161,12 +237,15 @@ func (s *Searcher) DeleteDoc(model SearchModel) error {
 }
 
 // search data from elasticsearch, response doc ids
-func (s *Searcher) Search(model SearchModel, searchString string) (*[]string, error) {
+func (s *Searcher) QuickSearch(model SearchModel, searchString string) (*[]string, error) {
 
 	query := fmt.Sprintf(`{
         "query": {
-            "query_string": {
-                "query": "%s"
+            "match": {
+                "_all": {
+                    "query": "%s",
+                    "analyzer": "ik_smart"
+                }
             }
         },
         "_source": false
@@ -181,28 +260,9 @@ func (s *Searcher) Search(model SearchModel, searchString string) (*[]string, er
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return nil, fmt.Errorf("search error: %s", res.Status())
-	}
-
-	var r map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+	ids, err := ExtractDocIDs(res)
+	if err != nil {
 		return nil, err
-	}
-
-	ids := []string{}
-	hits, ok := r["hits"].(map[string]interface{})["hits"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unexpected response format")
-	}
-	for _, hit := range hits {
-		id, ok := hit.(map[string]interface{})["_id"].(string)
-		if !ok {
-			return nil, fmt.Errorf("unexpected response format")
-		}
-		ids = append(ids, id)
 	}
 
 	return &ids, nil
@@ -210,13 +270,140 @@ func (s *Searcher) Search(model SearchModel, searchString string) (*[]string, er
 
 // index data from database to elasticsearch
 func (s *Searcher) IndexDocsByModel(model SearchModel, limit int, offset int) (int, error) {
-	s.CreateOrUpdateIndex(model)
+	err := s.CreateOrUpdateIndex(model)
+	if err != nil {
+		return 0, err
+	}
 	var rs []map[string]interface{}
 	if err := db.Table(model.TableName()).Offset(offset).Limit(limit).Find(&rs).Error; err != nil {
 		return 0, err
 	}
 	for _, r := range rs {
-		s.IndexDocByMap(model.IndexName(), r)
+		data := model.GetSearchData(r)
+		err := s.IndexDocByMap(model.IndexName(), data)
+		if err != nil {
+			return 0, err
+		}
 	}
 	return len(rs), nil
+}
+
+func NewSearchQueryBuilder(indexName string) *SearchQueryBuilder {
+	return &SearchQueryBuilder{
+		indexName:    indexName,
+		termFilters:  []map[string]interface{}{},
+		matchFilters: []map[string]interface{}{},
+		sorts:        []map[string]QBSortOrder{},
+	}
+}
+
+func (qb *SearchQueryBuilder) WhereTerm(field string, value interface{}) *SearchQueryBuilder {
+	qb.termFilters = append(qb.termFilters, map[string]interface{}{
+		"term": map[string]interface{}{
+			field: value,
+		},
+	})
+	return qb
+}
+
+func (qb *SearchQueryBuilder) Fuzzy(field string, value string) *SearchQueryBuilder {
+	qb.matchFilters = append(qb.matchFilters, map[string]interface{}{
+		"match": map[string]interface{}{
+			field: value,
+		},
+	})
+	return qb
+}
+
+// sort by field
+func (qb *SearchQueryBuilder) OrderBy(field string, order QBSortOrder) *SearchQueryBuilder {
+	qb.sorts = append(qb.sorts, map[string]QBSortOrder{field: order})
+	return qb
+}
+
+// build elasticsearch query code
+func (qb *SearchQueryBuilder) Build() (map[string]interface{}, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{},
+		},
+	}
+
+	// 构建 must 子句
+	mustClauses := []map[string]interface{}{}
+	mustClauses = append(mustClauses, qb.termFilters...)
+	mustClauses = append(mustClauses, qb.matchFilters...)
+
+	if len(mustClauses) > 0 {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = mustClauses
+	}
+
+	// 正确构建排序数组
+	if len(qb.sorts) > 0 {
+		sortArray := make([]map[string]interface{}, 0)
+		for _, sort := range qb.sorts {
+			for field, order := range sort {
+				sortArray = append(sortArray, map[string]interface{}{
+					field: map[string]interface{}{
+						"order": strings.ToLower(string(order)),
+					},
+				})
+			}
+		}
+		query["sort"] = sortArray
+	}
+
+	return query, nil
+}
+
+func (qb *SearchQueryBuilder) Execute() (*esapi.Response, error) {
+	query, err := qb.Build()
+	if err != nil {
+		return nil, err
+	}
+	queryBytes, err := json.Marshal(query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := searcher.client.Search(
+		searcher.client.Search.WithIndex(qb.indexName),
+		searcher.client.Search.WithBody(bytes.NewReader(queryBytes)),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func ExtractDocIDs(res *esapi.Response) ([]string, error) {
+	defer res.Body.Close()
+
+	// 检查查询是否成功
+	if res.IsError() {
+		return nil, fmt.Errorf("search error: %s", res.Status())
+	}
+
+	// 解析 JSON 响应
+	var response map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	// 提取文档 ID
+	var docIDs []string
+	hits, ok := response["hits"].(map[string]interface{})["hits"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected response format")
+	}
+	for _, hit := range hits {
+		if hitMap, ok := hit.(map[string]interface{}); ok {
+			if id, ok := hitMap["_id"].(string); ok {
+				docIDs = append(docIDs, id)
+			}
+		}
+	}
+
+	return docIDs, nil
 }
