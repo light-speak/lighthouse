@@ -10,7 +10,7 @@ func New{{ .Name }}Task(payload {{ .Name }}Payload) (*asynq.Task, error) {
     if err != nil {
         return nil, err
     }
-    return asynq.NewTask({{ .Name }}, data), nil
+    return asynq.NewTask({{ .Name }}, data, asynq.Queue({{ .Name }})), nil
 }
 
 func Execute{{ .Name }}Task(ctx bCtx.Context, t *asynq.Task) error {

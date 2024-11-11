@@ -6,6 +6,7 @@ type JobConfig struct {
 
 var (
 	JobConfigMap = map[string]JobConfig{}
+	client      *asynq.Client
 )
 
 func StartQueue() {
@@ -28,5 +29,18 @@ func StartQueue() {
 	if err := srv.Run(mux); err != nil {
 		panic(err)
 	}
+}
+
+
+func GetClient() *asynq.Client{
+	return client
+}
+
+func init() {
+	client = asynq.NewClient(asynq.RedisClientOpt{
+		Addr:     env.LighthouseConfig.Redis.Host + ":" + env.LighthouseConfig.Redis.Port,
+		Password: env.LighthouseConfig.Redis.Password,
+		DB:       env.LighthouseConfig.Redis.Db,
+	})
 }
 
