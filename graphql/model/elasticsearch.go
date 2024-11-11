@@ -279,7 +279,8 @@ func (s *Searcher) IndexDocsByModel(model SearchModel, limit int, offset int) (i
 		return 0, err
 	}
 	for _, r := range rs {
-		err := s.IndexDocByMap(model.IndexName(), model.GetSearchData(r))
+		data := model.GetSearchData(r)
+		err := s.IndexDocByMap(model.IndexName(), data)
 		if err != nil {
 			return 0, err
 		}
@@ -361,7 +362,6 @@ func (qb *SearchQueryBuilder) Execute() (*esapi.Response, error) {
 		return nil, err
 	}
 	queryBytes, err := json.Marshal(query)
-	log.Info().Msgf("query: %s", string(queryBytes))
 	if err != nil {
 		return nil, err
 	}
