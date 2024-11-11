@@ -1,0 +1,10 @@
+type Work @softDeleteModel {
+    name: String!
+    authorId: ID!
+    author: Author! @belongsTo
+}
+
+type Author @extends {
+    id: ID! 
+    works: [Work!]! @hasMany
+}
