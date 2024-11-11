@@ -27,35 +27,16 @@ func (s *Searcher) Args() []*command.CommandArg {
 func (s *Searcher) Action() func(flagValues map[string]interface{}) error {
 	return func(flagValues map[string]interface{}) error {
 		// Func:Action user code start. Do not remove this comment.
-		modelName := flagValues["model"].(*string)
-		modelMapping := models.GetSearchableModelMapping()
-		searchModel, ok := modelMapping[*modelName]
-
-		if !ok {
-			return fmt.Errorf("model %s not in searchable model mapping, please check models/searchable.go", *modelName)
-		}
-
-		db := model.GetDB()
-		model.InitSearch()
-		searcher := model.GetSearcher()
-		searcher.CreateOrUpdateIndex(searchModel)
-
-		var count int64
-		var limit int = 1000
-		var offset int = 0
-		if err := db.Table(searchModel.TableName()).Count(&count).Error; err != nil {
+		args, err := command.GetArgs(s.Args(), flagValues)
+		if err != nil {
 			return err
 		}
-		for offset < int(count) {
-			succCount, err := searcher.IndexDocsByModel(searchModel, offset, limit)
-			if err != nil {
-				return err
-			}
-			utils.SmoothProgress(offset*100/int(count), 100, fmt.Sprintf("Indexing documents (%d/%d)", succCount, count), time.Millisecond*100, true)
-			offset += limit
+		modelName, err := command.GetStringArg(args, "model")
+		if err != nil {
+			return err
 		}
-
-		fmt.Printf("\033[32m\nImport model %s %d documents success\n\033[0m", *modelName, count)
+		log.Info().Msgf("modelName: %s", modelName)
+		// importModel,ok := model.GetSearchableModelMapping()[modelName]
 		// Func:Action user code end. Do not remove this comment.
 		return nil
 	}
@@ -66,4 +47,28 @@ func (s *Searcher) OnExit() func() {
 }
 
 // Section: user code section start. Do not remove this comment.
+func Import(m model.SearchModel) error {
+	db := model.GetDB()
+	model.InitSearch()
+	searcher := model.GetSearcher()
+	searcher.CreateOrUpdateIndex(m)
+
+	var count int64
+	var limit int = 1000
+	var offset int = 0
+	if err := db.Table(m.TableName()).Count(&count).Error; err != nil {
+		return err
+	}
+	for offset < int(count) {
+		succCount, err := searcher.IndexDocsByModel(m, offset, limit)
+		if err != nil {
+			return err
+		}
+		utils.SmoothProgress(offset*100/int(count), 100, fmt.Sprintf("Indexing documents (%d/%d)", succCount, count), time.Millisecond*100, true)
+		offset += limit
+	}
+
+	fmt.Printf("\033[32m\nImport model %s %d documents success\n\033[0m", m.TypeName(), count)
+	return nil
+}
 // Section: user code section end. Do not remove this comment.

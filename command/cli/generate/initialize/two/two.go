@@ -163,7 +163,7 @@ func initSearcher() error {
 	options := &template.Options{
 		Path:         filepath.Join(projectName, "cmd"),
 		Template:     string(searcherTemplate),
-		FileName:     "start",
+		FileName:     "searcher",
 		FileExt:      "go",
 		Package:      "cmd",
 		Editable:     true,

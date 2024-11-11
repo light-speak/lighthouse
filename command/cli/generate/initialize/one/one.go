@@ -12,7 +12,7 @@ import (
 
 var projectName string
 var projectModule string
-var dirs = []string{"cmd", "schema", "service", "models", "resolver", "repo"}
+var dirs = []string{"cmd", "schema", "service", "models", "resolver", "repo", "queue"}
 
 //go:embed tpl
 var oneFs embed.FS

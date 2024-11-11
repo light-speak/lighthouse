@@ -16,7 +16,7 @@ func StartQueue() {
 	}
 
 	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: env.LighthouseConfig.Redis.Host, Password: env.LighthouseConfig.Redis.Password, DB: env.LighthouseConfig.Redis.Db},
+		asynq.RedisClientOpt{Addr: env.LighthouseConfig.Redis.Host + ":" + env.LighthouseConfig.Redis.Port, Password: env.LighthouseConfig.Redis.Password, DB: env.LighthouseConfig.Redis.Db},
 		asynq.Config{Concurrency: 20, Queues: queuePriority},
 	)
 

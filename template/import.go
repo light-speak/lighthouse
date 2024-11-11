@@ -48,6 +48,9 @@ var importRegexMap = map[string]Import{
 	`json\.`: {
 		Path: "encoding/json",
 	},
+	`env\.`: {
+		Path: "github.com/light-speak/lighthouse/env",
+	},
 	`template\.`: {
 		Path: "github.com/light-speak/lighthouse/template",
 	},
@@ -93,9 +96,6 @@ var importRegexMap = map[string]Import{
 	`bCtx\.`: {
 		Path:  "context",
 		Alias: "bCtx",
-	},
-	`queue\.`: {
-		Path: "github.com/light-speak/lighthouse/resolve",
 	},
 }
 
