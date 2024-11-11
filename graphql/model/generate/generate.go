@@ -183,7 +183,7 @@ func GenJob(name string, path string) error {
 		FileName:     utils.SnakeCase(name),
 		FileExt:      "go",
 		Package:      "queue",
-		Editable:     false,
+		Editable:     true,
 		SkipIfExists: false,
 		Data: map[string]interface{}{
 			"Name": name,
