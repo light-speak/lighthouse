@@ -59,6 +59,14 @@ func SnakeCase(str string) string {
 	return strings.Join(result, "_")
 }
 
+// CamelColon 将驼峰命名转换为路径格式 (例如: ProcessTask -> process::task)
+func CamelColon(str string) string {
+	// 先转换为蛇形命名
+	snake := SnakeCase(str)
+	// 将下划线替换为双冒号
+	return strings.ReplaceAll(snake, "_", "::")
+}
+
 // CamelCase 驼峰命名
 func CamelCase(str string) string {
 	// 如果已经是驼峰命名，直接返回

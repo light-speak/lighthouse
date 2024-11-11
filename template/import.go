@@ -42,6 +42,12 @@ var importRegexMap = map[string]Import{
 	`exec\.`: {
 		Path: "os/exec",
 	},
+	`asynq\.`: {
+		Path: "github.com/hibiken/asynq",
+	},
+	`json\.`: {
+		Path: "encoding/json",
+	},
 	`template\.`: {
 		Path: "github.com/light-speak/lighthouse/template",
 	},
@@ -82,6 +88,13 @@ var importRegexMap = map[string]Import{
 		Path: "github.com/light-speak/lighthouse/auth",
 	},
 	`resolve\.`: {
+		Path: "github.com/light-speak/lighthouse/resolve",
+	},
+	`bCtx\.`: {
+		Path:  "context",
+		Alias: "bCtx",
+	},
+	`queue\.`: {
 		Path: "github.com/light-speak/lighthouse/resolve",
 	},
 }

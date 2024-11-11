@@ -61,7 +61,6 @@ type Config struct {
 		Name        string
 		Environment AppEnvironment
 		Mode        AppMode
-		Version     int
 	}
 	Manor struct {
 		Weight int
@@ -74,7 +73,6 @@ type Config struct {
 	Server struct {
 		Throttle int
 		Port     string
-		Endpoint string
 	}
 	Api struct {
 		Restful bool
@@ -129,12 +127,10 @@ func init() {
 			Name        string
 			Environment AppEnvironment
 			Mode        AppMode
-			Version     int
 		}{
 			Name:        GetEnv("APP_NAME", "MyApp"),
 			Environment: AppEnvironment(GetEnv("APP_ENVIRONMENT", "development")),
 			Mode:        AppMode(GetEnv("APP_MODE", "single")),
-			Version:     GetEnvInt("APP_VERSION", 1),
 		},
 		Manor: struct {
 			Weight int
@@ -153,11 +149,9 @@ func init() {
 		Server: struct {
 			Throttle int
 			Port     string
-			Endpoint string
 		}{
 			Throttle: GetEnvInt("SERVER_THROTTLE", 100),
 			Port:     GetEnv("SERVER_PORT", "8080"),
-			Endpoint: GetEnv("SERVER_ENDPOINT", ""),
 		},
 		Api: struct {
 			Restful bool

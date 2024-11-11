@@ -172,6 +172,26 @@ func GenSearchable(fields map[*ast.ObjectNode][]*SearchableField, path string) e
 	return template.Render(options)
 }
 
+func GenJob(name string, path string) error {
+	jobTemplate, err := modelFs.ReadFile("tpl/job.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "queue"),
+		Template:     string(jobTemplate),
+		FileName:     utils.SnakeCase(name),
+		FileExt:      "go",
+		Package:      "queue",
+		Editable:     false,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Name": name,
+		},
+	}
+	return template.Render(options)
+}
+
 func GenRepo(nodes []*ast.ObjectNode, path string) error {
 	repoTemplate, err := modelFs.ReadFile("tpl/repo.tpl")
 	if err != nil {

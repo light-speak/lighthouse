@@ -432,6 +432,3 @@ directive @searchable(
 	"The search analyzer"
 	searchAnalyzer: SearchableAnalyzer = IK_SMART
 ) on FIELD_DEFINITION
-
-"Extends a foreign model"
-directive @extends on OBJECT

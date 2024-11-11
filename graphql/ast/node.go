@@ -76,9 +76,8 @@ type BaseNode struct {
 	Directives []*Directive `json:"-"`
 	IsReserved bool         `json:"-"`
 
-	// IsExtend is true when the node is extended by another service
-	IsExtend    bool   `json:"isExtend"`
-	MainService string `json:"mainService"`
+	// IsMain is true when the node is the main service
+	IsMain bool `json:"isMain"`
 }
 
 func (n *BaseNode) GetName() string { return n.Name }
@@ -325,7 +324,7 @@ type Field struct {
 }
 
 type ServiceInfo struct {
-	Service string `json:"service"`
+	ServiceName string `json:"serviceName"`
 }
 
 type RelationType string

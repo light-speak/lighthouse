@@ -45,6 +45,14 @@ func Run(module string) error {
 	if err != nil {
 		return err
 	}
+	err = initQueue()
+	if err != nil {
+		return err
+	}
+	err = initQueueStart()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -160,6 +168,42 @@ func initSearcher() error {
 		Package:      "cmd",
 		Editable:     true,
 		SkipIfExists: true,
+	}
+	return template.Render(options)
+}
+
+func initQueue() error {
+	queueTemplate, err := twoFs.ReadFile("tpl/queue.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "queue"),
+		Template:     string(queueTemplate),
+		FileName:     "queue",
+		FileExt:      "go",
+		Package:      "queue",
+		Editable:     false,
+		SkipIfExists: false,
+		Data:         map[string]interface{}{},
+	}
+	return template.Render(options)
+}
+
+func initQueueStart() error {
+	t, err := twoFs.ReadFile("tpl/queue_start.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "cmd"),
+		Template:     string(t),
+		FileName:     "queue",
+		FileExt:      "go",
+		Package:      "cmd",
+		Editable:     false,
+		SkipIfExists: false,
+		Data:         map[string]interface{}{},
 	}
 	return template.Render(options)
 }

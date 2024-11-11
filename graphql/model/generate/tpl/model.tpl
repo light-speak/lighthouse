@@ -34,9 +34,7 @@ func {{ $name | ucFirst }}EnumFields(key string) func(interface{}) interface{} {
 func Migrate() error {
 	return model.GetDB().AutoMigrate(
     {{- range $index, $node := .Nodes }}
-    {{- if not $node.IsExtend }}
-      &{{ $node.Name }}{},
-    {{- end }}
+    &{{ $node.Name }}{},
     {{- end }}
   )
 }

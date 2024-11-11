@@ -4,6 +4,7 @@ import (
 	"github.com/light-speak/lighthouse/command"
 	"github.com/light-speak/lighthouse/command/cli/generate/cmd"
 	"github.com/light-speak/lighthouse/command/cli/generate/initialize"
+	"github.com/light-speak/lighthouse/command/cli/generate/job"
 	"github.com/light-speak/lighthouse/command/cli/generate/schema"
 	"github.com/light-speak/lighthouse/command/cli/start"
 	"github.com/light-speak/lighthouse/command/cli/version"
@@ -17,6 +18,7 @@ func (c *Lighthouse) GetCommands() []command.Command {
 		&version.Version{},
 		&initialize.Initialize{},
 		&schema.Schema{},
+		&job.Job{},
 		&start.Start{},
 	}
 }

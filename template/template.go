@@ -59,6 +59,7 @@ func (o *Options) addFunc() {
 	o.Funcs["ucFirst"] = utils.UcFirst
 	o.Funcs["lcFirst"] = utils.LcFirst
 	o.Funcs["camelCase"] = utils.CamelCase
+	o.Funcs["camelColon"] = utils.CamelColon
 	o.Funcs["snakeCase"] = utils.SnakeCase
 	o.Funcs["funcStart"] = UserCodeStart
 	o.Funcs["funcEnd"] = UserCodeEnd
@@ -331,6 +332,7 @@ func init() {
 		"models",
 		"resolver",
 		"repo",
+		"queue",
 	}
 
 	for _, pkgName := range packages {

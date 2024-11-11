@@ -140,3 +140,4 @@ func Generate() error {
 
 	return nil
 }
+

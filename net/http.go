@@ -45,5 +45,5 @@ func setRoutes(r *chi.Mux) {
 	r.Post("/query", graphQLHandler)
 	r.Get("/query", graphQLHandler)
 	r.Get("/studio", studio.Handler)
-	r.Mount("/debug/pprof", http.DefaultServeMux)
+	r.Mount("/debug/pprof/", http.DefaultServeMux)
 }

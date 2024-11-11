@@ -14,7 +14,3 @@ type Context struct {
 	Errors          []errors.GraphqlErrorInterface `json:"-"`
 	Inject          map[string]interface{}         `json:"-"`
 }
-
-func NewContext(ctx context.Context) *Context {
-	return &Context{Context: ctx}
-}
