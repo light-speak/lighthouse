@@ -339,5 +339,7 @@ func init() {
 		importPath := fmt.Sprintf("%s/%s", goModel, pkgName)
 		pattern := fmt.Sprintf(`%s\.`, pkgName)
 		AddImportRegex(pattern, importPath, "")
+
 	}
+
 }

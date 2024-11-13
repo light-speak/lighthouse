@@ -43,6 +43,9 @@ type SearchQueryBuilder struct {
 }
 
 func init() {
+	if !env.LighthouseConfig.Elasticsearch.Enable {
+		return
+	}
 	c, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{fmt.Sprintf("http://%s:%s", env.LighthouseConfig.Elasticsearch.Host, env.LighthouseConfig.Elasticsearch.Port)},
 		Username:  env.LighthouseConfig.Elasticsearch.User,

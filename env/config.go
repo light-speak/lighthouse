@@ -110,6 +110,12 @@ type Config struct {
 		User     string
 		Password string
 	}
+	Kafka struct {
+		Enable   bool
+		Brokers  []string
+		Username string
+		Password string
+	}
 }
 
 // InitConfig Initialize the configuration
@@ -218,6 +224,17 @@ func init() {
 			Port:     GetEnv("ELASTICSEARCH_PORT", "9200"),
 			User:     GetEnv("ELASTICSEARCH_USER", "elastic"),
 			Password: GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
+		},
+		Kafka: struct {
+			Enable   bool
+			Brokers  []string
+			Username string
+			Password string
+		}{
+			Enable:   GetEnvBool("KAFKA_ENABLE", false),
+			Brokers:  strings.Split(GetEnv("KAFKA_BROKERS", "127.0.0.1:9092"), ","),
+			Username: GetEnv("KAFKA_USERNAME", ""),
+			Password: GetEnv("KAFKA_PASSWORD", ""),
 		},
 	}
 

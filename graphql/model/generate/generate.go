@@ -192,6 +192,46 @@ func GenJob(name string, path string) error {
 	return template.Render(options)
 }
 
+func GenPublisher(name string, path string) error {
+	publisherTemplate, err := modelFs.ReadFile("tpl/publisher.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "messages", "publisher"),
+		Template:     string(publisherTemplate),
+		FileName:     utils.SnakeCase(name),
+		FileExt:      "go",
+		Package:      "publisher",
+		Editable:     true,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Name": name,
+		},
+	}
+	return template.Render(options)
+}
+
+func GenSubscriber(name string, path string) error {
+	subscriberTemplate, err := modelFs.ReadFile("tpl/subscriber.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(path, "messages", "subscriber"),
+		Template:     string(subscriberTemplate),
+		FileName:     utils.SnakeCase(name),
+		FileExt:      "go",
+		Package:      "subscriber",
+		Editable:     true,
+		SkipIfExists: false,
+		Data: map[string]interface{}{
+			"Name": name,
+		},
+	}
+	return template.Render(options)
+}
+
 func GenRepo(nodes []*ast.ObjectNode, path string) error {
 	repoTemplate, err := modelFs.ReadFile("tpl/repo.tpl")
 	if err != nil {

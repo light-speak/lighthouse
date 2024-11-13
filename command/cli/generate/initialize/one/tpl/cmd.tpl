@@ -9,6 +9,7 @@ func (c *Command) GetCommands() []command.Command {
     &Searcher{},
     &QueueStart{},
 		&Migrate{},
+		&SubscribeStart{},
     {{ funcEnd "GetCommands" }}
 	}
 }

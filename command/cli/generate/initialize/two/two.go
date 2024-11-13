@@ -49,7 +49,19 @@ func Run(module string) error {
 	if err != nil {
 		return err
 	}
+	err = initPublisher()
+	if err != nil {
+		return err
+	}
+	err = initSubscriber()
+	if err != nil {
+		return err
+	}
 	err = initQueueStart()
+	if err != nil {
+		return err
+	}
+	err = initSubscribeStart()
 	if err != nil {
 		return err
 	}
@@ -190,6 +202,65 @@ func initQueue() error {
 	return template.Render(options)
 }
 
+func initPublisher() error {
+	publisherTemplate, err := twoFs.ReadFile("tpl/publisher.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "messages/publisher"),
+		Template:     string(publisherTemplate),
+		FileName:     "publisher",
+		FileExt:      "go",
+		Package:      "publisher",
+		Editable:     false,
+		SkipIfExists: false,
+		Data:         map[string]interface{}{},
+	}
+	return template.Render(options)
+}
+
+func initSubscriber() error {
+	subscriberTemplate, err := twoFs.ReadFile("tpl/subscriber.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "messages/subscriber"),
+		Template:     string(subscriberTemplate),
+		FileName:     "subscriber",
+		FileExt:      "go",
+		Package:      "subscriber",
+		Editable:     false,
+		SkipIfExists: false,
+		Data:         map[string]interface{}{},
+	}
+	return template.Render(options)
+}
+
+func initSubscribeStart() error {
+	subscriberTemplate, err := twoFs.ReadFile("tpl/subscribe_start.tpl")
+	if err != nil {
+		return err
+	}
+	options := &template.Options{
+		Path:         filepath.Join(projectName, "cmd"),
+		Template:     string(subscriberTemplate),
+		FileName:     "subscribe_start",
+		FileExt:      "go",
+		Package:      "cmd",
+		Editable:     true,
+		SkipIfExists: false,
+		Data:         map[string]interface{}{},
+		Imports: []*template.Import{
+			{
+				Path: fmt.Sprintf("%s/messages/subscriber", projectModule),
+			},
+		},
+	}
+	return template.Render(options)
+}
+
 func initQueueStart() error {
 	t, err := twoFs.ReadFile("tpl/queue_start.tpl")
 	if err != nil {
@@ -201,7 +272,7 @@ func initQueueStart() error {
 		FileName:     "queue",
 		FileExt:      "go",
 		Package:      "cmd",
-		Editable:     false,
+		Editable:     true,
 		SkipIfExists: false,
 		Data:         map[string]interface{}{},
 	}

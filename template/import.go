@@ -60,6 +60,12 @@ var importRegexMap = map[string]Import{
 	`log\.`: {
 		Path: "github.com/light-speak/lighthouse/log",
 	},
+	`watermill\.`: {
+		Path: "github.com/ThreeDotsLabs/watermill",
+	},
+	`kafka\.`: {
+		Path: "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka",
+	},
 	`model\.`: {
 		Path: "github.com/light-speak/lighthouse/graphql/model",
 	},
@@ -84,6 +90,12 @@ var importRegexMap = map[string]Import{
 	`handler\.`: {
 		Path: "github.com/light-speak/lighthouse/handler",
 	},
+	`message\.`: {
+		Path: "github.com/ThreeDotsLabs/watermill/message",
+	},
+	`uuid\.`: {
+		Path: "github.com/google/uuid",
+	},
 	`graphql\.`: {
 		Path: "github.com/light-speak/lighthouse/graphql",
 	},
@@ -104,10 +116,15 @@ var importRegexMap = map[string]Import{
 // if alias is not empty, it will use the alias as the import alias
 // like import command "github.com/light-speak/lighthouse/command"
 func AddImportRegex(regex string, path string, alias string) error {
+	if !strings.HasPrefix(regex, "\\b") {
+		regex = "\\b" + regex
+	}
+
 	_, err := regexp.Compile(regex)
 	if err != nil {
 		return fmt.Errorf("invalid regex pattern: %v", err)
 	}
+
 	importRegexMap[regex] = Import{
 		Path:  path,
 		Alias: alias,
@@ -146,8 +163,12 @@ func formatImport(imports []*Import) string {
 // other regex will be added by AddImportRegex
 func detectImports(content string) []*Import {
 	imports := []*Import{}
+
 	for regex, imp := range importRegexMap {
-		matched, _ := regexp.MatchString(regex, content)
+		matched, err := regexp.MatchString(regex, content)
+		if err != nil {
+			continue
+		}
 		if matched {
 			imports = append(imports, &imp)
 		}
