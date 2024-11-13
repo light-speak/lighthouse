@@ -42,7 +42,7 @@ type SearchQueryBuilder struct {
 	sorts        []map[string]QBSortOrder
 }
 
-func InitSearch() {
+func init() {
 	c, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{fmt.Sprintf("http://%s:%s", env.LighthouseConfig.Elasticsearch.Host, env.LighthouseConfig.Elasticsearch.Port)},
 		Username:  env.LighthouseConfig.Elasticsearch.User,

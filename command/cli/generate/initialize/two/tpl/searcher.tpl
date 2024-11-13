@@ -49,7 +49,6 @@ func (s *Searcher) OnExit() func() {
 // Section: user code section start. Do not remove this comment.
 func Import(m model.SearchModel) error {
 	db := model.GetDB()
-	model.InitSearch()
 	searcher := model.GetSearcher()
 	searcher.CreateOrUpdateIndex(m)
 
