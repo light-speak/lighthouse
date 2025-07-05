@@ -1,7 +1,0 @@
-{
-  "schemas": [
-      "graphql/**/schema/*.graphql",
-      "graphql/**/schema/*.graphqls",
-      "graphql/**/schema/*.gql",
-  ]
-}

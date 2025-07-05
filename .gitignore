@@ -1,7 +1,0 @@
-logs
-.VSCodeCounter/**
-.DS_Store
-.idea
-coverage.txt
-coverage.out
-test-report.json
