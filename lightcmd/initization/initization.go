@@ -51,7 +51,6 @@ func Run(module string, ms string) error {
 		initMain,
 		initCmd,
 		initGqlgen,
-		initGraph,
 		initModels,
 		initResolvers,
 		initServer,
@@ -269,27 +268,6 @@ func initGqlgen() error {
 		return err
 	}
 
-	return nil
-}
-
-func initGraph() error {
-	generatedTpl, err := tpl.ReadFile("tpl/generated.tpl")
-	if err != nil {
-		return err
-	}
-	options := &templates.Options{
-		Path:         filepath.Join(projectName, "graph"),
-		Template:     string(generatedTpl),
-		FileName:     "generated",
-		FileExt:      "go",
-		Editable:     false,
-		SkipIfExists: true,
-		SkipImport:   true,
-	}
-	err = templates.Render(options)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

@@ -31,7 +31,7 @@ func StartService() {
 	})
 	srv.SetErrorPresenter(lighterrors.ErrorPresenter)
 
-	router := lightmid.NewRouter()
+	router := routers.NewRouter()
 	router.Use(auth.Middleware())
 	router.Use(dataloader.Middleware(db))
 	router.Handle("/", playground.ApolloSandboxHandler("GraphQL playground", "/query"))

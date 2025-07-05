@@ -49,12 +49,12 @@ call_argument_directives_with_null: true
 models:
   ID:
     model:
-      - gitlab.staticoft.com/go-plugins/lightcmd/scalars.Uint
+      - github.com/light-speak/lighthouse/lightcmd/scalars.Uint
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int
   DeletedAt:
-    model: gitlab.staticoft.com/go-plugins/lightcmd/scalars.DeletedAt
+    model: github.com/light-speak/lighthouse/lightcmd/scalars.DeletedAt
 
 directives:
   searchable:
