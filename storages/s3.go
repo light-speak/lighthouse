@@ -2,6 +2,7 @@ package storages
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
@@ -12,7 +13,9 @@ import (
 // S3Storage S3 存储实现
 // 基于 minio-go v7 客户端
 type S3Storage struct {
-	client *minio.Client
+	client   *minio.Client
+	endpoint string // 端点地址
+	useSSL   bool   // 是否使用 SSL
 }
 
 // S3Config S3 配置参数
@@ -36,7 +39,9 @@ func NewS3Storage(config S3Config) (*S3Storage, error) {
 	}
 
 	return &S3Storage{
-		client: client,
+		client:   client,
+		endpoint: config.Endpoint,
+		useSSL:   config.UseSSL,
 	}, nil
 }
 
@@ -55,4 +60,25 @@ func (s *S3Storage) GetPresignedURL(ctx context.Context, bucket string, key stri
 		return "", err
 	}
 	return url.String(), nil
+}
+
+// GetPresignedPutURL 获取预签名上传 URL
+// 允许前端直接上传文件到 S3，无需经过后端服务器
+func (s *S3Storage) GetPresignedPutURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error) {
+	// 生成预签名上传 URL
+	url, err := s.client.PresignedPutObject(ctx, bucket, key, expiry)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
+}
+
+// GetPublicURL 获取公开访问 URL
+// 用于存储桶配置为公有读的场景
+func (s *S3Storage) GetPublicURL(bucket string, key string) string {
+	// 构建公开访问 URL
+	if s.useSSL {
+		return fmt.Sprintf("https://%s/%s/%s", s.endpoint, bucket, key)
+	}
+	return fmt.Sprintf("http://%s/%s/%s", s.endpoint, bucket, key)
 }

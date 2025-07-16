@@ -39,3 +39,16 @@ func (c *COSStorage) GetPresignedURL(ctx context.Context, bucket string, key str
 	// TODO: 实现 COS 预签名 URL 生成
 	return "", errors.New("COS storage not implemented yet")
 }
+
+// GetPresignedPutURL 获取预签名上传 URL (空实现)
+func (c *COSStorage) GetPresignedPutURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error) {
+	// TODO: 实现 COS 预签名上传 URL 生成
+	return "", errors.New("COS storage not implemented yet")
+}
+
+// GetPublicURL 获取公开访问 URL (空实现)
+func (c *COSStorage) GetPublicURL(bucket string, key string) string {
+	// TODO: 实现 COS 公开 URL 生成
+	// 格式: https://{bucket}.cos.{region}.myqcloud.com/{key}
+	return ""
+}

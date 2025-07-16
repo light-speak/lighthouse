@@ -29,7 +29,7 @@ DB_SLAVE_PORT=3306
 DB_SLAVE_USER=root
 DB_SLAVE_PASSWORD=
 
-# Legacy single database settings (单数据库模式)
+# Legacy single database settings (兼容旧版本)
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root

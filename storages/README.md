@@ -83,6 +83,79 @@ if err != nil {
 }
 ```
 
+### 前端直接上传（公有读私有写）
+
+```go
+// 后端生成上传凭证
+import "github.com/light-speak/lighthouse/storages"
+
+// 生成文件路径
+fileKey := storages.GenerateFileKey("avatars", "user-photo.jpg")
+
+// 获取上传 URL 和公开访问 URL
+uploadURL, publicURL, err := storages.GetUploadURL(ctx, storages.UploadConfig{
+    Key:    fileKey,
+    Expiry: 15 * time.Minute, // 上传链接 15 分钟有效
+})
+if err != nil {
+    log.Printf("获取上传 URL 失败: %v", err)
+    return
+}
+
+// 返回给前端
+response := map[string]string{
+    "uploadURL": uploadURL,  // 前端使用此 URL 上传文件
+    "publicURL": publicURL,  // 上传成功后的访问地址
+}
+```
+
+**前端上传示例（JavaScript）**：
+
+```javascript
+// 使用获取到的 uploadURL 直接上传文件
+async function uploadFile(file, uploadURL) {
+    const response = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+            'Content-Type': file.type,
+        }
+    });
+    
+    if (response.ok) {
+        console.log('上传成功');
+        // 使用 publicURL 访问文件
+    }
+}
+```
+
+## 存储桶配置
+
+### S3/MinIO 配置公有读私有写
+
+对于 MinIO，可以通过以下命令设置存储桶策略：
+
+```bash
+# 设置存储桶为公有读
+mc policy set download myminio/mybucket
+```
+
+或使用策略文件：
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": ["s3:GetObject"],
+            "Resource": ["arn:aws:s3:::mybucket/*"]
+        }
+    ]
+}
+```
+
 ## 扩展存储类型
 
 要添加新的存储类型，需要：
