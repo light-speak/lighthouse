@@ -21,24 +21,24 @@ type Storage interface {
 	// bucket: 存储桶名称
 	// key: 文件路径/键名
 	// reader: 文件内容读取器
-	Put(ctx context.Context, bucket string, key string, reader io.Reader) error
+	Put(ctx context.Context, key string, reader io.Reader) error
 
 	// GetPresignedURL 获取预签名下载 URL
 	// ctx: 上下文
 	// bucket: 存储桶名称
 	// key: 文件路径/键名
 	// expiry: 过期时间
-	GetPresignedURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error)
+	GetPresignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 
 	// GetPresignedPutURL 获取预签名上传 URL
 	// ctx: 上下文
 	// bucket: 存储桶名称
 	// key: 文件路径/键名
 	// expiry: 过期时间
-	GetPresignedPutURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error)
+	GetPresignedPutURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 
 	// GetPublicURL 获取公开访问 URL
 	// bucket: 存储桶名称
 	// key: 文件路径/键名
-	GetPublicURL(bucket string, key string) string
+	GetPublicURL(key string) string
 }

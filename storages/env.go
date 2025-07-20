@@ -1,13 +1,9 @@
 package storages
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/light-speak/lighthouse/logs"
@@ -115,7 +111,7 @@ func initStorage() {
 			logs.Error().Err(err).Msg("failed to initialize S3 storage")
 			return
 		}
-		logs.Info().Msg("S3 storage initialized successfully")
+		logs.Info().Msgf("S3 storage initialized successfully, bucket: %s", config.S3.DefaultBucket)
 
 	case DriverCOS:
 		if config.COS.SecretID == "" || config.COS.SecretKey == "" {
@@ -163,58 +159,4 @@ func GetDefaultBucket() string {
 	default:
 		return "default"
 	}
-}
-
-// UploadConfig 上传配置
-type UploadConfig struct {
-	Bucket      string        // 存储桶名称，为空时使用默认桶
-	Key         string        // 文件路径/键名
-	Expiry      time.Duration // 预签名 URL 过期时间，默认 15 分钟
-	ContentType string        // 文件类型（可选）
-}
-
-// GetUploadURL 获取预签名上传 URL，供前端直接上传使用
-// 实现公有读私有写：文件上传需要预签名，但可以通过公开 URL 访问
-func GetUploadURL(ctx context.Context, cfg UploadConfig) (uploadURL string, publicURL string, err error) {
-	if storage == nil {
-		return "", "", ErrStorageNotInitialized
-	}
-
-	// 使用默认值
-	if cfg.Bucket == "" {
-		cfg.Bucket = GetDefaultBucket()
-	}
-	if cfg.Expiry == 0 {
-		cfg.Expiry = 15 * time.Minute
-	}
-
-	// 获取预签名上传 URL
-	uploadURL, err = storage.GetPresignedPutURL(ctx, cfg.Bucket, cfg.Key, cfg.Expiry)
-	if err != nil {
-		return "", "", err
-	}
-
-	// 获取公开访问 URL
-	publicURL = storage.GetPublicURL(cfg.Bucket, cfg.Key)
-
-	return uploadURL, publicURL, nil
-}
-
-// GenerateFileKey 生成文件存储路径
-// prefix: 路径前缀，如 "avatars", "posts"
-// filename: 原始文件名
-func GenerateFileKey(prefix string, filename string) string {
-	// 生成基于时间的路径，避免文件名冲突
-	now := time.Now()
-	ext := filepath.Ext(filename)
-	name := strings.TrimSuffix(filename, ext)
-
-	// 生成唯一文件名: prefix/2006/01/02/timestamp_name.ext
-	return fmt.Sprintf("%s/%s/%d_%s%s",
-		prefix,
-		now.Format("2006/01/02"),
-		now.UnixNano(),
-		name,
-		ext,
-	)
 }

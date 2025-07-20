@@ -46,16 +46,16 @@ func NewS3Storage(config S3Config) (*S3Storage, error) {
 }
 
 // Put 上传文件到 S3 存储桶
-func (s *S3Storage) Put(ctx context.Context, bucket string, key string, reader io.Reader) error {
+func (s *S3Storage) Put(ctx context.Context, key string, reader io.Reader) error {
 	// 使用 PutObject 上传文件
-	_, err := s.client.PutObject(ctx, bucket, key, reader, -1, minio.PutObjectOptions{})
+	_, err := s.client.PutObject(ctx, GetDefaultBucket(), key, reader, -1, minio.PutObjectOptions{})
 	return err
 }
 
 // GetPresignedURL 获取预签名下载 URL
-func (s *S3Storage) GetPresignedURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error) {
+func (s *S3Storage) GetPresignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	// 生成预签名 URL
-	url, err := s.client.PresignedGetObject(ctx, bucket, key, expiry, nil)
+	url, err := s.client.PresignedGetObject(ctx, GetDefaultBucket(), key, expiry, nil)
 	if err != nil {
 		return "", err
 	}
@@ -64,9 +64,9 @@ func (s *S3Storage) GetPresignedURL(ctx context.Context, bucket string, key stri
 
 // GetPresignedPutURL 获取预签名上传 URL
 // 允许前端直接上传文件到 S3，无需经过后端服务器
-func (s *S3Storage) GetPresignedPutURL(ctx context.Context, bucket string, key string, expiry time.Duration) (string, error) {
+func (s *S3Storage) GetPresignedPutURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	// 生成预签名上传 URL
-	url, err := s.client.PresignedPutObject(ctx, bucket, key, expiry)
+	url, err := s.client.PresignedPutObject(ctx, GetDefaultBucket(), key, expiry)
 	if err != nil {
 		return "", err
 	}
@@ -75,10 +75,10 @@ func (s *S3Storage) GetPresignedPutURL(ctx context.Context, bucket string, key s
 
 // GetPublicURL 获取公开访问 URL
 // 用于存储桶配置为公有读的场景
-func (s *S3Storage) GetPublicURL(bucket string, key string) string {
+func (s *S3Storage) GetPublicURL(key string) string {
 	// 构建公开访问 URL
 	if s.useSSL {
-		return fmt.Sprintf("https://%s/%s/%s", s.endpoint, bucket, key)
+		return fmt.Sprintf("https://%s/%s/%s", s.endpoint, GetDefaultBucket(), key)
 	}
-	return fmt.Sprintf("http://%s/%s/%s", s.endpoint, bucket, key)
+	return fmt.Sprintf("http://%s/%s/%s", s.endpoint, GetDefaultBucket(), key)
 }
