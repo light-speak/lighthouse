@@ -30,11 +30,12 @@ func init() {
 		panic(err)
 	}
 	time.Local = loc
+	databaseConfig.Main.LogLevel = databaseConfig.LogLevel
+	databaseConfig.Slave.LogLevel = databaseConfig.LogLevel
 
 	// 初始化数据库连接，添加重试机制
 	initDatabaseWithRetry(loc)
-	databaseConfig.Main.LogLevel = databaseConfig.LogLevel
-	databaseConfig.Slave.LogLevel = databaseConfig.LogLevel
+
 }
 
 // initDatabaseWithRetry 初始化数据库连接，添加重试机制

@@ -16,6 +16,7 @@ type S3Storage struct {
 	client   *minio.Client
 	endpoint string // 端点地址
 	useSSL   bool   // 是否使用 SSL
+	useCDN   bool   // 是否使用 CDN
 }
 
 // S3Config S3 配置参数
@@ -24,6 +25,7 @@ type S3Config struct {
 	AccessKeyID     string // 访问密钥 ID
 	SecretAccessKey string // 访问密钥
 	UseSSL          bool   // 是否使用 SSL
+	UseCDN          bool   // 是否使用 CDN
 }
 
 // NewS3Storage 创建新的 S3 存储实例
@@ -42,6 +44,7 @@ func NewS3Storage(config S3Config) (*S3Storage, error) {
 		client:   client,
 		endpoint: config.Endpoint,
 		useSSL:   config.UseSSL,
+		useCDN:   config.UseCDN,
 	}, nil
 }
 
@@ -77,8 +80,12 @@ func (s *S3Storage) GetPresignedPutURL(ctx context.Context, key string, expiry t
 // 用于存储桶配置为公有读的场景
 func (s *S3Storage) GetPublicURL(key string) string {
 	// 构建公开访问 URL
-	if s.useSSL {
-		return fmt.Sprintf("https://%s/%s/%s", s.endpoint, GetDefaultBucket(), key)
+	endpoint := s.endpoint
+	if s.useCDN {
+		endpoint = GetConfig().S3.CDN
 	}
-	return fmt.Sprintf("http://%s/%s/%s", s.endpoint, GetDefaultBucket(), key)
+	if s.useSSL {
+		return fmt.Sprintf("https://%s/%s/%s", endpoint, GetDefaultBucket(), key)
+	}
+	return fmt.Sprintf("http://%s/%s/%s", endpoint, GetDefaultBucket(), key)
 }

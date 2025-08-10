@@ -22,6 +22,8 @@ const (
 type StorageConfig struct {
 	Driver StorageDriver // 存储驱动
 
+	UseCDN bool // 是否使用 CDN
+
 	// S3 配置
 	S3 struct {
 		Endpoint        string // 端点地址
@@ -29,6 +31,7 @@ type StorageConfig struct {
 		SecretAccessKey string // 访问密钥
 		UseSSL          bool   // 是否使用 SSL
 		DefaultBucket   string // 默认存储桶
+		CDN             string // CDN 地址
 	}
 
 	// COS 配置
@@ -37,6 +40,7 @@ type StorageConfig struct {
 		SecretKey     string // 密钥
 		Region        string // 地域
 		DefaultBucket string // 默认存储桶
+		CDN           string // CDN 地址
 	}
 }
 
@@ -49,17 +53,20 @@ func init() {
 	// 初始化默认配置
 	config = &StorageConfig{
 		Driver: DriverS3,
+		UseCDN: false,
 	}
 	config.S3.Endpoint = "localhost:9000"
 	config.S3.AccessKeyID = ""
 	config.S3.SecretAccessKey = ""
 	config.S3.UseSSL = false
 	config.S3.DefaultBucket = "default"
+	config.S3.CDN = ""
 
 	config.COS.SecretID = ""
 	config.COS.SecretKey = ""
 	config.COS.Region = "ap-beijing"
 	config.COS.DefaultBucket = "default"
+	config.COS.CDN = ""
 
 	// 加载 .env 文件
 	if curPath, err := os.Getwd(); err == nil {
@@ -71,6 +78,7 @@ func init() {
 
 	// 读取存储驱动配置
 	config.Driver = StorageDriver(utils.GetEnv("STORAGE_DRIVER", string(config.Driver)))
+	config.UseCDN = utils.GetEnvBool("USE_CDN", config.UseCDN)
 
 	// 读取 S3 配置
 	config.S3.Endpoint = utils.GetEnv("S3_ENDPOINT", config.S3.Endpoint)
@@ -78,12 +86,14 @@ func init() {
 	config.S3.SecretAccessKey = utils.GetEnv("S3_SECRET_KEY", config.S3.SecretAccessKey)
 	config.S3.UseSSL = utils.GetEnvBool("S3_USE_SSL", config.S3.UseSSL)
 	config.S3.DefaultBucket = utils.GetEnv("S3_DEFAULT_BUCKET", config.S3.DefaultBucket)
+	config.S3.CDN = utils.GetEnv("S3_CDN", config.S3.CDN)
 
 	// 读取 COS 配置
 	config.COS.SecretID = utils.GetEnv("COS_SECRET_ID", config.COS.SecretID)
 	config.COS.SecretKey = utils.GetEnv("COS_SECRET_KEY", config.COS.SecretKey)
 	config.COS.Region = utils.GetEnv("COS_REGION", config.COS.Region)
 	config.COS.DefaultBucket = utils.GetEnv("COS_DEFAULT_BUCKET", config.COS.DefaultBucket)
+	config.COS.CDN = utils.GetEnv("COS_CDN", config.COS.CDN)
 
 	// 初始化存储实例
 	initStorage()
@@ -105,6 +115,7 @@ func initStorage() {
 			AccessKeyID:     config.S3.AccessKeyID,
 			SecretAccessKey: config.S3.SecretAccessKey,
 			UseSSL:          config.S3.UseSSL,
+			UseCDN:          config.UseCDN,
 		}
 		storage, err = NewS3Storage(s3Config)
 		if err != nil {
