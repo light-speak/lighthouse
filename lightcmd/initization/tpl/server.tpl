@@ -29,7 +29,7 @@ func StartService() {
 		logs.Error().Interface("error", err).Msg("panic")
 		return gqlerror.Errorf("服务器繁忙")
 	})
-	srv.SetErrorPresenter(lighterrors.ErrorPresenter)
+	srv.SetErrorPresenter(lighterr.ErrorPresenter)
 
 	router := routers.NewRouter()
 	router.Use(auth.Middleware())

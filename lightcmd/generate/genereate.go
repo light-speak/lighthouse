@@ -88,7 +88,7 @@ func generateLoader() error {
 		},
 	}
 	templates.AddImportRegex("dataloadgen", "github.com/vikstrous/dataloadgen", "")
-	templates.AddImportRegex("lighterrors", "github.com/light-speak/lighthouse/errors", "lighterrors")
+	templates.AddImportRegex("lighterr", "github.com/light-speak/lighthouse/lighterr", "")
 	templates.AddImportRegex("context", "context", "")
 	templates.AddImportRegex("databases", "github.com/light-speak/lighthouse/databases", "")
 	templates.AddImportRegex("dataloader", "github.com/light-speak/lighthouse/routers/dataloader", "")

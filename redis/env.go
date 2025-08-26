@@ -15,6 +15,7 @@ import (
 // REDIS_PASSWORD=
 // REDIS_DB=0
 type Config struct {
+	Enable   bool
 	Host     string
 	Port     string
 	Password string
@@ -25,6 +26,7 @@ var LightRedisConfig *Config
 
 func init() {
 	LightRedisConfig = &Config{
+		Enable:   false,
 		Host:     "localhost",
 		Port:     "6379",
 		Password: "",
@@ -38,10 +40,13 @@ func init() {
 		}
 	}
 
+	LightRedisConfig.Enable = utils.GetEnvBool("REDIS_ENABLE", false)
 	LightRedisConfig.Host = utils.GetEnv("REDIS_HOST", "localhost")
 	LightRedisConfig.Port = utils.GetEnv("REDIS_PORT", "6379")
 	LightRedisConfig.Password = utils.GetEnv("REDIS_PASSWORD", "")
 	LightRedisConfig.DB = utils.GetEnvInt("REDIS_DB", 0)
 
-	initRedis()
+	if LightRedisConfig.Enable {
+		initRedis()
+	}
 }

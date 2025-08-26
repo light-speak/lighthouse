@@ -1,4 +1,4 @@
-package errors
+package lighterr
 
 type ErrorCode int
 

@@ -101,7 +101,7 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}(ctx context.Context, db *gor
 		if item, ok := itemByKey[key]; ok {
 			results[i] = item
 		} else {
-			errs[i] = lighterrors.NewNotFoundError("{{ $modelName }} not found")
+			errs[i] = lighterr.NewNotFoundError("{{ $modelName }} not found")
 		}
 	}
 
@@ -259,7 +259,7 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}
 		if item, ok := itemByKey[lookupKey]; ok {
 			results[i] = item
 		} else {
-			errs[i] = lighterrors.NewNotFoundError("{{ $modelName }} not found")
+			errs[i] = lighterr.NewNotFoundError("{{ $modelName }} not found")
 		}
 	}
 
@@ -415,7 +415,7 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ct
 		if item, ok := itemByKey[key]; ok {
 			results[i] = item
 		} else {
-			errs[i] = lighterrors.NewNotFoundError("{{ $modelName }} not found")
+			errs[i] = lighterr.NewNotFoundError("{{ $modelName }} not found")
 		}
 	}
 
@@ -573,7 +573,7 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}Wit
 		if item, ok := itemByKey[lookupKey]; ok {
 			results[i] = item
 		} else {
-			errs[i] = lighterrors.NewNotFoundError("{{ $modelName }} not found")
+			errs[i] = lighterr.NewNotFoundError("{{ $modelName }} not found")
 		}
 	}
 

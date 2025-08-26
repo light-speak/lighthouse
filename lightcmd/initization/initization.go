@@ -70,7 +70,7 @@ func Run(module string, ms string) error {
 	templates.AddImportRegex("filepath", "path/filepath", "")
 	templates.AddImportRegex("gorm", "gorm.io/gorm", "")
 	templates.AddImportRegex("databases", "github.com/light-speak/lighthouse/databases", "")
-	templates.AddImportRegex("lighterrors", "github.com/light-speak/lighthouse/errors", "lighterrors")
+	templates.AddImportRegex("lighterr", "github.com/light-speak/lighthouse/lighterr", "")
 	templates.AddImportRegex("lru", "github.com/99designs/gqlgen/graphql/handler/lru", "")
 	templates.AddImportRegex("extension", "github.com/99designs/gqlgen/graphql/handler/extension", "")
 	templates.AddImportRegex("transport", "github.com/99designs/gqlgen/graphql/handler/transport", "")

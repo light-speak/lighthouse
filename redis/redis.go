@@ -38,6 +38,9 @@ func initRedis() {
 }
 
 func GetLightRedis() (*LightRedis, error) {
+	if !LightRedisConfig.Enable {
+		return nil, errors.New("redis is not enabled")
+	}
 	if LightRedisClient == nil {
 		return nil, errors.New("redis is not initialized")
 	}
@@ -48,6 +51,7 @@ func GetLightRedis() (*LightRedis, error) {
 }
 
 func GetClient() (*goRedis.Client, error) {
+
 	if LightRedisClient == nil {
 		return nil, errors.New("redis is not initialized")
 	}
@@ -57,16 +61,37 @@ func GetClient() (*goRedis.Client, error) {
 	return LightRedisClient.Client, nil
 }
 
+func (lr *LightRedis) GetClient() (*goRedis.Client, error) {
+	if !LightRedisConfig.Enable {
+		return nil, errors.New("redis is not enabled")
+	}
+	if LightRedisClient == nil {
+		return nil, errors.New("redis is not initialized")
+	}
+	if !lr.IsEnable {
+		return nil, errors.New("redis is not enabled")
+	}
+	return lr.Client, nil
+}
+
 func (lr *LightRedis) Enable() bool {
 	return lr.IsEnable
 }
 
 func (lr *LightRedis) Get(ctx context.Context, key string) (string, error) {
-	return lr.Client.Get(ctx, key).Result()
+	client, err := lr.GetClient()
+	if err != nil {
+		return "", err
+	}
+	return client.Get(ctx, key).Result()
 }
 
 func (lr *LightRedis) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	return lr.Client.Set(ctx, key, value, expiration).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.Set(ctx, key, value, expiration).Err()
 }
 
 // Remember gets cached value or stores the result of callback
@@ -105,36 +130,64 @@ func (lr *LightRedis) RememberForever(ctx context.Context, key string, callback 
 
 // Delete removes key from redis
 func (lr *LightRedis) Delete(ctx context.Context, key string) error {
-	return lr.Client.Del(ctx, key).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.Del(ctx, key).Err()
 }
 
 // Clear clears all keys in current DB
 func (lr *LightRedis) Clear(ctx context.Context) error {
-	return lr.Client.FlushDB(ctx).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.FlushDB(ctx).Err()
 }
 
 // Has checks if key exists
 func (lr *LightRedis) Has(ctx context.Context, key string) bool {
-	val, err := lr.Client.Exists(ctx, key).Result()
+	client, err := lr.GetClient()
+	if err != nil {
+		return false
+	}
+	val, err := client.Exists(ctx, key).Result()
 	return err == nil && val > 0
 }
 
 // Increment increments value by 1
 func (lr *LightRedis) Increment(ctx context.Context, key string) error {
-	return lr.Client.Incr(ctx, key).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.Incr(ctx, key).Err()
 }
 
 // IncrementBy increments value by given amount
 func (lr *LightRedis) IncrementBy(ctx context.Context, key string, value int64) error {
-	return lr.Client.IncrBy(ctx, key, value).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.IncrBy(ctx, key, value).Err()
 }
 
 // Decrement decrements value by 1
 func (lr *LightRedis) Decrement(ctx context.Context, key string) error {
-	return lr.Client.Decr(ctx, key).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.Decr(ctx, key).Err()
 }
 
 // DecrementBy decrements value by given amount
 func (lr *LightRedis) DecrementBy(ctx context.Context, key string, value int64) error {
-	return lr.Client.DecrBy(ctx, key, value).Err()
+	client, err := lr.GetClient()
+	if err != nil {
+		return err
+	}
+	return client.DecrBy(ctx, key, value).Err()
 }

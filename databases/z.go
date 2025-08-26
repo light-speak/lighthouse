@@ -2,6 +2,7 @@ package databases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -202,6 +203,9 @@ func (l *DBLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 	if err != nil && l.LogLevel >= logger.Error {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return
+		}
 		logs.Error().Err(err).Str("sql", sql).Int64("rows", rows).Msg("database error")
 	} else if elapsed > 200*time.Millisecond && l.LogLevel >= logger.Warn {
 		logs.Warn().Str("sql", sql).Int64("rows", rows).Msg("database slow query")

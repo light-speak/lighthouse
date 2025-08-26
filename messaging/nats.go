@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/light-speak/lighthouse/errors"
+	"github.com/light-speak/lighthouse/lighterr"
 	"github.com/light-speak/lighthouse/logs"
 	"github.com/nats-io/nats.go"
 )
@@ -19,11 +19,11 @@ func (n *NatsBroker) Init(cfg Config) error {
 	nc, err := nats.Connect(cfg.URL,
 		nats.MaxReconnects(-1), nats.ReconnectWait(2*time.Second))
 	if err != nil {
-		return errors.NewServiceUnavailableError("failed to connect to nats", err)
+		return lighterr.NewServiceUnavailableError("failed to connect to nats", err)
 	}
 	js, err := nc.JetStream()
 	if err != nil {
-		return errors.NewServiceUnavailableError("failed to create jetstream client", err)
+		return lighterr.NewServiceUnavailableError("failed to create jetstream client", err)
 	}
 	streamName := "messaging"
 	streamSubjects := []string{"messaging.>"}
@@ -34,7 +34,7 @@ func (n *NatsBroker) Init(cfg Config) error {
 			Storage:   nats.FileStorage,
 			Retention: nats.LimitsPolicy,
 		}); err != nil {
-			return errors.NewServiceUnavailableError("failed to add stream", err)
+			return lighterr.NewServiceUnavailableError("failed to add stream", err)
 		}
 	}
 	n.conn = nc
@@ -100,7 +100,7 @@ func (n *NatsBroker) Subscribe(ctx context.Context, topic string, handler func(m
 	if err != nil {
 		logs.Error().Err(err).Msg("failed to subscribe to topic")
 		close(unsubscribeCh)
-		return nil, errors.NewServiceUnavailableError("failed to subscribe to topic", err)
+		return nil, lighterr.NewServiceUnavailableError("failed to subscribe to topic", err)
 	}
 
 	return func() {
@@ -118,7 +118,7 @@ func wrapHandler(ctx context.Context, handler func([]byte) error) nats.MsgHandle
 		}
 		defer func() {
 			if r := recover(); r != nil {
-				logs.Error().Err(errors.NewInternalError("panic in message handler")).Msg("panic in message handler")
+				logs.Error().Err(lighterr.NewInternalError("panic in message handler")).Msg("panic in message handler")
 			}
 		}()
 		err := handler(m.Data)
