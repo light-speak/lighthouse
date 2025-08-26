@@ -28,7 +28,7 @@ node_modules/
 
 # Log files
 *.log
-logs/
+./logs/
 
 # Environment files
 .env
