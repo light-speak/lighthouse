@@ -94,38 +94,43 @@ func (lr *LightRedis) Set(ctx context.Context, key string, value interface{}, ex
 	return client.Set(ctx, key, value, expiration).Err()
 }
 
-// Remember gets cached value or stores the result of callback
-func (lr *LightRedis) Remember(ctx context.Context, key string, callback func() interface{}, expiration time.Duration) (interface{}, error) {
-	// Try to get from cache first
-	val, err := lr.Get(ctx, key)
-	if err == nil {
-		var result interface{}
-		err = sonic.Unmarshal([]byte(val), &result)
-		if err == nil {
-			return result, nil
-		}
+func Remember[T any](ctx context.Context, key string, callback func() T, expiration time.Duration) (*T, error) {
+	redisClient, err := GetLightRedis()
+	if err != nil {
+		return nil, err
 	}
 
-	// Get fresh data
+	val, err := redisClient.Get(ctx, key)
+	if err == nil {
+		var result T
+		err = sonic.Unmarshal([]byte(val), &result)
+		if err == nil {
+			return &result, nil
+		} else {
+			// 清理坏掉的缓存
+			_ = redisClient.Delete(ctx, key)
+		}
+	} else if err != goRedis.Nil {
+		return nil, err
+	}
+
 	data := callback()
 
-	// Cache the result
 	bytes, err := sonic.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	err = lr.Set(ctx, key, string(bytes), expiration)
+	err = redisClient.Set(ctx, key, bytes, expiration)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	return &data, nil
 }
 
-// RememberForever caches value forever
-func (lr *LightRedis) RememberForever(ctx context.Context, key string, callback func() interface{}) (interface{}, error) {
-	return lr.Remember(ctx, key, callback, 0)
+func RememberForever[T any](ctx context.Context, key string, callback func() T) (*T, error) {
+	return Remember[T](ctx, key, callback, 0)
 }
 
 // Delete removes key from redis
