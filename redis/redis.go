@@ -130,7 +130,7 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 }
 
 func RememberForever[T any](ctx context.Context, key string, callback func() T) (*T, error) {
-	return Remember[T](ctx, key, callback, 0)
+	return Remember(ctx, key, callback, 0)
 }
 
 // Delete removes key from redis
