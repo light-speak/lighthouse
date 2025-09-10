@@ -83,7 +83,13 @@ func (lr *LightRedis) Get(ctx context.Context, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return client.Get(ctx, key).Result()
+
+	val, err := client.Get(ctx, key).Result()
+	if err == goRedis.Nil {
+		// key 不存在，不算错误
+		return "", nil
+	}
+	return val, err
 }
 
 func (lr *LightRedis) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
@@ -101,19 +107,20 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 	}
 
 	val, err := redisClient.Get(ctx, key)
-	if err == nil {
-		var result T
-		err = sonic.Unmarshal([]byte(val), &result)
-		if err == nil {
-			return &result, nil
-		} else {
-			// 清理坏掉的缓存
-			_ = redisClient.Delete(ctx, key)
-		}
-	} else if err != goRedis.Nil {
-		return nil, err
+	if err != nil {
+		return nil, err // 这里已经过滤掉 redis.Nil
 	}
 
+	if val != "" {
+		var result T
+		if err := sonic.Unmarshal([]byte(val), &result); err == nil {
+			return &result, nil
+		}
+		// 反序列化失败，清理坏缓存
+		_ = redisClient.Delete(ctx, key)
+	}
+
+	// 缓存未命中或坏数据 → 调用回调
 	data := callback()
 
 	bytes, err := sonic.Marshal(data)
@@ -121,8 +128,7 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 		return nil, err
 	}
 
-	err = redisClient.Set(ctx, key, bytes, expiration)
-	if err != nil {
+	if err := redisClient.Set(ctx, key, bytes, expiration); err != nil {
 		return nil, err
 	}
 
