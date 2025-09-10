@@ -29,6 +29,7 @@ func initRedis() {
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
 		logs.Error().Err(err).Msg("failed to connect redis")
+		panic(err)
 	}
 	logs.Info().Msg("redis connected")
 	LightRedisClient = &LightRedis{
@@ -117,11 +118,16 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 			return &result, nil
 		}
 		// 反序列化失败，清理坏缓存
+		logs.Error().Err(err).Msg("failed to unmarshal value")
 		_ = redisClient.Delete(ctx, key)
 	}
 
 	// 缓存未命中或坏数据 → 调用回调
 	data := callback()
+
+	if any(data) == nil {
+		return nil, nil
+	}
 
 	bytes, err := sonic.Marshal(data)
 	if err != nil {
