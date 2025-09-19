@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/hibiken/asynq"
+	"github.com/light-speak/lighthouse/logs"
 )
 
 type JobConfig struct {
@@ -63,9 +64,9 @@ func GetClient() *asynq.Client {
 	if !LightQueueConfig.Enable {
 		return nil
 	}
+	if client == nil {
+		logs.Warn().Msg("init queue client")
+		client = asynq.NewClient(getRedisConfig())
+	}
 	return client
-}
-
-func init() {
-	client = asynq.NewClient(getRedisConfig())
 }
