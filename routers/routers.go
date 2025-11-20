@@ -18,9 +18,9 @@ const (
 func NewRouter() *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"},
-		AllowedHeaders:   []string{"*"},
+		AllowedOrigins:   Config.CORSAllowOrigins,
+		AllowedMethods:   Config.CORSAllowMethods,
+		AllowedHeaders:   Config.CORSAllowHeaders,
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 	}).Handler)
