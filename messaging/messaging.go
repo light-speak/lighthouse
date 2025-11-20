@@ -18,3 +18,7 @@ func init() {
 	}
 	broker = b
 }
+
+func GetBroker() Broker {
+	return broker
+}

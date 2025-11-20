@@ -77,6 +77,9 @@ func Run(module string, ms string) error {
 	templates.AddImportRegex("ast", "github.com/vektah/gqlparser/v2/ast", "")
 	templates.AddImportRegex("time", "time", "")
 	templates.AddImportRegex("dataloader", "github.com/light-speak/lighthouse/routers/dataloader", "")
+	templates.AddImportRegex("messaging", "github.com/light-speak/lighthouse/messaging", "")
+	templates.AddImportRegex("queue", "github.com/light-speak/lighthouse/queue", "")
+	templates.AddImportRegex("redis", "github.com/light-speak/lighthouse/redis", "")
 
 	for _, fn := range initFunctions {
 		if err := fn(); err != nil {
