@@ -22,6 +22,13 @@ func initRedis() {
 		Addr:     LightRedisConfig.Host + ":" + LightRedisConfig.Port,
 		Password: LightRedisConfig.Password,
 		DB:       LightRedisConfig.DB,
+
+		PoolSize:     10,
+		MinIdleConns: 5,
+		MaxRetries:   3,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -29,7 +36,11 @@ func initRedis() {
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
 		logs.Error().Err(err).Msg("failed to connect redis")
-		panic(err)
+		LightRedisClient = &LightRedis{
+			Client:   nil,
+			IsEnable: false,
+		}
+		return
 	}
 	logs.Info().Msg("redis connected")
 	LightRedisClient = &LightRedis{
@@ -73,6 +84,13 @@ func (lr *LightRedis) GetClient() (*goRedis.Client, error) {
 		return nil, errors.New("redis is not enabled")
 	}
 	return lr.Client, nil
+}
+
+func (lr *LightRedis) Close() error {
+	if lr == nil || lr.Client == nil {
+		return nil
+	}
+	return lr.Client.Close()
 }
 
 func (lr *LightRedis) Enable() bool {

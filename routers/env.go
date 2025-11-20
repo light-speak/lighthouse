@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -22,17 +23,24 @@ type middlewareConfig struct {
 	Timeout time.Duration
 	// Throttle is the throttle for the request
 	Throttle int
+
+	CORSAllowOrigins []string
+	CORSAllowMethods []string
+	CORSAllowHeaders []string
 }
 
 var Config *middlewareConfig
 
 func init() {
 	Config = &middlewareConfig{
-		JWT_SECRET:    "IWY@*3JUI#d309HhefzX2WpLtPKtD!hn",
-		HeartbeatPath: "/health",
-		CompressLevel: 5,
-		Timeout:       10 * time.Second,
-		Throttle:      100,
+		JWT_SECRET:       "IWY@*3JUI#d309HhefzX2WpLtPKtD!hn",
+		HeartbeatPath:    "/health",
+		CompressLevel:    5,
+		Timeout:          10 * time.Second,
+		Throttle:         100,
+		CORSAllowOrigins: []string{"*"},
+		CORSAllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"},
+		CORSAllowHeaders: []string{"*"},
 	}
 
 	if curPath, err := os.Getwd(); err == nil {
@@ -47,4 +55,13 @@ func init() {
 	Config.CompressLevel = utils.GetEnvInt("MID_COMPRESS_LEVEL", Config.CompressLevel)
 	Config.Timeout = time.Duration(utils.GetEnvInt("MID_TIMEOUT", 30)) * time.Second
 	Config.Throttle = utils.GetEnvInt("MID_THROTTLE", Config.Throttle)
+	if origins := utils.GetEnv("CORS_ALLOW_ORIGINS", ""); origins != "" {
+		Config.CORSAllowOrigins = strings.Split(origins, ",")
+	}
+	if methods := utils.GetEnv("CORS_ALLOW_METHODS", ""); methods != "" {
+		Config.CORSAllowMethods = strings.Split(methods, ",")
+	}
+	if headers := utils.GetEnv("CORS_ALLOW_HEADERS", ""); headers != "" {
+		Config.CORSAllowHeaders = strings.Split(headers, ",")
+	}
 }

@@ -34,9 +34,9 @@ func (ex *{{ .Name }}TaskExecutor) Execute(ctx context.Context, t *asynq.Task) e
 
 func init(){
     executor := &{{ .Name }}TaskExecutor{}
-    lightqueue.JobConfigMap[{{ .Name }}] = lightqueue.JobConfig{
+    queue.RegisterJob({{ .Name }}, queue.JobConfig{
         Name: {{ .Name }},
         Priority: {{ .Name }}Priority,
         Executor: executor,
-    }
+    })
 }

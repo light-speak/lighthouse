@@ -110,6 +110,8 @@ func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
 		DisableForeignKeyConstraintWhenMigrating: true,
 		IgnoreRelationshipsWhenMigrating:         true,
 		Logger:                                   &DBLogger{LogLevel: config.LogLevel},
+		PrepareStmt:                              true,
+		SkipDefaultTransaction:                   true,
 		NowFunc: func() time.Time {
 			return time.Now().In(loc)
 		},
@@ -117,10 +119,15 @@ func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	sqlDB, _ := db.DB()
-	sqlDB.SetMaxIdleConns(5)
-	sqlDB.SetMaxOpenConns(200)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(50)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 	return db, nil
 }
 
@@ -131,17 +138,6 @@ func (l *LightDatabase) GetDB(ctx context.Context) (*gorm.DB, error) {
 	}
 	if !l.Completed {
 		return nil, fmt.Errorf("database is not completed, error: %v", l.Error)
-	}
-
-	// 在独立的goroutine中监控context结束
-	// 但不关闭数据库连接，因为这可能影响其他查询
-	if ctx != nil && ctx != context.Background() && ctx != context.TODO() {
-		go func() {
-			<-ctx.Done()
-			// 这里可以添加日志记录context结束
-			logs.Debug().Msg("context done in GetDB")
-			// 不关闭数据库连接，让GORM的连接池处理
-		}()
 	}
 
 	return l.MainDB, nil
@@ -156,20 +152,7 @@ func (l *LightDatabase) GetSlaveDB(ctx context.Context) (*gorm.DB, error) {
 		return nil, fmt.Errorf("database is not completed, error: %v", l.Error)
 	}
 
-	// 随机选择一个从库
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	slaveDB := l.SlaveDBs[r.Intn(len(l.SlaveDBs))]
-
-	// 在独立的goroutine中监控context结束
-	// 但不关闭数据库连接，因为这可能影响其他查询
-	if ctx != nil && ctx != context.Background() && ctx != context.TODO() {
-		go func() {
-			<-ctx.Done()
-			// 这里可以添加日志记录context结束
-			logs.Debug().Msg("context done in GetSlaveDB")
-			// 不关闭数据库连接，让GORM的连接池处理
-		}()
-	}
+	slaveDB := l.SlaveDBs[rand.Intn(len(l.SlaveDBs))]
 
 	return slaveDB, nil
 }

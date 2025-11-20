@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/hibiken/asynq"
 	"github.com/light-speak/lighthouse/logs"
@@ -15,8 +16,10 @@ type JobConfig struct {
 }
 
 var (
+	JobMutex     sync.RWMutex
 	JobConfigMap = map[string]JobConfig{}
 	client       *asynq.Client
+	clientOnce   sync.Once
 )
 
 type Executor interface {
@@ -28,12 +31,25 @@ func StartQueue() error {
 		return errors.New("queue is not enabled")
 	}
 
-	queuePriority := map[string]int{}
-	concurrency := 0
-	for _, job := range JobConfigMap {
-		queuePriority[job.Name] = job.Priority
-		concurrency += job.Priority
+	JobMutex.RLock()
+	defer JobMutex.RUnlock()
+
+	if len(JobConfigMap) == 0 {
+		return errors.New("no job config found")
 	}
+
+	queuePriority := map[string]int{}
+	for _, job := range JobConfigMap {
+		if job.Priority <= 0 {
+			return errors.New("job priority must be greater than 0")
+		}
+		if job.Executor == nil {
+			return errors.New("job executor must be not nil")
+		}
+		queuePriority[job.Name] = job.Priority
+	}
+
+	concurrency := 8
 
 	srv := asynq.NewServer(
 		getRedisConfig(),
@@ -45,7 +61,10 @@ func StartQueue() error {
 		mux.HandleFunc(job.Name, job.Executor.Execute)
 	}
 
+	logs.Info().Int("concurrency", concurrency).Int("jobs", len(JobConfigMap)).Msg("starting queue server")
+
 	if err := srv.Run(mux); err != nil {
+		logs.Error().Err(err).Msg("queue failed to run")
 		return err
 	}
 
@@ -60,13 +79,29 @@ func getRedisConfig() *asynq.RedisClientOpt {
 	}
 }
 
-func GetClient() *asynq.Client {
+func GetClient() (*asynq.Client, error) {
 	if !LightQueueConfig.Enable {
-		return nil
+		return nil, errors.New("queue is not enabled")
 	}
-	if client == nil {
-		logs.Warn().Msg("init queue client")
+	clientOnce.Do(func() {
 		client = asynq.NewClient(getRedisConfig())
+		logs.Info().Msg("queue client initialized")
+	})
+	if client == nil {
+		return nil, errors.New("queue client not initialized")
 	}
-	return client
+	return client, nil
+}
+
+func RegisterJob(name string, config JobConfig) {
+	JobMutex.Lock()
+	defer JobMutex.Unlock()
+	JobConfigMap[name] = config
+}
+
+func CloseClient() error {
+	if client != nil {
+		return client.Close()
+	}
+	return nil
 }

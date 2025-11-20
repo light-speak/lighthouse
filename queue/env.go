@@ -43,7 +43,7 @@ func init() {
 		LightQueueConfig.DB = utils.GetEnvInt("QUEUE_REDIS_DB", LightQueueConfig.DB)
 	}
 
-	if LightQueueConfig.Enable && (LightQueueConfig.Host == "" || LightQueueConfig.Port == "" || LightQueueConfig.Password == "" || LightQueueConfig.DB == 0) {
+	if LightQueueConfig.Enable && (LightQueueConfig.Host == "" || LightQueueConfig.Port == "") {
 		log.Println("Queue config is invalid, please check the .env file")
 		panic("Queue config is invalid, please check the .env file")
 	}
