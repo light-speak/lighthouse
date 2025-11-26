@@ -78,7 +78,12 @@ func (l *{{ $listLoaderName }}) LoadAll(ctx context.Context, ids []uint) ([][]*{
 
 func fetch{{ $modelName }}sBy{{ $field | ucFirst }}(ctx context.Context, db *gorm.DB, keys []uint) ([]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	result := db.WithContext(ctx).Where("{{ $field | snakeCase }} IN (?)", keys).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?)", keys).Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
 		errs := make([]error, len(keys))
@@ -110,7 +115,12 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}(ctx context.Context, db *gor
 
 func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}(ctx context.Context, db *gorm.DB, keys []uint) ([][]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	result := db.WithContext(ctx).Where("{{ $field | snakeCase}} IN (?)", keys).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase}} IN (?)", keys).Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
 		errs := make([]error, len(keys))
@@ -227,7 +237,7 @@ func (l *{{ $extraListLoaderName }}) LoadAll(ctx context.Context, ids []uint, ex
 
 func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}(ctx context.Context, db *gorm.DB, keys []struct{ID uint; ExtraID interface{}}) ([]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	
+
 	// Extract IDs and ExtraIDs
 	ids := make([]uint, len(keys))
 	extraIDs := make([]interface{}, len(keys))
@@ -235,8 +245,12 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}
 		ids[i] = key.ID
 		extraIDs[i] = key.ExtraID
 	}
-	
-	result := db.WithContext(ctx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
 	if result.Error != nil {
 		errs := make([]error, len(keys))
 		for i := range errs {
@@ -268,7 +282,7 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}
 
 func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}(ctx context.Context, db *gorm.DB, keys []struct{ID uint; ExtraID interface{}}) ([][]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	
+
 	// Extract IDs and ExtraIDs
 	ids := make([]uint, len(keys))
 	extraIDs := make([]interface{}, len(keys))
@@ -276,8 +290,12 @@ func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}With{{ $extraKey | ucFirs
 		ids[i] = key.ID
 		extraIDs[i] = key.ExtraID
 	}
-	
-	result := db.WithContext(ctx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
 	if result.Error != nil {
 		errs := make([]error, len(keys))
 		for i := range errs {
@@ -392,7 +410,12 @@ func (l *{{ $listLoaderName }}) LoadAll(ctx context.Context, ids []uint) ([][]*{
 
 func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ctx context.Context, db *gorm.DB, keys []uint) ([]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	result := db.WithContext(ctx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
 		errs := make([]error, len(keys))
@@ -424,7 +447,12 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ct
 
 func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ctx context.Context, db *gorm.DB, keys []uint) ([][]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	result := db.WithContext(ctx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
 		errs := make([]error, len(keys))
@@ -541,7 +569,7 @@ func (l *{{ $extraListLoaderName }}) LoadAll(ctx context.Context, ids []uint, ex
 
 func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}With{{ $extraKey | ucFirst }}(ctx context.Context, db *gorm.DB, keys []struct{ID uint; ExtraID interface{}}) ([]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	
+
 	// Extract IDs and ExtraIDs
 	ids := make([]uint, len(keys))
 	extraIDs := make([]interface{}, len(keys))
@@ -549,8 +577,12 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}Wit
 		ids[i] = key.ID
 		extraIDs[i] = key.ExtraID
 	}
-	
-	result := db.WithContext(ctx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
 	if result.Error != nil {
 		errs := make([]error, len(keys))
 		for i := range errs {
@@ -582,7 +614,7 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}Wit
 
 func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }}With{{ $extraKey | ucFirst }}(ctx context.Context, db *gorm.DB, keys []struct{ID uint; ExtraID interface{}}) ([][]*{{ $modelName }}, []error) {
 	items := []*{{ $modelName }}{}
-	
+
 	// Extract IDs and ExtraIDs
 	ids := make([]uint, len(keys))
 	extraIDs := make([]interface{}, len(keys))
@@ -590,8 +622,12 @@ func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }
 		ids[i] = key.ID
 		extraIDs[i] = key.ExtraID
 	}
-	
-	result := db.WithContext(ctx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
+
+	// 为查询创建独立的 context，不受客户端断开影响
+	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
 	if result.Error != nil {
 		errs := make([]error, len(keys))
 		for i := range errs {

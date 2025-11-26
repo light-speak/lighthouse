@@ -105,7 +105,7 @@ func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
 		config.Port,
 		config.Name,
 	)
-	dsn += "&parseTime=True&loc=Local"
+	dsn += "&parseTime=True&loc=Local&timeout=10s&readTimeout=30s&writeTimeout=30s"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		IgnoreRelationshipsWhenMigrating:         true,
