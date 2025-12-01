@@ -30,13 +30,13 @@ func NewRouter() *chi.Mux {
 
 func setMiddlewares(r *chi.Mux) {
 
-	r.Use(middleware.Recoverer)                             // Recover from panics
-	r.Use(middleware.RequestID)                             // Request ID
-	r.Use(middleware.RealIP)                                // Real IP
-	r.Use(request.RequestMiddleware)                        // Request middleware
-	r.Use(middleware.NoCache)                               // No cache
-	r.Use(middleware.Heartbeat(Config.HeartbeatPath))       // Heartbeat
-	r.Use(middleware.RequestLogger(&log.LogMiddleware{}))   // Request logger
-	r.Use(middleware.Compress(Config.CompressLevel))        // Compress
-	r.Use(httprate.LimitByIP(Config.Throttle, time.Minute)) // Limit by IP
+	r.Use(middleware.Recoverer)                                 // Recover from panics
+	r.Use(middleware.RequestID)                                 // Request ID
+	r.Use(middleware.RealIP)                                    // Real IP
+	r.Use(request.RequestMiddleware)                            // Request middleware
+	r.Use(middleware.NoCache)                                   // No cache
+	r.Use(middleware.Heartbeat(Config.HeartbeatPath))           // Heartbeat
+	r.Use(middleware.RequestLogger(&log.LogMiddleware{}))       // Request logger
+	r.Use(middleware.Compress(Config.CompressLevel))            // Compress
+	r.Use(httprate.LimitByRealIP(Config.Throttle, time.Minute)) // Limit by IP
 }
