@@ -26,10 +26,6 @@ func NewRouter() *chi.Mux {
 		AllowCredentials: false,
 	}).Handler)
 	setMiddlewares(router)
-
-	// 健康检查路由（不受限流等中间件影响）
-	router.Get(Config.ReadinessPath, health.ReadinessHandler)
-
 	return router
 }
 
@@ -40,7 +36,8 @@ func setMiddlewares(r *chi.Mux) {
 	r.Use(middleware.RealIP)                                    // Real IP
 	r.Use(request.RequestMiddleware)                            // Request middleware
 	r.Use(middleware.NoCache)                                   // No cache
-	r.Use(middleware.Heartbeat(Config.HeartbeatPath))           // Heartbeat
+	r.Use(middleware.Heartbeat(Config.HeartbeatPath))           // Heartbeat (liveness)
+	r.Use(health.Readiness(Config.ReadinessPath))               // Readiness check
 	r.Use(middleware.RequestLogger(&log.LogMiddleware{}))       // Request logger
 	r.Use(middleware.Compress(Config.CompressLevel))            // Compress
 	r.Use(httprate.LimitByRealIP(Config.Throttle, time.Minute)) // Limit by IP

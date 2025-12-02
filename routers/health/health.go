@@ -64,6 +64,20 @@ func getConfig() *Config {
 	return config
 }
 
+// Readiness 就绪检查中间件
+// 类似 chi 的 Heartbeat 中间件，拦截指定路径
+func Readiness(path string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == "GET" && r.URL.Path == path {
+				ReadinessHandler(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // ReadinessHandler 就绪检查处理器
 // 检查服务是否可以接收流量
 func ReadinessHandler(w http.ResponseWriter, r *http.Request) {
