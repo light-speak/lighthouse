@@ -10,6 +10,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/light-speak/lighthouse/logs"
+	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -124,10 +125,10 @@ func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(50)
-	sqlDB.SetConnMaxLifetime(30 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	sqlDB.SetMaxIdleConns(utils.GetEnvInt("DB_MAX_IDLE_CONNS", 50))
+	sqlDB.SetMaxOpenConns(utils.GetEnvInt("DB_MAX_OPEN_CONNS", 200))
+	sqlDB.SetConnMaxLifetime(time.Duration(utils.GetEnvInt("DB_CONN_MAX_LIFETIME", 30)) * time.Minute)
+	sqlDB.SetConnMaxIdleTime(time.Duration(utils.GetEnvInt("DB_CONN_MAX_IDLE_TIME", 5)) * time.Minute)
 	return db, nil
 }
 

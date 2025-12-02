@@ -86,11 +86,12 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}(ctx context.Context, db *gor
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?)", keys).Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
+		results := make([]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup
@@ -123,11 +124,12 @@ func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}(ctx context.Context, db 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase}} IN (?)", keys).Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
+		results := make([][]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup
@@ -252,11 +254,12 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
 	if result.Error != nil {
+		results := make([]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup using composite key
@@ -297,11 +300,12 @@ func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}With{{ $extraKey | ucFirs
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
 	if result.Error != nil {
+		results := make([][]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup using composite key
@@ -418,11 +422,12 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ct
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
+		results := make([]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup
@@ -455,11 +460,12 @@ func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
 	if result.Error != nil {
 		// Return error for each key when query fails
+		results := make([][]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup
@@ -584,11 +590,12 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}Wit
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
 	if result.Error != nil {
+		results := make([]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup using composite key
@@ -629,11 +636,12 @@ func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
 	if result.Error != nil {
+		results := make([][]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
 			errs[i] = result.Error
 		}
-		return nil, errs
+		return results, errs
 	}
 
 	// Create a map for easier lookup using composite key
