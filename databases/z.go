@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	_ "time/tzdata"
@@ -26,8 +27,8 @@ type LightDatabase struct {
 var LightDatabaseClient *LightDatabase
 
 func init() {
-	// 使用固定的 CST 时区代替加载 Asia/Shanghai
-	loc, err := time.LoadLocation("Asia/Shanghai")
+	// 从配置加载时区，默认 Asia/Shanghai
+	loc, err := time.LoadLocation(databaseConfig.Timezone)
 	if err != nil {
 		panic(err)
 	}
@@ -36,18 +37,17 @@ func init() {
 	databaseConfig.Slave.LogLevel = databaseConfig.LogLevel
 
 	// 初始化数据库连接，添加重试机制
-	initDatabaseWithRetry(loc)
-
+	initDatabaseWithRetry(loc, databaseConfig.Timezone)
 }
 
 // initDatabaseWithRetry 初始化数据库连接，添加重试机制
-func initDatabaseWithRetry(loc *time.Location) {
+func initDatabaseWithRetry(loc *time.Location, timezone string) {
 	maxRetries := 5
 	retryInterval := 5 * time.Second
 
 	for i := 0; i < maxRetries; i++ {
 		// 尝试初始化主库
-		mainDB, err := initDB(databaseConfig.Main, loc)
+		mainDB, err := initDB(databaseConfig.Main, loc, timezone)
 		if err != nil {
 			logs.Error().Err(err).Int("retry", i+1).Msg("main database init error, retrying...")
 
@@ -73,7 +73,7 @@ func initDatabaseWithRetry(loc *time.Location) {
 			for _, host := range databaseConfig.Slave.Hosts {
 				slaveConfig := *databaseConfig.Slave
 				slaveConfig.Hosts = []string{host}
-				slaveDB, err := initDB(&slaveConfig, loc)
+				slaveDB, err := initDB(&slaveConfig, loc, timezone)
 				if err != nil {
 					logs.Error().Err(err).Str("host", host).Msg("slave database init error")
 					continue
@@ -98,7 +98,9 @@ func initDatabaseWithRetry(loc *time.Location) {
 	}
 }
 
-func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
+func initDB(config *DatabaseConfig, loc *time.Location, timezone string) (*gorm.DB, error) {
+	// URL encode timezone (e.g., Asia/Shanghai -> Asia%2FShanghai)
+	encodedTZ := strings.ReplaceAll(timezone, "/", "%2F")
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4",
 		config.User,
 		config.Password,
@@ -106,7 +108,7 @@ func initDB(config *DatabaseConfig, loc *time.Location) (*gorm.DB, error) {
 		config.Port,
 		config.Name,
 	)
-	dsn += "&parseTime=True&loc=Local&timeout=10s&readTimeout=30s&writeTimeout=30s"
+	dsn += "&parseTime=True&loc=" + encodedTZ + "&timeout=10s&readTimeout=30s&writeTimeout=30s"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		IgnoreRelationshipsWhenMigrating:         true,

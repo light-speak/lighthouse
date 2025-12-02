@@ -19,6 +19,7 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	LogLevel logger.LogLevel
+	Timezone string // 时区，如 Asia/Shanghai
 
 	// 1.0 版本，支持多数据库，同时兼容原有数据库配置
 	EnableSlave bool
@@ -51,6 +52,7 @@ func init() {
 		Password: "",
 		Name:     "example",
 		LogLevel: logger.Info,
+		Timezone: "Asia/Shanghai",
 		Main: &DatabaseConfig{
 			Hosts:    []string{"localhost"},
 			Port:     "3306",
@@ -125,4 +127,6 @@ func init() {
 		databaseConfig.LogLevel = logger.Info
 	}
 
+	// 时区配置，默认 Asia/Shanghai
+	databaseConfig.Timezone = utils.GetEnv("DB_TIMEZONE", databaseConfig.Timezone)
 }
