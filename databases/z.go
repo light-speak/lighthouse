@@ -11,7 +11,6 @@ import (
 	_ "time/tzdata"
 
 	"github.com/light-speak/lighthouse/logs"
-	"github.com/light-speak/lighthouse/utils"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -113,7 +112,7 @@ func initDB(config *DatabaseConfig, loc *time.Location, timezone string) (*gorm.
 		DisableForeignKeyConstraintWhenMigrating: true,
 		IgnoreRelationshipsWhenMigrating:         true,
 		Logger:                                   &DBLogger{LogLevel: config.LogLevel},
-		PrepareStmt:                              true,
+		PrepareStmt:                              databaseConfig.PrepareStmt,
 		SkipDefaultTransaction:                   true,
 		NowFunc: func() time.Time {
 			return time.Now().In(loc)
@@ -127,10 +126,10 @@ func initDB(config *DatabaseConfig, loc *time.Location, timezone string) (*gorm.
 		return nil, err
 	}
 
-	sqlDB.SetMaxIdleConns(utils.GetEnvInt("DB_MAX_IDLE_CONNS", 50))
-	sqlDB.SetMaxOpenConns(utils.GetEnvInt("DB_MAX_OPEN_CONNS", 200))
-	sqlDB.SetConnMaxLifetime(time.Duration(utils.GetEnvInt("DB_CONN_MAX_LIFETIME", 30)) * time.Minute)
-	sqlDB.SetConnMaxIdleTime(time.Duration(utils.GetEnvInt("DB_CONN_MAX_IDLE_TIME", 5)) * time.Minute)
+	sqlDB.SetMaxIdleConns(databaseConfig.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(databaseConfig.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(databaseConfig.ConnMaxLifetime) * time.Minute)
+	sqlDB.SetConnMaxIdleTime(time.Duration(databaseConfig.ConnMaxIdleTime) * time.Minute)
 	return db, nil
 }
 
@@ -197,6 +196,67 @@ func (l *DBLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 		logs.Warn().Str("sql", sql).Int64("rows", rows).Msg("database slow query")
 	} else if l.LogLevel >= logger.Info {
 		logs.Info().Str("sql", sql).Int64("rows", rows).Msg("database query")
+	}
+}
+
+// Stats 返回数据库连接池统计信息
+func (l *LightDatabase) Stats() map[string]interface{} {
+	stats := make(map[string]interface{})
+	if l == nil || !l.Completed {
+		return stats
+	}
+
+	if l.MainDB != nil {
+		if sqlDB, err := l.MainDB.DB(); err == nil {
+			s := sqlDB.Stats()
+			stats["main"] = map[string]int{
+				"in_use":    s.InUse,
+				"idle":      s.Idle,
+				"open":      s.OpenConnections,
+				"max":       s.MaxOpenConnections,
+				"wait":      int(s.WaitCount),
+				"wait_time": int(s.WaitDuration.Milliseconds()),
+			}
+		}
+	}
+
+	for i, slaveDB := range l.SlaveDBs {
+		if slaveDB != nil {
+			if sqlDB, err := slaveDB.DB(); err == nil {
+				s := sqlDB.Stats()
+				stats[fmt.Sprintf("slave_%d", i)] = map[string]int{
+					"in_use":    s.InUse,
+					"idle":      s.Idle,
+					"open":      s.OpenConnections,
+					"max":       s.MaxOpenConnections,
+					"wait":      int(s.WaitCount),
+					"wait_time": int(s.WaitDuration.Milliseconds()),
+				}
+			}
+		}
+	}
+
+	return stats
+}
+
+// LogStats 记录数据库连接池统计信息到日志
+func (l *LightDatabase) LogStats() {
+	if l == nil || !l.Completed {
+		return
+	}
+
+	if l.MainDB != nil {
+		if sqlDB, err := l.MainDB.DB(); err == nil {
+			s := sqlDB.Stats()
+			logs.Info().
+				Int("in_use", s.InUse).
+				Int("idle", s.Idle).
+				Int("open", s.OpenConnections).
+				Int("max", s.MaxOpenConnections).
+				Int64("wait_count", s.WaitCount).
+				Dur("wait_duration", s.WaitDuration).
+				Msg("main database pool stats")
+		}
 	}
 }
 

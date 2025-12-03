@@ -21,10 +21,11 @@ LOG_PRETTY=false                       # 是否美化输出
 # ===========================================
 DB_TIMEZONE=Asia/Shanghai              # 数据库时区
 DB_LOG_LEVEL=info                      # debug | info | warn | error
-DB_MAX_IDLE_CONNS=50                   # 最大空闲连接数
-DB_MAX_OPEN_CONNS=200                  # 最大打开连接数
+DB_MAX_IDLE_CONNS=10                   # 最大空闲连接数
+DB_MAX_OPEN_CONNS=100                  # 最大打开连接数
 DB_CONN_MAX_LIFETIME=30                # 连接最大生命周期(分钟)
-DB_CONN_MAX_IDLE_TIME=5                # 空闲连接最大生命周期(分钟)
+DB_CONN_MAX_IDLE_TIME=3                # 空闲连接最大生命周期(分钟)
+DB_PREPARE_STMT=false                  # prepared statement 缓存（启用会导致连接累积）
 
 # 单数据库模式 (DB_ENABLE_SLAVE=false 时使用)
 DB_ENABLE_SLAVE=false
@@ -45,6 +46,17 @@ DB_NAME=example
 # DB_SLAVE_PORT=3306
 # DB_SLAVE_USER=root
 # DB_SLAVE_PASSWORD=
+
+# ===========================================
+# Redis Settings
+# ===========================================
+REDIS_ENABLE=false
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+REDIS_POOL_SIZE=10                     # 连接池大小
+REDIS_MIN_IDLE_CONNS=5                 # 最小空闲连接数
 
 # ===========================================
 # Queue Settings (Redis-based)

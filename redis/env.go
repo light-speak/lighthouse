@@ -20,6 +20,10 @@ type Config struct {
 	Port     string
 	Password string
 	DB       int
+
+	// 连接池配置
+	PoolSize     int // 连接池大小
+	MinIdleConns int // 最小空闲连接数
 }
 
 var LightRedisConfig *Config
@@ -45,6 +49,8 @@ func init() {
 	LightRedisConfig.Port = utils.GetEnv("REDIS_PORT", "6379")
 	LightRedisConfig.Password = utils.GetEnv("REDIS_PASSWORD", "")
 	LightRedisConfig.DB = utils.GetEnvInt("REDIS_DB", 0)
+	LightRedisConfig.PoolSize = utils.GetEnvInt("REDIS_POOL_SIZE", 10)
+	LightRedisConfig.MinIdleConns = utils.GetEnvInt("REDIS_MIN_IDLE_CONNS", 5)
 
 	if LightRedisConfig.Enable {
 		initRedis()

@@ -23,8 +23,8 @@ func initRedis() {
 		Password: LightRedisConfig.Password,
 		DB:       LightRedisConfig.DB,
 
-		PoolSize:     10,
-		MinIdleConns: 5,
+		PoolSize:     LightRedisConfig.PoolSize,
+		MinIdleConns: LightRedisConfig.MinIdleConns,
 		MaxRetries:   3,
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,

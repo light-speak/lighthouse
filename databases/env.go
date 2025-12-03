@@ -26,6 +26,13 @@ type DatabaseConfig struct {
 
 	Main  *DatabaseConfig
 	Slave *DatabaseConfig
+
+	// 连接池配置
+	MaxIdleConns    int  // 最大空闲连接数
+	MaxOpenConns    int  // 最大打开连接数
+	ConnMaxLifetime int  // 连接最大生命周期（分钟）
+	ConnMaxIdleTime int  // 空闲连接最大存活时间（分钟）
+	PrepareStmt     bool // 是否启用 prepared statement 缓存
 }
 
 type LogLevel string
@@ -129,4 +136,11 @@ func init() {
 
 	// 时区配置，默认 Asia/Shanghai
 	databaseConfig.Timezone = utils.GetEnv("DB_TIMEZONE", databaseConfig.Timezone)
+
+	// 连接池配置
+	databaseConfig.MaxIdleConns = utils.GetEnvInt("DB_MAX_IDLE_CONNS", 10)
+	databaseConfig.MaxOpenConns = utils.GetEnvInt("DB_MAX_OPEN_CONNS", 100)
+	databaseConfig.ConnMaxLifetime = utils.GetEnvInt("DB_CONN_MAX_LIFETIME", 30)
+	databaseConfig.ConnMaxIdleTime = utils.GetEnvInt("DB_CONN_MAX_IDLE_TIME", 3)
+	databaseConfig.PrepareStmt = utils.GetEnv("DB_PREPARE_STMT", "false") == "true"
 }
