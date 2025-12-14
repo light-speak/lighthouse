@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func Run(c CommandListInterface, args []string) error {
@@ -39,17 +40,43 @@ func printAllCommands(c CommandListInterface) {
 	fmt.Println("\nUse 'command --help' for more information about a command.")
 }
 
-func runREPL(cmd CommandInterface) error {
+// setupSignalHandler 设置信号处理，返回一个 done channel 用于通知主程序退出
+func setupSignalHandler(cmd CommandInterface) chan struct{} {
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
+	done := make(chan struct{})
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-sigChan
 		fmt.Print("\r")
-		fmt.Println("\n\033[33mThank you for using light-cmd. Bye!\033[0m")
-		cmd.OnExit()
-		os.Exit(0)
+		fmt.Println("\n\033[33mReceived shutdown signal, cleaning up...\033[0m")
+		if onExit := cmd.OnExit(); onExit != nil {
+			onExit()
+		}
+		fmt.Println("\033[33mThank you for using light-cmd. Bye!\033[0m")
+		close(done)
 	}()
+
+	return done
+}
+
+func runREPL(cmd CommandInterface) error {
+	done := setupSignalHandler(cmd)
+
+	// 如果命令没有参数，直接执行 Action
+	if len(cmd.Args()) == 0 {
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- cmd.Action()(make(map[string]interface{}))
+		}()
+
+		select {
+		case <-done:
+			return nil
+		case err := <-errChan:
+			return err
+		}
+	}
 
 	fmt.Println("Welcome to use light-cmd. Type 'exit' to quit.")
 	fmt.Printf("\033[36m%s\033[0m\n", cmd.Usage())
@@ -82,7 +109,18 @@ func runREPL(cmd CommandInterface) error {
 			fmt.Println("Input cannot be empty. Please try again.")
 		}
 	}
-	return cmd.Action()(args)
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- cmd.Action()(args)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case err := <-errChan:
+		return err
+	}
 }
 
 func runCommand(c CommandListInterface, args []string) error {
@@ -99,10 +137,6 @@ func runCommand(c CommandListInterface, args []string) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	if len(args) == 2 {
-		cmd.Action()(flagValues)
-		return nil
-	}
 	if *help {
 		printHelp(cmd, cmdName, flagSet)
 		return nil
@@ -112,7 +146,20 @@ func runCommand(c CommandListInterface, args []string) error {
 		return err
 	}
 
-	return cmd.Action()(flagValues)
+	// 设置信号处理
+	done := setupSignalHandler(cmd)
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- cmd.Action()(flagValues)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case err := <-errChan:
+		return err
+	}
 }
 
 func findCommand(c CommandListInterface, name string) CommandInterface {

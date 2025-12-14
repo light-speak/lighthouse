@@ -23,8 +23,10 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 	// Check if error is our custom GraphQLError type
 	logs.Error().Err(e).Msg("error presenter")
 	if errors.As(e, &myErr) {
+
 		ext := map[string]interface{}{
 			"code": myErr.Code,
+			"info": GetCodeInfo(myErr.Code),
 		}
 
 		if config.Env != EnvProduction {

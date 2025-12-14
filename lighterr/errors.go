@@ -35,6 +35,32 @@ const (
 	ErrorCodeOperationFailed
 )
 
+var CodeInfoMap = map[ErrorCode]string{
+	ErrorCodeInternalError:      "Internal Error",
+	ErrorCodeInvalidInput:       "Invalid Input",
+	ErrorCodeNotFound:           "Not Found",
+	ErrorCodeUnauthorized:       "Unauthorized",
+	ErrorCodeForbidden:          "Forbidden",
+	ErrorCodeBadRequest:         "Bad Request",
+	ErrorCodeConflict:           "Conflict",
+	ErrorCodeServiceUnavailable: "Service Unavailable",
+	ErrorCodeTooManyRequests:    "Too Many Requests",
+	ErrorCodeRequestTimeout:     "Request Timeout",
+	ErrorCodeDatabaseError:      "Database Error",
+	ErrorCodeThirdPartyError:    "Third Party Error",
+	ErrorCodeValidationFailed:   "Validation Failed",
+	ErrorCodeResourceExists:     "Resource Exists",
+	ErrorCodeOperationFailed:    "Operation Failed",
+}
+
+func GetCodeInfo(code ErrorCode) string {
+	info, ok := CodeInfoMap[code]
+	if !ok {
+		return "Unknown error"
+	}
+	return info
+}
+
 type GraphQLError struct {
 	Message string    `json:"message"` // 错误信息
 	Code    ErrorCode `json:"code"`    // 错误码
