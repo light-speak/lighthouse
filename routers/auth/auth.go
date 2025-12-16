@@ -11,6 +11,8 @@ import (
 
 var userContextKey = &contextKey{"user"}
 var sessionContextKey = &contextKey{"session"}
+var clientIPKey = &contextKey{"clientIP"}
+var userAgentKey = &contextKey{"userAgent"}
 
 type contextKey struct {
 	name string
@@ -42,11 +44,21 @@ func Middleware() func(http.Handler) http.Handler {
 func AdminAuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// Session
 			session := r.Header.Get("X-Session-Id")
 			if session != "" {
-				ctx := context.WithValue(r.Context(), sessionContextKey, session)
-				r = r.WithContext(ctx)
+				ctx = context.WithValue(ctx, sessionContextKey, session)
 			}
+
+			// ClientIP (chi middleware.RealIP 已经处理过 RemoteAddr)
+			ctx = context.WithValue(ctx, clientIPKey, r.RemoteAddr)
+
+			// UserAgent
+			ctx = context.WithValue(ctx, userAgentKey, r.Header.Get("User-Agent"))
+
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -104,6 +116,20 @@ func GetCtxUserId(ctx context.Context) uint {
 func GetCtxSession(ctx context.Context) string {
 	if session, ok := ctx.Value(sessionContextKey).(string); ok {
 		return session
+	}
+	return ""
+}
+
+func GetCtxClientIP(ctx context.Context) string {
+	if ip, ok := ctx.Value(clientIPKey).(string); ok {
+		return ip
+	}
+	return ""
+}
+
+func GetCtxUserAgent(ctx context.Context) string {
+	if ua, ok := ctx.Value(userAgentKey).(string); ok {
+		return ua
 	}
 	return ""
 }
