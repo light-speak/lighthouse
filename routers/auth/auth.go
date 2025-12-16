@@ -101,6 +101,13 @@ func GetCtxUserId(ctx context.Context) uint {
 	return 0
 }
 
+func GetCtxSession(ctx context.Context) string {
+	if session, ok := ctx.Value(sessionContextKey).(string); ok {
+		return session
+	}
+	return ""
+}
+
 func IsLogin(ctx context.Context) bool {
 	return GetCtxUserId(ctx) != 0
 }
