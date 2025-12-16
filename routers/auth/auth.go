@@ -48,6 +48,7 @@ func AdminAuthMiddleware() func(http.Handler) http.Handler {
 
 			// Session
 			session := r.Header.Get("X-Session-Id")
+			logs.Debug().Msgf("AdminAuthMiddleware: X-Session-Id=%s, RemoteAddr=%s, User-Agent=%s", session, r.RemoteAddr, r.Header.Get("User-Agent"))
 			if session != "" {
 				ctx = context.WithValue(ctx, sessionContextKey, session)
 			}
