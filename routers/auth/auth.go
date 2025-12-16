@@ -10,6 +10,7 @@ import (
 )
 
 var userContextKey = &contextKey{"user"}
+var sessionContextKey = &contextKey{"session"}
 
 type contextKey struct {
 	name string
@@ -31,6 +32,19 @@ func Middleware() func(http.Handler) http.Handler {
 					return
 				}
 				ctx := context.WithValue(r.Context(), userContextKey, uint(userId))
+				r = r.WithContext(ctx)
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func AdminAuthMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			session := r.Header.Get("X-Session-Id")
+			if session != "" {
+				ctx := context.WithValue(r.Context(), sessionContextKey, session)
 				r = r.WithContext(ctx)
 			}
 			next.ServeHTTP(w, r)
