@@ -2,7 +2,9 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -16,17 +18,43 @@ func GetProjectPath() (string, error) {
 	return dir, nil
 }
 
-// GetModPath returns the module path
-func GetModPath(projectPath *string) (string, error) {
-	path := "."
-	if projectPath != nil {
-		path = *projectPath
+// GetGoModPath returns the path to go.mod file using go env GOMOD
+func GetGoModPath() (string, error) {
+	cmd := exec.Command("go", "env", "GOMOD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to run 'go env GOMOD': %w", err)
 	}
 
-	// Read go.mod file
-	data, err := os.ReadFile(filepath.Join(path, "go.mod"))
+	gomodPath := strings.TrimSpace(string(output))
+	if gomodPath == "" || gomodPath == "/dev/null" {
+		return "", errors.New("not in a Go module (go env GOMOD returned empty or /dev/null)")
+	}
+
+	return gomodPath, nil
+}
+
+// GetModuleRoot returns the module root directory (directory containing go.mod)
+func GetModuleRoot() (string, error) {
+	gomodPath, err := GetGoModPath()
 	if err != nil {
 		return "", err
+	}
+	return filepath.Dir(gomodPath), nil
+}
+
+// GetModPath returns the module path using go env GOMOD
+// Note: projectPath parameter is deprecated and ignored; go env GOMOD is used instead
+func GetModPath(projectPath *string) (string, error) {
+	gomodPath, err := GetGoModPath()
+	if err != nil {
+		return "", err
+	}
+
+	// Read go.mod file from the path returned by go env GOMOD
+	data, err := os.ReadFile(gomodPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read go.mod at %s: %w", gomodPath, err)
 	}
 
 	// Parse module path
@@ -41,25 +69,49 @@ func GetModPath(projectPath *string) (string, error) {
 }
 
 // GetPkgPath returns the package path
+// Note: projectPath parameter is deprecated and ignored; go env GOMOD is used instead
 func GetPkgPath(projectPath, filePath string) (string, error) {
 	if filePath == "" {
 		return "", errors.New("file path is empty")
 	}
 
-	// Get directory of file
-	dir := filepath.Dir(filePath)
-	if dir == "." {
-		return "", nil
-	}
-
-	// Get module path
-	modPath, err := GetModPath(&projectPath)
+	// Get module path name
+	modPath, err := GetModPath(nil)
 	if err != nil {
 		return "", err
 	}
 
+	// Get module root directory
+	modRoot, err := GetModuleRoot()
+	if err != nil {
+		return "", err
+	}
+
+	// Convert filePath to absolute path if it's relative
+	absFilePath := filePath
+	if !filepath.IsAbs(filePath) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		absFilePath = filepath.Join(cwd, filePath)
+	}
+
+	// Get directory of file
+	dir := filepath.Dir(absFilePath)
+
+	// Calculate relative path from module root
+	relPath, err := filepath.Rel(modRoot, dir)
+	if err != nil {
+		return "", fmt.Errorf("failed to calculate relative path: %w", err)
+	}
+
+	if relPath == "." {
+		return modPath, nil
+	}
+
 	// Combine full package path
-	return filepath.Join(modPath, dir), nil
+	return filepath.Join(modPath, relPath), nil
 }
 
 // GetGoPath returns GOPATH

@@ -29,48 +29,107 @@ func AddDirective(name string, fn func(*ast.Directive, *DirectiveLogic) (*Direct
 }
 
 func GenerateSchema() error {
+	logs.Info().Msg("Starting schema generation...")
+
+	// Load config
+	logs.Info().Msg("Loading gqlgen config...")
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
-		return err
+		logs.Error().Msgf("Failed to load gqlgen config: %v", err)
+		return fmt.Errorf("failed to load gqlgen config: %w", err)
 	}
+	logs.Info().Msgf("Config loaded from: %s", cfg.SchemaFilename)
+
+	// Generate schema
+	logs.Info().Msg("Generating GraphQL schema and models...")
 	p := &modelgen.Plugin{
 		FieldHook: fieldHook,
 	}
 
 	err = api.Generate(cfg, api.ReplacePlugin(p))
 	if err != nil {
-		logs.Error().Msgf("generate schema error: %+v", err)
+		logs.Error().Msgf("Failed to generate schema: %+v", err)
+		return fmt.Errorf("failed to generate schema: %w", err)
 	}
 
+	// Print generated models info
+	if len(loaderTypeToFieldsMap) > 0 {
+		logs.Info().Msgf("Generated %d models with @loader directive:", len(loaderTypeToFieldsMap))
+		for modelName, keys := range loaderTypeToFieldsMap {
+			if len(keys) > 0 {
+				logs.Info().Msgf("  - %s (keys: %s)", modelName, strings.Join(keys, ", "))
+			} else {
+				logs.Info().Msgf("  - %s", modelName)
+			}
+		}
+	}
+
+	// Generate dataloader
+	logs.Info().Msg("Generating DataLoader...")
 	err = generateLoader()
 	if err != nil {
-		return err
+		logs.Error().Msgf("Failed to generate DataLoader: %v", err)
+		return fmt.Errorf("failed to generate dataloader: %w", err)
 	}
+	logs.Info().Msg("DataLoader generated successfully")
+
+	// Run go mod tidy
+	logs.Info().Msg("Running go mod tidy...")
 	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		return err
+		logs.Error().Msgf("Failed to run go mod tidy: %v", err)
+		return fmt.Errorf("failed to run go mod tidy: %w", err)
 	}
+
+	// Run gofmt
+	logs.Info().Msg("Running gofmt...")
 	cmd = exec.Command("gofmt", "-s", "-w", ".")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		return err
+		logs.Error().Msgf("Failed to run gofmt: %v", err)
+		return fmt.Errorf("failed to run gofmt: %w", err)
 	}
+
+	logs.Info().Msg("Schema generation completed successfully!")
 	return nil
 }
 
 func generateLoader() error {
 	dataloaderTpl, err := tpl.ReadFile("tpl/dataloader.tpl")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to read dataloader template: %w", err)
 	}
+
 	curPath, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	outputPath := filepath.Join(curPath, "models", "dataloader_gen.go")
+	logs.Info().Msgf("Writing DataLoader to: %s", outputPath)
+
+	// Log MorphTo loaders if any
+	if len(loaderTypeMorphToMap) > 0 {
+		logs.Info().Msgf("Generated %d MorphTo loaders:", len(loaderTypeMorphToMap))
+		for modelName, fields := range loaderTypeMorphToMap {
+			for _, field := range fields {
+				logs.Info().Msgf("  - %s.%s -> [%s]", modelName, field.Field, strings.Join(field.Union, ", "))
+			}
+		}
+	}
+
+	// Log extra keys if any
+	if len(loaderTypeExtraKeysMap) > 0 {
+		for modelName, keys := range loaderTypeExtraKeysMap {
+			if len(keys) > 0 {
+				logs.Info().Msgf("  - %s extra keys: %s", modelName, strings.Join(keys, ", "))
+			}
+		}
 	}
 
 	options := &templates.Options{
@@ -96,7 +155,7 @@ func generateLoader() error {
 
 	err = templates.Render(options)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to render dataloader template: %w", err)
 	}
 	return nil
 }

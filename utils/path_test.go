@@ -21,83 +21,105 @@ func TestGetProjectPath(t *testing.T) {
 	}
 }
 
+func TestGetGoModPath(t *testing.T) {
+	gomodPath, err := GetGoModPath()
+	if err != nil {
+		t.Errorf("GetGoModPath() failed: %v", err)
+		return
+	}
+
+	if gomodPath == "" {
+		t.Error("GetGoModPath() returned empty path")
+		return
+	}
+
+	// Verify the path ends with go.mod
+	if filepath.Base(gomodPath) != "go.mod" {
+		t.Errorf("GetGoModPath() = %v, expected path to end with go.mod", gomodPath)
+	}
+
+	// Verify the file exists
+	if _, err := os.Stat(gomodPath); os.IsNotExist(err) {
+		t.Errorf("GetGoModPath() returned non-existent path: %s", gomodPath)
+	}
+}
+
+func TestGetModuleRoot(t *testing.T) {
+	modRoot, err := GetModuleRoot()
+	if err != nil {
+		t.Errorf("GetModuleRoot() failed: %v", err)
+		return
+	}
+
+	if modRoot == "" {
+		t.Error("GetModuleRoot() returned empty path")
+		return
+	}
+
+	// Verify go.mod exists in the module root
+	gomodPath := filepath.Join(modRoot, "go.mod")
+	if _, err := os.Stat(gomodPath); os.IsNotExist(err) {
+		t.Errorf("GetModuleRoot() = %v, but go.mod not found there", modRoot)
+	}
+}
+
 func TestGetModPath(t *testing.T) {
-	tempDir := t.TempDir()
-
-	modContent := []byte("module github.com/test/project\n\ngo 1.16\n")
-	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), modContent, 0644); err != nil {
-		t.Fatal(err)
+	// Since GetModPath now uses go env GOMOD, we test that it returns
+	// the correct module path for the current module
+	modPath, err := GetModPath(nil)
+	if err != nil {
+		t.Errorf("GetModPath() failed: %v", err)
+		return
 	}
 
-	tests := []struct {
-		name        string
-		projectPath string
-		want        string
-		wantErr     bool
-	}{
-		{
-			name:        "Valid go.mod",
-			projectPath: tempDir,
-			want:        "github.com/test/project",
-			wantErr:     false,
-		},
-		{
-			name:        "Invalid path",
-			projectPath: "/non/existent/path",
-			want:        "",
-			wantErr:     true,
-		},
+	if modPath == "" {
+		t.Error("GetModPath() returned empty module path")
+		return
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			path := tt.projectPath
-			modPath, err := GetModPath(&path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetModPath() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && modPath != tt.want {
-				t.Errorf("GetModPath() = %v, want %v", modPath, tt.want)
-			}
-		})
+	// Verify it returns the lighthouse module path
+	expectedModPath := "github.com/light-speak/lighthouse"
+	if modPath != expectedModPath {
+		t.Errorf("GetModPath() = %v, want %v", modPath, expectedModPath)
 	}
 }
 
 func TestGetPkgPath(t *testing.T) {
-	tempDir := t.TempDir()
-
-	modContent := []byte("module github.com/test/project\n\ngo 1.16\n")
-	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), modContent, 0644); err != nil {
-		t.Fatal(err)
+	// Get the module root to construct test paths
+	modRoot, err := GetModuleRoot()
+	if err != nil {
+		t.Fatalf("GetModuleRoot() failed: %v", err)
 	}
 
 	tests := []struct {
-		name        string
-		projectPath string
-		filePath    string
-		want        string
-		wantErr     bool
+		name     string
+		filePath string
+		want     string
+		wantErr  bool
 	}{
 		{
-			name:        "Valid package path",
-			projectPath: tempDir,
-			filePath:    "utils/path_test.go",
-			want:        "github.com/test/project/utils",
-			wantErr:     false,
+			name:     "Valid package path - utils directory",
+			filePath: filepath.Join(modRoot, "utils", "path_test.go"),
+			want:     "github.com/light-speak/lighthouse/utils",
+			wantErr:  false,
 		},
 		{
-			name:        "Empty file path",
-			projectPath: tempDir,
-			filePath:    "",
-			want:        "",
-			wantErr:     true,
+			name:     "Valid package path - root directory",
+			filePath: filepath.Join(modRoot, "go.mod"),
+			want:     "github.com/light-speak/lighthouse",
+			wantErr:  false,
+		},
+		{
+			name:     "Empty file path",
+			filePath: "",
+			want:     "",
+			wantErr:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pkgPath, err := GetPkgPath(tt.projectPath, tt.filePath)
+			pkgPath, err := GetPkgPath("", tt.filePath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetPkgPath() error = %v, wantErr %v", err, tt.wantErr)
 				return

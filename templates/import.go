@@ -36,7 +36,7 @@ var importRegexMap = map[string]Import{
 	`bufio\.`: {
 		Path: "bufio",
 	},
-	`exec\.`: {
+	`(^|[^A-Za-z])exec\.`: {
 		Path: "os/exec",
 	},
 	`filepath\.`: {
