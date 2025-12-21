@@ -56,6 +56,7 @@ lighthouse generate:schema  # That's it. Models, resolvers, dataloaders generate
 | **Messaging** | NATS pub/sub for real-time |
 | **Storage** | S3/MinIO/COS unified interface |
 | **Metrics** | Prometheus + health checks |
+| **MCP** | AI-powered development with Claude Code |
 
 ## 5-Minute Start
 
@@ -94,6 +95,83 @@ myapp/
 - **[asynq](https://github.com/hibiken/asynq)** - Job queue
 - **[NATS](https://nats.io/)** - Messaging
 - **[zerolog](https://github.com/rs/zerolog)** - Logging
+
+## MCP Integration
+
+Lighthouse includes built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) support, enabling AI assistants like Claude Code to understand and work with your Lighthouse projects.
+
+### Setup
+
+**Option 1: Using CLI (Recommended)**
+
+```bash
+# Install lighthouse first
+go install github.com/light-speak/lighthouse@latest
+
+# Add MCP server to Claude Code
+claude mcp add lighthouse -- lighthouse mcp
+```
+
+**Option 2: Manual Configuration**
+
+Add to `.mcp.json` in your project root (for team sharing):
+
+```json
+{
+  "mcpServers": {
+    "lighthouse": {
+      "type": "stdio",
+      "command": "lighthouse",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Or add to `~/.claude.json` (for personal use across projects):
+
+```json
+{
+  "mcpServers": {
+    "lighthouse": {
+      "command": "lighthouse",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+**Verify Installation**
+
+```bash
+# Check if MCP server is registered
+claude mcp list
+```
+
+### What AI Can Do
+
+| Capability | Description |
+|------------|-------------|
+| **Generate Code** | Create schemas, resolvers, commands, tasks |
+| **Query Docs** | Get directive usage (@loader, @auth, etc.) |
+| **Config Help** | Database, Redis, queue configuration |
+| **Run Commands** | Execute any lighthouse CLI command |
+| **Read Examples** | Access schema, resolver, dataloader examples |
+
+### Available Tools
+
+```
+generate_schema      - Generate GraphQL schema and models
+generate_dataloader  - Generate DataLoader code
+generate_command     - Create new CLI command
+generate_task        - Create async queue task
+init_project         - Initialize new project
+get_directive_info   - Get directive documentation
+get_config_info      - Get configuration docs
+list_generators      - List all generators
+search_docs          - Search framework docs
+run_command          - Run any lighthouse command
+```
 
 ## Documentation
 
