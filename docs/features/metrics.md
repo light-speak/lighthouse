@@ -56,7 +56,7 @@ scrape_configs:
 
 ### 请求延迟
 
-```promql
+```txt
 # 平均延迟
 rate(lighthouse_graphql_resolver_duration_seconds_sum[5m])
 / rate(lighthouse_graphql_resolver_duration_seconds_count[5m])
@@ -67,7 +67,7 @@ histogram_quantile(0.99, rate(lighthouse_graphql_resolver_duration_seconds_bucke
 
 ### 请求量
 
-```promql
+```txt
 # QPS
 rate(lighthouse_graphql_operations_total[5m])
 
@@ -77,7 +77,7 @@ sum by (type) (rate(lighthouse_graphql_operations_total[5m]))
 
 ### 慢查询
 
-```promql
+```txt
 # 执行时间超过 1 秒的 resolver
 histogram_quantile(0.99, rate(lighthouse_graphql_resolver_duration_seconds_bucket[5m])) > 1
 ```

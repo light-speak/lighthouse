@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Lighthouse',
   description: 'A Go GraphQL Framework',
   base: '/lighthouse/',
+  ignoreDeadLinks: [
+    /^http:\/\/localhost/,
+  ],
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/lighthouse/logo.svg' }],
