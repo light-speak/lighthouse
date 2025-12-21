@@ -137,7 +137,7 @@ func Run(module string, ms string) error {
 
 	// Generate schema
 	logs.Info().Msg("⚡ Generating GraphQL schema...")
-	cmd = exec.Command("lightcmd", "generate:schema")
+	cmd = exec.Command("lighthouse", "generate:schema")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
