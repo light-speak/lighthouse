@@ -383,6 +383,8 @@ func initServer() error {
 	templates.AddImportRegex("routers", "github.com/light-speak/lighthouse/routers", "")
 	templates.AddImportRegex("auth", "github.com/light-speak/lighthouse/routers/auth", "")
 	templates.AddImportRegex("gqlerror", "github.com/vektah/gqlparser/v2/gqlerror", "")
+	templates.AddImportRegex("metrics", "github.com/light-speak/lighthouse/metrics", "")
+	templates.AddImportRegex("extensions", "github.com/light-speak/lighthouse/extensions", "")
 
 	err = templates.Render(options)
 	if err != nil {

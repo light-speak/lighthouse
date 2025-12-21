@@ -1,4 +1,6 @@
 func StartService() {
+	metrics.Init() // init metrics
+
 	port := configs.Config.Port
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -22,6 +24,8 @@ func StartService() {
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.MultipartForm{})
 	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+	srv.Use(extensions.MetricsExtension{})
+
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.AutomaticPersistedQuery{Cache: lru.New[string](100)})
 

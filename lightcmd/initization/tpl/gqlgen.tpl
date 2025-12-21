@@ -52,7 +52,10 @@ models:
       - github.com/light-speak/lighthouse/lightcmd/scalars.Uint
   Int:
     model:
-      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int32
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
   DeletedAt:
     model: github.com/light-speak/lighthouse/lightcmd/scalars.DeletedAt
 
