@@ -15,21 +15,31 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 	err := graphql.DefaultErrorPresenter(ctx, e)
 	var myErr *GraphQLError
 
-	// Check if error is gorm.ErrRecordNotFound
+	// Check if error is gorm.ErrRecordNotFound, convert to NotFound error
 	if errors.Is(e, gorm.ErrRecordNotFound) {
-		return nil
+		myErr = NewNotFoundError("record not found")
 	}
 
 	// Check if error is our custom GraphQLError type
-	logs.Error().Err(e).Msg("error presenter")
-	if errors.As(e, &myErr) {
+	if myErr == nil {
+		errors.As(e, &myErr)
+	}
+
+	if myErr != nil {
+		// Log based on error type: client errors (4xx) use Warn, server errors (5xx) use Error
+		if IsClientError(myErr.Code) {
+			logs.Warn().Str("key", GetCodeKey(myErr.Code)).Msg(myErr.Message)
+		} else {
+			logs.Error().Err(myErr.Err).Str("key", GetCodeKey(myErr.Code)).Msg(myErr.Message)
+		}
 
 		ext := map[string]interface{}{
 			"code": myErr.Code,
-			"info": GetCodeInfo(myErr.Code),
+			"key":  GetCodeKey(myErr.Code),
 		}
 
 		if config.Env != EnvProduction {
+			ext["info"] = GetCodeInfo(myErr.Code)
 			// Capture stack trace with proper formatting
 			stackTrace := captureStackTrace(5)
 			ext["stack"] = stackTrace
@@ -45,6 +55,9 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 			Extensions: ext,
 		}
 	}
+
+	// Unknown error, log as error
+	logs.Error().Err(e).Msg("unhandled error")
 
 	// Add stack trace to other errors in development mode
 	if config.Env != EnvProduction {

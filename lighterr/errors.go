@@ -53,12 +53,50 @@ var CodeInfoMap = map[ErrorCode]string{
 	ErrorCodeOperationFailed:    "Operation Failed",
 }
 
+// CodeKeyMap 错误码对应的 key，用于前端 i18n
+var CodeKeyMap = map[ErrorCode]string{
+	ErrorCodeInternalError:      "error.internal",
+	ErrorCodeInvalidInput:       "error.invalid_input",
+	ErrorCodeNotFound:           "error.not_found",
+	ErrorCodeUnauthorized:       "error.unauthorized",
+	ErrorCodeForbidden:          "error.forbidden",
+	ErrorCodeBadRequest:         "error.bad_request",
+	ErrorCodeConflict:           "error.conflict",
+	ErrorCodeServiceUnavailable: "error.service_unavailable",
+	ErrorCodeTooManyRequests:    "error.too_many_requests",
+	ErrorCodeRequestTimeout:     "error.request_timeout",
+	ErrorCodeDatabaseError:      "error.database",
+	ErrorCodeThirdPartyError:    "error.third_party",
+	ErrorCodeValidationFailed:   "error.validation_failed",
+	ErrorCodeResourceExists:     "error.resource_exists",
+	ErrorCodeOperationFailed:    "error.operation_failed",
+}
+
 func GetCodeInfo(code ErrorCode) string {
 	info, ok := CodeInfoMap[code]
 	if !ok {
 		return "Unknown error"
 	}
 	return info
+}
+
+func GetCodeKey(code ErrorCode) string {
+	key, ok := CodeKeyMap[code]
+	if !ok {
+		return "error.unknown"
+	}
+	return key
+}
+
+// IsClientError 判断是否是客户端错误（4xx），不需要记录为 Error 级别
+func IsClientError(code ErrorCode) bool {
+	switch code {
+	case ErrorCodeInvalidInput, ErrorCodeNotFound, ErrorCodeUnauthorized,
+		ErrorCodeForbidden, ErrorCodeBadRequest, ErrorCodeConflict,
+		ErrorCodeTooManyRequests, ErrorCodeValidationFailed, ErrorCodeResourceExists:
+		return true
+	}
+	return false
 }
 
 type GraphQLError struct {
