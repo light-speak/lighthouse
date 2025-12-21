@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Lighthouse base -->
+  <path d="M35 85 L45 45 L55 45 L65 85 Z" fill="url(#grad)"/>
+  <!-- Lighthouse top -->
+  <rect x="42" y="35" width="16" height="12" rx="2" fill="url(#grad)"/>
+  <!-- Light beam -->
+  <path d="M50 30 L50 15 L45 25 L50 20 L55 25 Z" fill="#fbbf24"/>
+  <!-- Light rays -->
+  <circle cx="50" cy="12" r="5" fill="#fbbf24" opacity="0.8"/>
+  <line x1="50" y1="5" x2="50" y2="0" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="57" y1="7" x2="62" y2="2" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="43" y1="7" x2="38" y2="2" stroke="#fbbf24" stroke-width="2"/>
+  <!-- Window -->
+  <rect x="46" y="55" width="8" height="10" rx="1" fill="white" opacity="0.9"/>
+  <!-- Base platform -->
+  <rect x="30" y="85" width="40" height="5" rx="2" fill="url(#grad)"/>
+</svg>
