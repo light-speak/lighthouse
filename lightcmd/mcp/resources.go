@@ -160,6 +160,7 @@ func registerDirectiveDocs(s *Server) {
 		name string
 		desc string
 	}{
+		// Lighthouse 指令
 		{"loader", "DataLoader 批量加载指令"},
 		{"auth", "认证保护指令"},
 		{"own", "所有权校验指令"},
@@ -171,6 +172,11 @@ func registerDirectiveDocs(s *Server) {
 		{"index", "索引指令"},
 		{"unique", "唯一索引指令"},
 		{"default", "默认值指令"},
+		// gqlgen 内置指令
+		{"goField", "gqlgen: 控制字段生成行为"},
+		{"goModel", "gqlgen: 指定 Go 模型映射"},
+		{"goTag", "gqlgen: 添加自定义 struct tag"},
+		{"goEnum", "gqlgen: 自定义枚举值映射"},
 	}
 
 	// 注册所有指令文档

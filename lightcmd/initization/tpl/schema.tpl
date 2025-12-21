@@ -30,3 +30,43 @@ directive @unique on FIELD_DEFINITION
 directive @default(value: String!) on FIELD_DEFINITION
 directive @gorm(value: String!) on FIELD_DEFINITION
 directive @loader(keys: [String!], morphKey: String, unionTypes: [String!], extraKeys: [String!]) on OBJECT
+
+
+
+input PaginationInput {
+	current: Int
+	pageSize: Int
+}
+
+enum SortOrder {
+	ASC
+	DESC
+}
+
+input SorterInput {
+	field: String!
+	order: SortOrder!
+}
+
+enum FilterOperator {
+	EQ
+	NE
+	LT
+	LTE
+	GT
+	GTE
+	CONTAINS
+	STARTS_WITH
+	ENDS_WITH
+	IN
+	NIN
+	NULL
+	NNULL
+	BETWEEN
+}
+
+input FilterInput {
+	field: String!
+	operator: FilterOperator!
+	value: String
+}

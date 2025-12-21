@@ -76,6 +76,7 @@ func Run(module string, ms string) error {
 		{"Creating schema command", initSchemaCmd},
 		{"Creating Atlas loader", initLoader},
 		{"Creating atlas.hcl", initAtlas},
+		{"Creating refine helper", initRefine},
 	}
 
 	// Register import patterns
@@ -513,6 +514,22 @@ func initAtlas() error {
 		Data: map[string]string{
 			"ProjectName": projectName,
 		},
+	}
+	return templates.Render(options)
+}
+
+func initRefine() error {
+	refineTpl, err := tpl.ReadFile("tpl/refine.tpl")
+	if err != nil {
+		return err
+	}
+	options := &templates.Options{
+		Path:         filepath.Join(projectName, "resolver"),
+		Template:     string(refineTpl),
+		FileName:     "refine",
+		FileExt:      "go",
+		Editable:     true,
+		SkipIfExists: true,
 	}
 	return templates.Render(options)
 }

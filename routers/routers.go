@@ -13,7 +13,7 @@ const (
 	ContentTypeJSON = "application/json"
 )
 
-func NewRouter() *chi.Mux {
+func NewRouter(middlewares ...func(http.Handler) http.Handler) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(cors.New(cors.Options{
 		AllowedOrigins:   Config.CORSAllowOrigins,
@@ -22,8 +22,12 @@ func NewRouter() *chi.Mux {
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 	}).Handler)
-
 	setMiddlewares(r)
+
+	for _, middleware := range middlewares {
+		r.Use(middleware)
+	}
+
 	registerSystemRoutes(r)
 	return r
 }

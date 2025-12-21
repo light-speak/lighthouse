@@ -24,7 +24,7 @@ func StartService() {
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.MultipartForm{})
 	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
-	srv.Use(extensions.MetricsExtension{})
+	srv.Use(&extensions.MetricsExtension{})
 
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.AutomaticPersistedQuery{Cache: lru.New[string](100)})
@@ -35,9 +35,7 @@ func StartService() {
 	})
 	srv.SetErrorPresenter(lighterr.ErrorPresenter)
 
-	router := routers.NewRouter()
-	router.Use(auth.Middleware())
-	router.Use(dataloader.Middleware(db))
+	router := routers.NewRouter(auth.Middleware(), dataloader.Middleware(db))
 	router.Handle("/", playground.ApolloSandboxHandler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 

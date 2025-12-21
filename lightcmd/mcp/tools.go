@@ -607,6 +607,165 @@ type User {
 }
 ` + "```" + `
 `,
+		// gqlgen 内置指令
+		"goField": `# @goField 指令 (gqlgen 内置)
+
+控制字段的 Go 代码生成行为。
+
+## 语法
+` + "```graphql" + `
+directive @goField(
+  forceResolver: Boolean  # 强制生成 resolver
+  name: String            # 自定义 Go 字段名
+  omittable: Boolean      # 是否可省略
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+` + "```" + `
+
+## 示例
+` + "```graphql" + `
+type User {
+  id: ID!
+  # 强制使用 resolver 而不是直接返回字段
+  friends: [User!]! @goField(forceResolver: true)
+
+  # 自定义 Go 字段名
+  createdAt: Time! @goField(name: "CreatedTime")
+}
+
+input UserInput {
+  # 可省略的字段（用于 PATCH 更新）
+  name: String @goField(omittable: true)
+}
+` + "```" + `
+
+## 使用场景
+1. **forceResolver: true** - 当字段需要额外查询或计算时
+2. **name** - 当 GraphQL 字段名与 Go 字段名不同时
+3. **omittable** - 用于区分 null 和未提供的情况
+`,
+		"goModel": `# @goModel 指令 (gqlgen 内置)
+
+指定 GraphQL 类型对应的 Go 模型。
+
+## 语法
+` + "```graphql" + `
+directive @goModel(
+  model: String     # Go 类型的完整路径
+  models: [String!] # 多个可选模型
+  forceGenerate: Boolean # 强制生成模型
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+` + "```" + `
+
+## 示例
+` + "```graphql" + `
+# 使用外部包的类型
+type User @goModel(model: "myproject/models.User") {
+  id: ID!
+  name: String!
+}
+
+# 使用标准库类型
+scalar Time @goModel(model: "time.Time")
+
+# 强制生成模型（即使已存在绑定）
+type Product @goModel(forceGenerate: true) {
+  id: ID!
+  name: String!
+}
+` + "```" + `
+
+## gqlgen.yml 配置
+也可以在 gqlgen.yml 中配置：
+` + "```yaml" + `
+models:
+  User:
+    model: myproject/models.User
+  Time:
+    model: time.Time
+` + "```" + `
+`,
+		"goTag": `# @goTag 指令 (gqlgen 内置)
+
+为生成的 struct 字段添加自定义 tag。
+
+## 语法
+` + "```graphql" + `
+directive @goTag(
+  key: String!    # tag 键名
+  value: String   # tag 值
+) repeatable on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+` + "```" + `
+
+## 示例
+` + "```graphql" + `
+type User {
+  id: ID!
+
+  # 添加 json tag
+  email: String! @goTag(key: "json", value: "email_address")
+
+  # 添加 validate tag
+  password: String! @goTag(key: "validate", value: "required,min=8")
+
+  # 添加多个 tag
+  phone: String
+    @goTag(key: "json", value: "phone_number")
+    @goTag(key: "validate", value: "omitempty,e164")
+}
+
+input CreateUserInput {
+  name: String! @goTag(key: "binding", value: "required")
+  email: String! @goTag(key: "binding", value: "required,email")
+}
+` + "```" + `
+
+## 生成的 Go 代码
+` + "```go" + `
+type User struct {
+    ID       string ` + "`json:\"id\"`" + `
+    Email    string ` + "`json:\"email_address\"`" + `
+    Password string ` + "`json:\"password\" validate:\"required,min=8\"`" + `
+    Phone    *string ` + "`json:\"phone_number\" validate:\"omitempty,e164\"`" + `
+}
+` + "```" + `
+`,
+		"goEnum": `# @goEnum 指令 (gqlgen 内置)
+
+自定义枚举值的 Go 映射。
+
+## 语法
+` + "```graphql" + `
+directive @goEnum(
+  value: String  # Go 中使用的值
+) on ENUM_VALUE
+` + "```" + `
+
+## 示例
+` + "```graphql" + `
+enum Status {
+  ACTIVE @goEnum(value: "active")
+  INACTIVE @goEnum(value: "inactive")
+  PENDING @goEnum(value: "pending")
+}
+
+enum Role {
+  ADMIN @goEnum(value: "1")
+  USER @goEnum(value: "2")
+  GUEST @goEnum(value: "3")
+}
+` + "```" + `
+
+## 生成的 Go 代码
+` + "```go" + `
+type Status string
+
+const (
+    StatusActive   Status = "active"
+    StatusInactive Status = "inactive"
+    StatusPending  Status = "pending"
+)
+` + "```" + `
+`,
 	}
 
 	info, ok := directives[name]
