@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/bytedance/sonic"
@@ -15,7 +16,11 @@ type LightRedis struct {
 	IsEnable bool
 }
 
-var LightRedisClient *LightRedis
+var (
+	LightRedisClient *LightRedis
+	healthCheckStop  chan struct{}
+	reconnectMu      sync.Mutex
+)
 
 func initRedis() {
 	client := goRedis.NewClient(&goRedis.Options{
@@ -46,6 +51,99 @@ func initRedis() {
 	LightRedisClient = &LightRedis{
 		Client:   client,
 		IsEnable: true,
+	}
+
+	// Start health check goroutine
+	startRedisHealthCheck()
+}
+
+// startRedisHealthCheck starts a goroutine that monitors Redis health
+// and attempts reconnection on consecutive failures
+func startRedisHealthCheck() {
+	if !LightRedisConfig.Enable {
+		return
+	}
+
+	healthCheckStop = make(chan struct{})
+	ticker := time.NewTicker(30 * time.Second)
+
+	go func() {
+		defer ticker.Stop()
+
+		failCount := 0
+		for {
+			select {
+			case <-healthCheckStop:
+				logs.Debug().Msg("redis health check stopped")
+				return
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				_, err := LightRedisClient.Client.Ping(ctx).Result()
+				cancel()
+
+				if err != nil {
+					failCount++
+					logs.Warn().Err(err).Int("fail_count", failCount).Msg("Redis health check failed")
+					if failCount >= 3 {
+						go reconnectRedis()
+						failCount = 0
+					}
+				} else {
+					if failCount > 0 {
+						logs.Info().Int("previous_failures", failCount).Msg("Redis health recovered")
+					}
+					failCount = 0
+				}
+			}
+		}
+	}()
+}
+
+// reconnectRedis attempts to reconnect to Redis
+func reconnectRedis() {
+	reconnectMu.Lock()
+	defer reconnectMu.Unlock()
+
+	logs.Info().Msg("attempting Redis reconnection...")
+
+	// Close old connection if exists
+	if LightRedisClient != nil && LightRedisClient.Client != nil {
+		_ = LightRedisClient.Client.Close()
+	}
+
+	// Create new client
+	client := goRedis.NewClient(&goRedis.Options{
+		Addr:     LightRedisConfig.Host + ":" + LightRedisConfig.Port,
+		Password: LightRedisConfig.Password,
+		DB:       LightRedisConfig.DB,
+
+		PoolSize:     LightRedisConfig.PoolSize,
+		MinIdleConns: LightRedisConfig.MinIdleConns,
+		MaxRetries:   3,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := client.Ping(ctx).Result()
+	if err != nil {
+		logs.Error().Err(err).Msg("Redis reconnection failed")
+		return
+	}
+
+	LightRedisClient.Client = client
+	LightRedisClient.IsEnable = true
+	logs.Info().Msg("Redis reconnected successfully")
+}
+
+// StopHealthCheck stops the Redis health check goroutine
+func StopHealthCheck() {
+	if healthCheckStop != nil {
+		close(healthCheckStop)
+		healthCheckStop = nil
 	}
 }
 
@@ -87,10 +185,29 @@ func (lr *LightRedis) GetClient() (*goRedis.Client, error) {
 }
 
 func (lr *LightRedis) Close() error {
+	// Stop health check first
+	StopHealthCheck()
+
 	if lr == nil || lr.Client == nil {
 		return nil
 	}
 	return lr.Client.Close()
+}
+
+// Stats returns the Redis connection pool statistics
+func (lr *LightRedis) Stats() map[string]any {
+	if lr == nil || lr.Client == nil {
+		return nil
+	}
+	stats := lr.Client.PoolStats()
+	return map[string]any{
+		"hits":        stats.Hits,
+		"misses":      stats.Misses,
+		"timeouts":    stats.Timeouts,
+		"total_conns": stats.TotalConns,
+		"idle_conns":  stats.IdleConns,
+		"stale_conns": stats.StaleConns,
+	}
 }
 
 func (lr *LightRedis) Enable() bool {
@@ -119,6 +236,12 @@ func (lr *LightRedis) Set(ctx context.Context, key string, value interface{}, ex
 	return client.Set(ctx, key, value, expiration).Err()
 }
 
+// nilMarker is used to cache nil values to prevent cache penetration
+const nilMarker = "__NIL__"
+
+// nilCacheTTL is the TTL for nil value cache (shorter than normal cache)
+const nilCacheTTL = 5 * time.Minute
+
 func Remember[T any](ctx context.Context, key string, callback func() T, expiration time.Duration) (*T, error) {
 	redisClient, err := GetLightRedis()
 	if err != nil {
@@ -128,6 +251,11 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 	val, err := redisClient.Get(ctx, key)
 	if err != nil {
 		return nil, err // 这里已经过滤掉 redis.Nil
+	}
+
+	// Check if it's a cached nil value
+	if val == nilMarker {
+		return nil, nil
 	}
 
 	if val != "" {
@@ -144,6 +272,12 @@ func Remember[T any](ctx context.Context, key string, callback func() T, expirat
 	data := callback()
 
 	if any(data) == nil {
+		// Cache nil value with shorter TTL to prevent cache penetration
+		ttl := nilCacheTTL
+		if expiration > 0 && expiration < nilCacheTTL {
+			ttl = expiration
+		}
+		_ = redisClient.Set(ctx, key, nilMarker, ttl)
 		return nil, nil
 	}
 

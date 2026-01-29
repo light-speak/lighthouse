@@ -10,6 +10,7 @@ type Broker interface {
 	Publish(topic string, payload []byte) error
 	Subscribe(ctx context.Context, topic string, handler func(msg []byte) error, opts ...SubscriberOption) (func(), error)
 	Close() error
+	IsConnected() bool
 }
 
 func resolveSubscriberOption(topic string, opts ...SubscriberOption) SubscriberOption {
@@ -33,9 +34,10 @@ func resolveSubscriptionID(topic, instanceID string, opts ...SubscriberOption) s
 
 	if opt.Mode == ModeQueue {
 		if opt.DurablePrefix != "" {
-			return opt.DurablePrefix
+			return strings.ReplaceAll(opt.DurablePrefix, ".", "-")
 		}
-		return topic + "-queue"
+		// NATS consumer 名字不能包含点号，需要替换
+		return strings.ReplaceAll(topic+"-queue", ".", "-")
 	}
 	prefix := opt.DurablePrefix
 	if prefix == "" {

@@ -152,6 +152,7 @@ func generateLoader() error {
 	templates.AddImportRegex("databases", "github.com/light-speak/lighthouse/databases", "")
 	templates.AddImportRegex("dataloader", "github.com/light-speak/lighthouse/routers/dataloader", "")
 	templates.AddImportRegex("gorm", "gorm.io/gorm", "")
+	templates.AddImportRegex("fmt", "fmt", "")
 
 	err = templates.Render(options)
 	if err != nil {

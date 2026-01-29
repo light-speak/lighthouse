@@ -2,10 +2,12 @@ package databases
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	_ "time/tzdata"
@@ -25,6 +27,12 @@ type LightDatabase struct {
 
 var LightDatabaseClient *LightDatabase
 
+// healthCheckStops stores stop channels for all health check goroutines
+var (
+	healthCheckStops   []chan struct{}
+	healthCheckStopsMu sync.Mutex
+)
+
 func init() {
 	// 从配置加载时区，默认 Asia/Shanghai
 	loc, err := time.LoadLocation(databaseConfig.Timezone)
@@ -39,10 +47,10 @@ func init() {
 	initDatabaseWithRetry(loc, databaseConfig.Timezone)
 }
 
-// initDatabaseWithRetry 初始化数据库连接，添加重试机制
+// initDatabaseWithRetry 初始化数据库连接，添加指数退避重试机制
 func initDatabaseWithRetry(loc *time.Location, timezone string) {
 	maxRetries := 5
-	retryInterval := 5 * time.Second
+	baseInterval := 2 * time.Second
 
 	for i := 0; i < maxRetries; i++ {
 		// 尝试初始化主库
@@ -61,7 +69,12 @@ func initDatabaseWithRetry(loc *time.Location, timezone string) {
 				return
 			}
 
-			// 等待一段时间后重试
+			// 指数退避: 2s, 4s, 8s, 16s, 32s (max 30s)
+			retryInterval := baseInterval * time.Duration(1<<i)
+			if retryInterval > 30*time.Second {
+				retryInterval = 30 * time.Second
+			}
+			logs.Info().Dur("retry_after", retryInterval).Msg("waiting before next retry")
 			time.Sleep(retryInterval)
 			continue
 		}
@@ -130,7 +143,36 @@ func initDB(config *DatabaseConfig, loc *time.Location, timezone string) (*gorm.
 	sqlDB.SetMaxOpenConns(databaseConfig.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(databaseConfig.ConnMaxLifetime) * time.Minute)
 	sqlDB.SetConnMaxIdleTime(time.Duration(databaseConfig.ConnMaxIdleTime) * time.Minute)
+
+	// 启动连接健康检查 goroutine
+	stopCh := make(chan struct{})
+	healthCheckStopsMu.Lock()
+	healthCheckStops = append(healthCheckStops, stopCh)
+	healthCheckStopsMu.Unlock()
+	go startConnectionHealthCheck(sqlDB, stopCh)
+
 	return db, nil
+}
+
+// startConnectionHealthCheck 定期 ping 数据库以检测死连接
+// Go 的 database/sql 在 Ping 时会自动清理失效连接并重建
+func startConnectionHealthCheck(sqlDB *sql.DB, stop chan struct{}) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-stop:
+			logs.Debug().Msg("database health check stopped")
+			return
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := sqlDB.PingContext(ctx); err != nil {
+				logs.Warn().Err(err).Msg("数据库健康检查失败，连接池将自动重建连接")
+			}
+			cancel()
+		}
+	}
 }
 
 // GetDB 获取主库连接
@@ -260,9 +302,24 @@ func (l *LightDatabase) LogStats() {
 	}
 }
 
+// StopHealthChecks stops all database health check goroutines
+func StopHealthChecks() {
+	healthCheckStopsMu.Lock()
+	defer healthCheckStopsMu.Unlock()
+
+	for _, stop := range healthCheckStops {
+		close(stop)
+	}
+	healthCheckStops = nil
+	logs.Debug().Msg("all database health checks stopped")
+}
+
 // CloseConnections 提供一个方法用于安全地关闭数据库连接
 // 应仅在确认不再需要使用数据库时调用，例如应用程序关闭时
 func (l *LightDatabase) CloseConnections() {
+	// First stop all health check goroutines
+	StopHealthChecks()
+
 	if l == nil || !l.Completed {
 		return
 	}

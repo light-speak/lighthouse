@@ -100,6 +100,9 @@ func Run(module string, ms string) error {
 	templates.AddImportRegex("messaging", "github.com/light-speak/lighthouse/messaging", "")
 	templates.AddImportRegex("queue", "github.com/light-speak/lighthouse/queue", "")
 	templates.AddImportRegex("redis", "github.com/light-speak/lighthouse/redis", "")
+	templates.AddImportRegex("health", "github.com/light-speak/lighthouse/routers/health", "")
+	templates.AddImportRegex("errors", "errors", "")
+	templates.AddImportRegex("context", "context", "")
 	templates.AddImportRegex("bytes", "bytes", "")
 
 	// Execute init steps with progress

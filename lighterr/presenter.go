@@ -3,7 +3,9 @@ package lighterr
 import (
 	"context"
 	"errors"
+	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/light-speak/lighthouse/logs"
@@ -20,17 +22,50 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 		myErr = NewNotFoundError("record not found")
 	}
 
+	// Check if error is context deadline exceeded or canceled
+	if myErr == nil && errors.Is(e, context.DeadlineExceeded) {
+		myErr = NewRequestTimeoutError("request timeout: database query took too long", e)
+	}
+	if myErr == nil && errors.Is(e, context.Canceled) {
+		myErr = NewRequestTimeoutError("request canceled", e)
+	}
+
+	// Check if error message contains common timeout patterns
+	if myErr == nil && e != nil {
+		errMsg := e.Error()
+		if strings.Contains(errMsg, "context deadline exceeded") ||
+			strings.Contains(errMsg, "context canceled") ||
+			strings.Contains(errMsg, "i/o timeout") {
+			myErr = NewRequestTimeoutError("request timeout", e)
+		}
+	}
+
 	// Check if error is our custom GraphQLError type
 	if myErr == nil {
 		errors.As(e, &myErr)
 	}
 
 	if myErr != nil {
+		// Capture stack trace for logging (always, for debugging)
+		stackTrace := captureStackTrace(5)
+
 		// Log based on error type: client errors (4xx) use Warn, server errors (5xx) use Error
 		if IsClientError(myErr.Code) {
-			logs.Warn().Str("key", GetCodeKey(myErr.Code)).Msg(myErr.Message)
+			logs.Warn().
+				Str("key", GetCodeKey(myErr.Code)).
+				Msg(myErr.Message)
 		} else {
-			logs.Error().Err(myErr.Err).Str("key", GetCodeKey(myErr.Code)).Msg(myErr.Message)
+			// For server errors, log full details including stack
+			logEvent := logs.Error().
+				Str("key", GetCodeKey(myErr.Code)).
+				Str("code_info", GetCodeInfo(myErr.Code))
+
+			if myErr.Err != nil {
+				logEvent = logEvent.Str("cause", myErr.Err.Error())
+			}
+
+			// Log stack trace as structured data
+			logEvent.Interface("stack", stackTrace).Msg(myErr.Message)
 		}
 
 		ext := map[string]interface{}{
@@ -38,10 +73,12 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 			"key":  GetCodeKey(myErr.Code),
 		}
 
-		if config.Env != EnvProduction {
+		// 非生产环境：总是返回详细信息
+		// 生产环境：只有服务端错误（非客户端错误）才返回详细信息
+		shouldIncludeDetails := config.Env != EnvProduction || !IsClientError(myErr.Code)
+
+		if shouldIncludeDetails {
 			ext["info"] = GetCodeInfo(myErr.Code)
-			// Capture stack trace with proper formatting
-			stackTrace := captureStackTrace(5)
 			ext["stack"] = stackTrace
 
 			// Convert error to string if it's not nil
@@ -56,19 +93,31 @@ func ErrorPresenter(ctx context.Context, e error) *gqlerror.Error {
 		}
 	}
 
-	// Unknown error, log as error
-	logs.Error().Err(e).Msg("unhandled error")
+	// Unknown error - capture full context for logging
+	stackTrace := captureStackTrace(3)
+	logs.Error().
+		Err(e).
+		Str("error_type", getErrorType(e)).
+		Interface("stack", stackTrace).
+		Msg("unhandled error")
 
-	// Add stack trace to other errors in development mode
-	if config.Env != EnvProduction {
-		if err.Extensions == nil {
-			err.Extensions = map[string]interface{}{}
-		}
-		err.Extensions["stack"] = captureStackTrace(3)
-		err.Extensions["originalError"] = e.Error()
+	// 未知错误视为服务端错误，总是返回详细信息帮助调试
+	if err.Extensions == nil {
+		err.Extensions = map[string]interface{}{}
 	}
+	err.Extensions["stack"] = stackTrace
+	err.Extensions["originalError"] = e.Error()
+	err.Extensions["errorType"] = getErrorType(e)
 
 	return err
+}
+
+// getErrorType returns a string representation of the error type
+func getErrorType(e error) string {
+	if e == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%T", e)
 }
 
 func captureStackTrace(skip int) []map[string]interface{} {

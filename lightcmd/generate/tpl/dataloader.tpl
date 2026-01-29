@@ -80,16 +80,21 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}(ctx context.Context, db *gor
 	items := []*{{ $modelName }}{}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?)", keys).Find(&items)
 	if result.Error != nil {
+		// Wrap error with context information
+		wrappedErr := lighterr.NewDatabaseError(
+			fmt.Sprintf("{{ $loaderName }}: failed to fetch {{ $modelName }} by {{ $field }}, keys=%v", keys),
+			result.Error,
+		)
 		// Return error for each key when query fails
 		results := make([]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
-			errs[i] = result.Error
+			errs[i] = wrappedErr
 		}
 		return results, errs
 	}
@@ -118,16 +123,21 @@ func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}(ctx context.Context, db 
 	items := []*{{ $modelName }}{}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase}} IN (?)", keys).Find(&items)
 	if result.Error != nil {
+		// Wrap error with context information
+		wrappedErr := lighterr.NewDatabaseError(
+			fmt.Sprintf("{{ $listLoaderName }}: failed to fetch {{ $modelName }} list by {{ $field }}, keys=%v", keys),
+			result.Error,
+		)
 		// Return error for each key when query fails
 		results := make([][]*{{ $modelName }}, len(keys))
 		errs := make([]error, len(keys))
 		for i := range errs {
-			errs[i] = result.Error
+			errs[i] = wrappedErr
 		}
 		return results, errs
 	}
@@ -249,7 +259,7 @@ func fetch{{ $modelName }}sBy{{ $field | ucFirst }}With{{ $extraKey | ucFirst }}
 	}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
@@ -295,7 +305,7 @@ func fetch{{ $modelName }}sListBy{{ $field | ucFirst }}With{{ $extraKey | ucFirs
 	}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $field | snakeCase }} IN (?) AND {{ $extraKey | snakeCase }} IN (?)", ids, extraIDs).Find(&items)
@@ -416,7 +426,7 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}(ct
 	items := []*{{ $modelName }}{}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
@@ -454,7 +464,7 @@ func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }
 	items := []*{{ $modelName }}{}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ?", keys, "{{ $unionType | snakeCase }}").Find(&items)
@@ -585,7 +595,7 @@ func fetch{{ $modelName }}sBy{{ $morph.Field | ucFirst }}With{{ $unionType }}Wit
 	}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)
@@ -631,7 +641,7 @@ func fetch{{ $modelName }}sListBy{{ $morph.Field | ucFirst }}With{{ $unionType }
 	}
 
 	// 为查询创建独立的 context，不受客户端断开影响
-	queryCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	queryCtx, cancel := context.WithTimeout(context.Background(), dataloader.GetQueryTimeout())
 	defer cancel()
 
 	result := db.WithContext(queryCtx).Where("{{ $morph.Field | snakeCase }}_id IN (?) AND {{ $morph.Field | snakeCase }}_type = ? AND {{ $extraKey | snakeCase }} IN (?)", ids, "{{ $unionType | snakeCase }}", extraIDs).Find(&items)

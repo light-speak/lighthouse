@@ -123,6 +123,7 @@ func init() {
 
 	switch LogLevel(utils.GetEnv("DB_LOG_LEVEL", string(LogLevelInfo))) {
 	case LogLevelDebug:
+		// GORM logger does not have a Debug level, using Info as the most verbose level
 		databaseConfig.LogLevel = logger.Info
 	case LogLevelInfo:
 		databaseConfig.LogLevel = logger.Info
@@ -140,7 +141,9 @@ func init() {
 	// 连接池配置
 	databaseConfig.MaxIdleConns = utils.GetEnvInt("DB_MAX_IDLE_CONNS", 10)
 	databaseConfig.MaxOpenConns = utils.GetEnvInt("DB_MAX_OPEN_CONNS", 100)
+	// ConnMaxLifetime: 连接最大生命周期，避免使用被服务器关闭的死连接
 	databaseConfig.ConnMaxLifetime = utils.GetEnvInt("DB_CONN_MAX_LIFETIME", 30)
-	databaseConfig.ConnMaxIdleTime = utils.GetEnvInt("DB_CONN_MAX_IDLE_TIME", 3)
+	// ConnMaxIdleTime: 空闲连接最大存活时间，防止连接泄漏的关键参数
+	databaseConfig.ConnMaxIdleTime = utils.GetEnvInt("DB_CONN_MAX_IDLE_TIME", 5)
 	databaseConfig.PrepareStmt = utils.GetEnv("DB_PREPARE_STMT", "false") == "true"
 }

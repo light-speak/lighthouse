@@ -136,3 +136,8 @@ func (n *NatsBroker) Close() error {
 	}
 	return nil
 }
+
+// IsConnected returns true if the NATS connection is active
+func (n *NatsBroker) IsConnected() bool {
+	return n.conn != nil && n.conn.IsConnected()
+}

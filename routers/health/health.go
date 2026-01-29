@@ -10,18 +10,20 @@ import (
 	"time"
 
 	"github.com/light-speak/lighthouse/databases"
+	"github.com/light-speak/lighthouse/messaging"
+	"github.com/light-speak/lighthouse/redis"
 )
 
 // HealthStatus 健康状态
 type HealthStatus struct {
-	Status    string                 `json:"status"`     // healthy | degraded | unhealthy
+	Status    string                 `json:"status"` // healthy | degraded | unhealthy
 	Timestamp time.Time              `json:"timestamp"`
 	Checks    map[string]CheckResult `json:"checks"`
 }
 
 // CheckResult 单项检查结果
 type CheckResult struct {
-	Status  string `json:"status"`            // healthy | unhealthy
+	Status  string `json:"status"` // healthy | unhealthy
 	Message string `json:"message,omitempty"`
 	Latency string `json:"latency,omitempty"` // 响应时间
 }
@@ -107,6 +109,24 @@ func ReadinessHandler(w http.ResponseWriter, r *http.Request) {
 	status.Checks["db_pool"] = poolCheck
 	if poolCheck.Status == "unhealthy" && status.Status == "healthy" {
 		status.Status = "degraded"
+	}
+
+	// 检查 Redis（如果启用）
+	if redis.LightRedisConfig.Enable {
+		redisCheck := checkRedis(cfg)
+		status.Checks["redis"] = redisCheck
+		if redisCheck.Status == "unhealthy" && status.Status == "healthy" {
+			status.Status = "degraded"
+		}
+	}
+
+	// 检查 NATS（如果可用）
+	if messaging.GetBroker() != nil {
+		natsCheck := checkNATS(cfg)
+		status.Checks["nats"] = natsCheck
+		if natsCheck.Status == "unhealthy" && status.Status == "healthy" {
+			status.Status = "degraded"
+		}
 	}
 
 	// 设置响应
@@ -255,4 +275,56 @@ func formatBytes(b uint64) string {
 
 func formatPoolStats(inUse, idle, maxOpen int) string {
 	return fmt.Sprintf("in_use=%d idle=%d max=%d", inUse, idle, maxOpen)
+}
+
+// checkRedis checks Redis connectivity
+func checkRedis(_ *Config) CheckResult {
+	redisClient, err := redis.GetLightRedis()
+	if err != nil {
+		return CheckResult{
+			Status:  "unhealthy",
+			Message: err.Error(),
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	_, err = redisClient.Client.Ping(ctx).Result()
+	if err != nil {
+		return CheckResult{
+			Status:  "unhealthy",
+			Message: "redis ping failed: " + err.Error(),
+		}
+	}
+
+	return CheckResult{
+		Status:  "healthy",
+		Latency: time.Since(start).String(),
+	}
+}
+
+// checkNATS checks NATS connectivity
+func checkNATS(_ *Config) CheckResult {
+	broker := messaging.GetBroker()
+	if broker == nil {
+		return CheckResult{
+			Status:  "unhealthy",
+			Message: "nats broker not initialized",
+		}
+	}
+
+	start := time.Now()
+	if !broker.IsConnected() {
+		return CheckResult{
+			Status:  "unhealthy",
+			Message: "nats connection is not active",
+		}
+	}
+
+	return CheckResult{
+		Status:  "healthy",
+		Latency: time.Since(start).String(),
+	}
 }
