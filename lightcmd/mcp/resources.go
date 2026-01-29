@@ -56,7 +56,7 @@ go install github.com/light-speak/lighthouse@latest
 
 ### 2. 初始化项目
 ` + "```bash" + `
-lighthouse generate:init --name github.com/yourname/myproject
+lighthouse generate:init --module github.com/yourname/myproject --models user
 cd myproject
 ` + "```" + `
 
@@ -86,9 +86,9 @@ type Query {
 
 ### 4. 生成代码
 ` + "```bash" + `
-lighthouse gen
+lighthouse generate:schema
 # 或
-go run . gen
+go run . generate:schema
 ` + "```" + `
 
 ### 5. 启动服务
@@ -573,7 +573,7 @@ type Comment @loader(morphKey: "commentableType", unionTypes: ["Post", "Video"])
 
 ## 生成的 DataLoader
 
-运行 ` + "`lighthouse gen`" + ` 后会在 ` + "`models/dataloader_gen.go`" + ` 生成：
+运行 ` + "`lighthouse generate:schema`" + ` 后会在 ` + "`models/dataloader_gen.go`" + ` 生成：
 
 ` + "```go" + `
 // UserLoader - 通过 ID 加载

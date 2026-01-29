@@ -37,7 +37,7 @@ func registerGenerateSchema(s *Server) {
 			"properties": map[string]interface{}{},
 		},
 		func(args map[string]interface{}) (*CallToolResult, error) {
-			cmd := exec.Command("go", "run", ".", "gen")
+			cmd := exec.Command("go", "run", ".", "generate:schema")
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				return &CallToolResult{
@@ -62,7 +62,7 @@ func registerGenerateDataloader(s *Server) {
 			"properties": map[string]interface{}{},
 		},
 		func(args map[string]interface{}) (*CallToolResult, error) {
-			cmd := exec.Command("go", "run", ".", "gen")
+			cmd := exec.Command("go", "run", ".", "generate:schema")
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				return &CallToolResult{
@@ -164,13 +164,21 @@ func registerInitProject(s *Server) {
 					"type":        "string",
 					"description": "项目名称（Go module 名称），例如: github.com/yourname/myproject",
 				},
+				"models": map[string]interface{}{
+					"type":        "string",
+					"description": "模型名称，用逗号分隔，例如: user,post,comment",
+				},
 			},
 			"required": []string{"name"},
 		},
 		func(args map[string]interface{}) (*CallToolResult, error) {
 			name, _ := args["name"].(string)
+			models, _ := args["models"].(string)
+			if models == "" {
+				models = "user" // 默认模型
+			}
 
-			cmd := exec.Command("go", "run", ".", "generate:init", "--name", name)
+			cmd := exec.Command("go", "run", ".", "generate:init", "--module", name, "--models", models)
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				return &CallToolResult{
@@ -253,22 +261,22 @@ func registerListGenerators(s *Server) {
 |------|------|
 | generate:init | 初始化新项目 |
 | generate:command | 生成 CLI 命令 |
-| gen | 生成 GraphQL Schema、Models、DataLoader |
+| generate:schema | 生成 GraphQL Schema、Models、DataLoader |
 | generate:task | 生成队列任务 |
 
 ## 使用方式
 
 ### 初始化项目
 ` + "```bash" + `
-lighthouse generate:init --name github.com/yourname/project
+lighthouse generate:init --module github.com/yourname/project --models user,post
 ` + "```" + `
 
 ### 生成 Schema
 在项目目录下运行:
 ` + "```bash" + `
-lighthouse gen
+lighthouse generate:schema
 # 或
-go run . gen
+go run . generate:schema
 ` + "```" + `
 
 ### 生成命令
@@ -323,7 +331,7 @@ func registerRunLighthouseCommand(s *Server) {
 			"properties": map[string]interface{}{
 				"command": map[string]interface{}{
 					"type":        "string",
-					"description": "要执行的命令，例如: gen, generate:init --name xxx",
+					"description": "要执行的命令，例如: generate:schema, generate:init --module xxx --models user",
 				},
 			},
 			"required": []string{"command"},
@@ -334,7 +342,6 @@ func registerRunLighthouseCommand(s *Server) {
 
 			cmdArgs := append([]string{"run", "."}, parts...)
 			cmd := exec.Command("go", cmdArgs...)
-			cmd.Dir, _ = os.Getwd()
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				return &CallToolResult{
