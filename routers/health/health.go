@@ -120,8 +120,8 @@ func ReadinessHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 检查 NATS（如果可用）
-	if messaging.GetBroker() != nil {
+	// 检查 NATS（如果启用）
+	if messaging.IsEnabled() {
 		natsCheck := checkNATS(cfg)
 		status.Checks["nats"] = natsCheck
 		if natsCheck.Status == "unhealthy" && status.Status == "healthy" {

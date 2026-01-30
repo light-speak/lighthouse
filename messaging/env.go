@@ -19,6 +19,7 @@ const (
 )
 
 type Config struct {
+	Enable     bool
 	Driver     Driver
 	URL        string
 	InstanceID string
@@ -26,6 +27,7 @@ type Config struct {
 
 func init() {
 	cfg = Config{
+		Enable:     false,
 		Driver:     DriverNats,
 		URL:        "localhost:4222",
 		InstanceID: "hostname",
@@ -38,11 +40,8 @@ func init() {
 		}
 	}
 
+	cfg.Enable = utils.GetEnv("MESSAGING_ENABLE", "false") == "true"
 	cfg.Driver = Driver(utils.GetEnv("MESSAGING_DRIVER", string(cfg.Driver)))
 	cfg.URL = utils.GetEnv("MESSAGING_URL", cfg.URL)
 	cfg.InstanceID = utils.GetEnv("HOSTNAME", cfg.InstanceID)
-
-	if cfg.Driver == "" {
-		log.Fatal("MESSAGING_DRIVER is not set")
-	}
 }

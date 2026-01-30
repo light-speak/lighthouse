@@ -70,6 +70,7 @@ QUEUE_REDIS_DB=0
 # ===========================================
 # Messaging Settings (NATS/Redis)
 # ===========================================
+MESSAGING_ENABLE=false                 # 是否启用消息队列
 MESSAGING_DRIVER=nats                  # nats | redis
 MESSAGING_URL=localhost:4222
 HOSTNAME=default-instance              # 实例标识，用于消息订阅

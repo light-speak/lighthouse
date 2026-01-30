@@ -56,6 +56,21 @@ lighthouse/
 | `REDIS_POOL_SIZE` | 10 | 连接池大小 |
 | `REDIS_MIN_IDLE_CONNS` | 5 | 最小空闲连接数 |
 
+### 消息队列 (NATS)
+
+环境变量配置（在 `messaging/env.go` 中加载）：
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `MESSAGING_ENABLE` | false | 是否启用消息队列 |
+| `MESSAGING_DRIVER` | nats | 消息驱动 (nats) |
+| `MESSAGING_URL` | localhost:4222 | NATS 服务器地址 |
+| `HOSTNAME` | hostname | 实例标识，用于消息订阅 |
+
+**重要**：
+- `MESSAGING_ENABLE=false` 时不会初始化 NATS 连接
+- 如果项目不需要 NATS，保持 `MESSAGING_ENABLE=false` 即可
+
 ## 代码生成
 
 ### DataLoader 模板

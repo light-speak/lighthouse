@@ -5,6 +5,10 @@ import "log"
 var broker Broker
 
 func init() {
+	if !cfg.Enable {
+		return
+	}
+
 	var b Broker
 
 	switch cfg.Driver {
@@ -21,4 +25,8 @@ func init() {
 
 func GetBroker() Broker {
 	return broker
+}
+
+func IsEnabled() bool {
+	return cfg.Enable
 }

@@ -92,9 +92,11 @@ func (c *Start) OnExit() func() {
 			}
 
 			// 关闭 NATS 连接
-			if broker := messaging.GetBroker(); broker != nil {
-				broker.Close()
-				logs.Info().Msg("messaging broker closed")
+			if messaging.IsEnabled() {
+				if broker := messaging.GetBroker(); broker != nil {
+					broker.Close()
+					logs.Info().Msg("messaging broker closed")
+				}
 			}
 
 			close(done)
